@@ -279,6 +279,40 @@ const searchableItems = [
     { label: 'Sistem Desain - Kartu Statistik', routeName: 'design-system.cards', description: 'Koleksi layout kartu data statistik & visualisasi grid' },
 ];
 
+const mobilePageTitles = [
+    { routeName: 'dashboard', label: 'Dashboard' },
+    { routeName: 'services.index', label: 'Layanan Penunjang' },
+    { routeName: 'services.medik', label: 'Layanan Penunjang Medik' },
+    { routeName: 'services.non-medik', label: 'Layanan Penunjang Non-Medik' },
+    { routeName: 'services.units.show', label: 'Unit Penunjang' },
+    { routeName: 'reports.index', label: 'Laporan & Export' },
+    { routeName: 'reports.history', label: 'Riwayat Pelaporan' },
+    { routeName: 'tickets.show', label: 'Detail Tiket' },
+    { routeName: 'service-management.rooms', label: 'Manajemen Ruangan' },
+    { routeName: 'service-management.categories', label: 'Kategori Kerusakan' },
+    { routeName: 'service-management.supporting-units', label: 'Layanan Penunjang' },
+    { routeName: 'users.approvals', label: 'Persetujuan Registrasi' },
+    { routeName: 'users.admin', label: 'Super Admin' },
+    { routeName: 'users.management', label: 'Manajemen' },
+    { routeName: 'users.unit-head', label: 'Kepala Unit' },
+    { routeName: 'users.technician', label: 'Teknisi Lapangan' },
+    { routeName: 'users.room-head', label: 'Kepala Ruangan' },
+    { routeName: 'users.reporter', label: 'Staf / Pelapor' },
+    { routeName: 'profile.edit', label: 'Profil Saya' },
+    { routeName: 'settings.index', label: 'Pengaturan Profil' },
+    { routeName: 'design-system.index', label: 'Sistem Desain - Ringkasan' },
+    { routeName: 'design-system.buttons-badges', label: 'Sistem Desain - Tombol & Badge' },
+    { routeName: 'design-system.forms', label: 'Sistem Desain - Formulir & Input' },
+    { routeName: 'design-system.modals-alerts', label: 'Sistem Desain - Modal & Alert' },
+    { routeName: 'design-system.tables', label: 'Sistem Desain - Tabel & Pagination' },
+    { routeName: 'design-system.cards', label: 'Sistem Desain - Kartu Statistik' },
+];
+
+const currentPageTitle = computed(() => {
+    const match = mobilePageTitles.find(item => route().current(item.routeName));
+    return match ? match.label : '';
+});
+
 const filteredSearchItems = computed(() => {
     if (!globalSearchQuery.value.trim()) return [];
     const query = globalSearchQuery.value.toLowerCase();
@@ -303,7 +337,7 @@ const getGroupInitials = (title) => {
         <!-- Navbar -->
         <nav class="relative sticky top-0 z-40 w-full h-20 mobile-nav-gradient shadow-none border-none -mb-4 transition-all duration-300 ease-in-out">
             <div :class="['w-full px-4 lg:pr-4 transition-all duration-300 ease-in-out', sidebarCollapsed ? 'lg:pl-[96px]' : 'lg:pl-[304px]']">
-                <div class="flex h-20 items-center justify-between gap-4">
+                <div class="flex h-20 items-center justify-between gap-3">
 
                     <!-- Left: Back Button / Hamburger and Global Search -->
                     <div class="flex items-center flex-1">
@@ -312,7 +346,7 @@ const getGroupInitials = (title) => {
                             v-if="route().current('services.medik') || route().current('services.non-medik') || route().current('profile.edit') || route().current('services.units.show') || route().current('tickets.show')"
                             :href="backRoute"
                             @click="route().current('profile.edit') || route().current('services.units.show') || route().current('tickets.show') ? null : triggerSupportBack"
-                            class="hidden lg:inline-flex items-center justify-center h-11 w-11 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition duration-150 focus:outline-none shadow-sm border border-white dark:border-slate-800 mr-4 flex-shrink-0"
+                            class="hidden lg:inline-flex items-center justify-center h-11 w-11 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition duration-150 focus:outline-none shadow-sm border border-white dark:border-slate-800 mr-3 flex-shrink-0"
                             title="Kembali"
                         >
                             <ArrowLeft class="h-5 w-5 text-slate-500 dark:text-slate-400" />
@@ -343,6 +377,11 @@ const getGroupInitials = (title) => {
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
                             </button>
+                            <div class="min-w-0">
+                                <span v-if="currentPageTitle" class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {{ currentPageTitle }}
+                                </span>
+                            </div>
                         </div>
 
                         <!-- Global Search (Desktop Only) -->
