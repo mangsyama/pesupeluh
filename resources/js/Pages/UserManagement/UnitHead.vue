@@ -1,0 +1,40 @@
+<script setup>
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head } from '@inertiajs/vue3';
+import UserList from './Partials/UserList.vue';
+
+defineProps({
+    users: {
+        type: Array,
+        required: true
+    },
+    rooms: {
+        type: Array,
+        required: true
+    },
+    supportingUnits: {
+        type: Array,
+        required: true
+    }
+});
+</script>
+
+<template>
+    <Head :title="__('pages.user_management.unit_head')" />
+
+    <AuthenticatedLayout>
+        <div class="py-4 px-4 sm:px-4 lg:px-4">
+            <div class="w-full">
+                <UserList 
+                    :users="users" 
+                    :role-id="5" 
+                    :role-name="__('menu.unit_head')" 
+                    :description="__('pages.user_management.desc_unit_head')"
+                    :rooms="rooms"
+                    :supporting-units="supportingUnits"
+                    :show-placement="true" 
+                />
+            </div>
+        </div>
+    </AuthenticatedLayout>
+</template>

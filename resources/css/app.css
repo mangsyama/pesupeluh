@@ -1,0 +1,55 @@
+/* Import font Poppins locally */
+@import "@fontsource/poppins/300.css";
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/500.css";
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        font-family: 'Poppins', sans-serif;
+    }
+}
+
+/* SweetAlert2 custom smooth transitions (simple fade & subtle slide) */
+@keyframes swal-fade-in {
+    0% { opacity: 0; transform: scale(0.98); }
+    100% { opacity: 1; transform: scale(1); }
+}
+@keyframes swal-fade-out {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.98); }
+}
+@keyframes swal-toast-fade-in {
+    0% { opacity: 0; transform: translateY(-4px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes swal-toast-fade-out {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-4px); }
+}
+
+.animate-swal-show {
+    animation: swal-fade-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+.animate-swal-hide {
+    animation: swal-fade-out 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+.animate-swal-toast-show {
+    animation: swal-toast-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+.animate-swal-toast-hide {
+    animation: swal-toast-fade-out 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* Override SweetAlert2 default container backdrop transitions to match our animations */
+.swal2-backdrop-show {
+    transition: background-color 0.18s ease-out !important;
+}
+.swal2-backdrop-hide {
+    transition: background-color 0.12s ease-in !important;
+}
