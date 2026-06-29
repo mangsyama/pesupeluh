@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Lightweight wrapper to run `php` inside the php83-fpm container.
+# Usage: ./bin/php-docker <php-args...>
+
+CONTAINER=php83-fpm
+PROJECT_DIR=/var/www/pesupeluh
+
+if ! sudo docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
+  echo "Container ${CONTAINER} is not running. Start it with the README instructions." >&2
+  exit 1
+fi
+
+sudo docker exec -u www-data -w ${PROJECT_DIR} -it ${CONTAINER} php "$@"

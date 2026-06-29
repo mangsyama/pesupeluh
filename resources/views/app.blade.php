@@ -26,6 +26,7 @@
 
         <!-- Scripts -->
         @routes
+        {{-- Include the main Vite entry only; pages are bundled via import.meta.glob in `resources/js/app.js` --}}
         @vite(['resources/js/app.js'])
         @inertiaHead
     </head>
