@@ -80,6 +80,106 @@ const triggerToastDirectSwal = () => {
     timer: 3000
   });
 };
+
+const triggerDemoToast = (type) => {
+  let title = 'Notifikasi Baru';
+  let message = 'Ini adalah isi pesan uji coba notifikasi real-time.';
+  let routePath = '/dashboard';
+
+  if (type === 'user') {
+    title = 'Pendaftaran Baru';
+    message = 'Pengguna Budi Santoso telah mendaftar dan menunggu verifikasi.';
+    routePath = route('users.approvals');
+  } else if (type === 'ticket') {
+    title = 'Tiket Laporan Baru';
+    message = 'Laporan kerusakan pendingin ruangan (AC) di IGD telah diajukan.';
+    routePath = route('dashboard');
+  } else if (type === 'progress') {
+    title = 'Teknisi Menuju Lokasi';
+    message = 'Teknisi Ahmad Dahlan sedang menuju ke Ruang ICU.';
+    routePath = route('dashboard');
+  } else if (type === 'done') {
+    title = 'Pekerjaan Selesai';
+    message = 'Perbaikan kelistrikan di Poli Anak telah selesai dikonfirmasi.';
+    routePath = route('dashboard');
+  }
+
+  window.dispatchEvent(new CustomEvent('show-demo-toast', {
+    detail: {
+      title,
+      message,
+      type,
+      route: routePath
+    }
+  }));
+};
+
+const triggerSuccessCustom = () => {
+  window.dispatchEvent(new CustomEvent('trigger-custom-alert', {
+    detail: {
+      options: {
+        title: 'Sukses!',
+        text: 'Data pengguna baru berhasil disetujui dan diberikan hak akses.',
+        icon: 'success',
+        confirmText: 'Selesai'
+      }
+    }
+  }));
+};
+
+const triggerErrorCustom = () => {
+  window.dispatchEvent(new CustomEvent('trigger-custom-alert', {
+    detail: {
+      options: {
+        title: 'Gagal Memproses!',
+        text: 'Kamera tidak terdeteksi atau izin biometrik wajah ditolak.',
+        icon: 'error',
+        confirmText: 'Coba Lagi'
+      }
+    }
+  }));
+};
+
+const triggerWarningCustom = () => {
+  window.dispatchEvent(new CustomEvent('trigger-custom-alert', {
+    detail: {
+      options: {
+        title: 'Konfigurasi Terbatas!',
+        text: 'Divisi ini masih terhubung dengan beberapa unit penunjang aktif.',
+        icon: 'warning',
+        confirmText: 'Mengerti'
+      }
+    }
+  }));
+};
+
+const triggerConfirmCustom = () => {
+  window.dispatchEvent(new CustomEvent('trigger-custom-alert', {
+    detail: {
+      options: {
+        title: 'Apakah Anda yakin?',
+        text: 'Pengguna bernama Budi Santoso akan ditolak pendaftarannya secara permanen.',
+        icon: 'question',
+        confirmText: 'Ya, Tolak',
+        cancelText: 'Batal'
+      },
+      callback: (result) => {
+        if (result.isConfirmed) {
+          window.dispatchEvent(new CustomEvent('trigger-custom-alert', {
+            detail: {
+              options: {
+                title: 'Ditolak!',
+                text: 'Pendaftaran pengguna telah resmi ditolak.',
+                icon: 'success',
+                confirmText: 'Selesai'
+              }
+            }
+          }));
+        }
+      }
+    }
+  }));
+};
 </script>
 
 <template>
@@ -170,6 +270,51 @@ const triggerToastDirectSwal = () => {
                 <button @click="triggerToastDirectSwal" class="h-10 px-4 text-sm font-semibold rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow transition flex items-center gap-2">
                   <CheckCircle2 class="h-4.5 w-4.5" />
                   <span>Toast Direct ($swal)</span>
+                </button>
+              </div>
+            </div>
+            <div class="space-y-4 mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-6">
+              <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest text-[10px]">Trigger Reverb Real-time Toast Demos</h4>
+              <div class="flex flex-wrap gap-3">
+                <button @click="triggerDemoToast('user')" class="h-10 px-4 text-sm font-semibold rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-sm transition flex items-center gap-2">
+                  <span>User (Pendaftaran)</span>
+                </button>
+
+                <button @click="triggerDemoToast('ticket')" class="h-10 px-4 text-sm font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition flex items-center gap-2">
+                  <span>Ticket Baru</span>
+                </button>
+
+                <button @click="triggerDemoToast('progress')" class="h-10 px-4 text-sm font-semibold rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition flex items-center gap-2">
+                  <span>Progress (On-site)</span>
+                </button>
+
+                <button @click="triggerDemoToast('done')" class="h-10 px-4 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition flex items-center gap-2">
+                  <span>Ticket Selesai</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-4 mt-6 border-t border-slate-100 dark:border-slate-800/80 pt-6">
+              <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest text-[10px]">Trigger Custom Dialog Demos (Swal Replacement)</h4>
+              <div class="flex flex-wrap gap-3">
+                <button @click="triggerSuccessCustom" class="h-10 px-4 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow transition flex items-center gap-2">
+                  <CheckCircle2 class="h-4.5 w-4.5" />
+                  <span>Success Alert (Kustom)</span>
+                </button>
+
+                <button @click="triggerErrorCustom" class="h-10 px-4 text-sm font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow transition flex items-center gap-2">
+                  <AlertCircle class="h-4.5 w-4.5" />
+                  <span>Error Alert (Kustom)</span>
+                </button>
+
+                <button @click="triggerWarningCustom" class="h-10 px-4 text-sm font-semibold rounded-xl bg-amber-600 hover:bg-amber-700 text-white shadow transition flex items-center gap-2">
+                  <AlertTriangle class="h-4.5 w-4.5" />
+                  <span>Warning Alert (Kustom)</span>
+                </button>
+
+                <button @click="triggerConfirmCustom" class="h-10 px-4 text-sm font-semibold rounded-xl bg-slate-700 hover:bg-slate-800 text-white shadow transition flex items-center gap-2">
+                  <ShieldAlert class="h-4.5 w-4.5" />
+                  <span>Confirm Dialog (Kustom)</span>
                 </button>
               </div>
             </div>

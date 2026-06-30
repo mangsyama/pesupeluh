@@ -35,6 +35,20 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'pending_approvals_count' => $request->user() ? \App\Models\User::whereNull('approved_by')->count() : 0,
             ],
+            'notifications' => $request->user() ? $request->user()->unreadNotifications->map(function ($notification) {
+                return [
+                    'id' => $notification->id,
+                    'type' => $notification->data['type'] ?? 'user',
+                    'title' => $notification->data['title'] ?? null,
+                    'message' => $notification->data['message'] ?? null,
+                    'route' => $notification->data['route'] ?? null,
+                    'user_id' => $notification->data['user_id'] ?? null,
+                    'read_at' => $notification->read_at,
+                    'created_at' => $notification->created_at,
+                    'time' => $notification->created_at ? $notification->created_at->diffForHumans() : null,
+                ];
+            }) : [],
+            'unread_notifications_count' => $request->user() ? $request->user()->unreadNotifications()->count() : 0,
             'locale' => app()->getLocale(),
             'translations' => $this->getTranslations(),
         ];

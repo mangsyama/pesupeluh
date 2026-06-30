@@ -88,3 +88,11 @@ Sistem harus mengkalkulasi metrik berikut secara otomatis untuk kebutuhan rekapi
   - Setiap proses unggah berkas foto (baik berupa file gambar pendukung maupun pas foto profil pada modul registrasi) **wajib melalui proses kompresi otomatis di sisi klien (frontend)** sebelum dikirim ke server.
   - Proses kompresi ini dikelola secara terpusat pada file utilitas: [imageCompressor.js](file:///c:/project/pesupeluh/resources/js/Utils/imageCompressor.js) (`resources/js/Utils/imageCompressor.js`).
   - Ketentuan ini bertujuan untuk menghemat konsumsi bandwidth jaringan pengguna seluler serta efisiensi penyimpanan storage server tanpa mengurangi kualitas ketajaman foto secara signifikan (batas toleransi kompresi kualitas 80% dan dimensi maksimal 1200px).
+
+- **Real-Time Notification Capabilities (WebSocket)**:
+  - Aplikasi harus mengirimkan notifikasi penting (seperti registrasi user baru untuk Administrator, disposisi tiket untuk Teknisi, dan perubahan status tiket untuk Reporter) secara instan tanpa delay menggunakan server WebSocket lokal (Laravel Reverb).
+  - Penerimaan notifikasi real-time wajib memperbarui angka badge notifikasi unread dan state daftar notifikasi pada navigasi/sidebar secara real-time tanpa memaksa user melakukan reload halaman manual.
+
+- **Unified Custom Dialog & Alert System**:
+  - Semua kotak dialog informasi (sukses, error, peringatan) dan kotak konfirmasi aksi di seluruh aplikasi harus menggunakan **Custom Dialog Modal** kustom dengan tema glassmorphism dan membulat `rounded-2xl`.
+  - Integrasi ini di-override secara global agar otomatis menggantikan library SweetAlert2 tanpa memerlukan penulisan ulang sintaksis di setiap file Vue page, memastikan konsistensi antarmuka pengguna di seluruh aplikasi.

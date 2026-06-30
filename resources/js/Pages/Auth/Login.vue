@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onBeforeUnmount, getCurrentInstance, nextTick } from 'vue';
+import { ref, onBeforeUnmount, getCurrentInstance, nextTick, onMounted } from 'vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -10,13 +10,25 @@ import axios from 'axios';
 
 const showPassword = ref(false);
 
-defineProps({
+const props = defineProps({
     canResetPassword: {
         type: Boolean,
     },
     status: {
         type: String,
     },
+});
+
+onMounted(() => {
+    if (props.status) {
+        const isRegistration = props.status.toLowerCase().includes('pendaftaran') || props.status.toLowerCase().includes('verifikasi');
+        proxy.$swal({
+            title: isRegistration ? 'Pendaftaran Berhasil!' : 'Notifikasi',
+            text: props.status,
+            icon: 'success',
+            confirmButtonText: '' // Menghilangkan tombol agar hanya berupa informasi klik di luar untuk menutup
+        });
+    }
 });
 
 const form = useForm({
@@ -234,7 +246,7 @@ onBeforeUnmount(() => {
 
 <template>
     <GuestLayout>
-        <Head :title="__('global.profile')" />
+        <Head :title="__('global.login')" />
 
         <!-- HEADER FORM -->
         <div class="mb-8">
@@ -249,9 +261,6 @@ onBeforeUnmount(() => {
             </p>
         </div>
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-emerald-600">
-            {{ status }}
-        </div>
 
         <!-- FORM CREDENTIALS -->
         <form @submit.prevent="submit" class="space-y-6">

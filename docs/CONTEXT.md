@@ -15,6 +15,7 @@ Aplikasi dibangun dengan tumpukan teknologi modern berikut:
   - `vite-plugin-pwa` (^1.3) - Plugin PWA (Progressive Web App) untuk kemampuan offline client.
   - `barryvdh/laravel-dompdf` (^3.1) - Untuk cetak laporan PDF server-side.
   - `maatwebsite/excel` (^3.1) - Untuk ekspor laporan tabular Excel/CSV.
+  - `laravel/reverb` (^1.10) - WebSocket server lokal untuk penyiaran event/notifikasi real-time.
 - **Architecture Style**: Monolith Hybrid (Inertia.js + Server-side rendering untuk web client, dan API-ready untuk mobile client).
 
 ---
@@ -222,3 +223,33 @@ CREATE UNIQUE INDEX uq_users_email ON users(email) WHERE deleted_at IS NULL;
    - Kualitas kompresi: **0.8 (80%)** dengan format `image/jpeg`.
    - Batas resolusi maksimum: Lebar atau tinggi maksimal **1200px** dengan mempertahankan rasio aspek asli (aspect ratio).
    - Format data kirim: Base64 Data URL (`data:image/jpeg;base64,...`) agar kompatibel dengan sistem penyimpanan database/file server.
+
+---
+
+## 6. Real-time Event Broadcasting (Laravel Reverb) Rules
+1. **Pusat Integrasi Broadcast**:
+   - Seluruh event real-time (notifikasi pendaftaran baru, pembaruan tiket, dll) harus disalurkan melalui driver `reverb` yang terintegrasi di `config/broadcasting.php`.
+   - Driver eksternal seperti Pusher Cloud **tidak diperbolehkan** dan seluruh dependensi environment-nya harus bersih dari file konfigurasi.
+
+2. **Penggunaan Queue Driver**:
+   - Untuk performa non-blocking, semua Event/Notification broadcast wajib mengimplementasikan interface `ShouldQueue` dan menggunakan koneksi `database` queue.
+   - Di server lokal maupun production, queue worker (`php artisan queue:work`) dan server Reverb (`php artisan reverb:start`) wajib berjalan bersamaan di background.
+
+3. **Autentikasi Saluran Privat**:
+   - Saluran private channel menggunakan standar penamaan model `App.Models.User.{id}` untuk menyalurkan notifikasi personal ke masing-masing pengguna.
+   - Aturan otorisasi hak akses channel wajib didefinisikan secara ketat pada [channels.php](file:///c:/project/pesupeluh/routes/channels.php).
+   - Di sisi client (Vue), inisialisasi Echo di [app.js](file:///c:/project/pesupeluh/resources/js/app.js) hanya boleh memproses inisialisasi jika environment key Reverb (`VITE_REVERB_APP_KEY`) tersedia.
+
+---
+
+## 7. Global Dialog & Alert Standard (SweetAlert2 Replacement)
+1. **Pemberhentian SweetAlert2**:
+   - Seluruh halaman web **dilarang keras** memicu antarmuka default dari SweetAlert2 untuk dialog alert (Success, Error, Warning) maupun konfirmasi aksi.
+   
+2. **Penggunaan Helper Global**:
+   - Semua pop-up pesan, toast, dan dialog konfirmasi wajib dipicu menggunakan helper global Vue:
+     - `this.$toast('pesan', 'type')` atau `proxy.$toast(...)` untuk toast pemberitahuan di pojok kanan atas.
+     - `this.$swal({ title: '...', text: '...', icon: '...' })` atau `proxy.$swal(...)` untuk dialog pop-up tengah layar.
+   
+3. **Mekanisme Otomatis**:
+   - Helper global `$swal` dan `$toast` telah di-override secara internal pada [app.js](file:///c:/project/pesupeluh/resources/js/app.js) untuk meneruskan data secara asinkronus ke modal kustom berdesain premium (glassmorphism & rounded-2xl) di [AuthenticatedLayout.vue](file:///c:/project/pesupeluh/resources/js/Layouts/AuthenticatedLayout.vue). Developer tidak perlu memodifikasi sintaksis pemanggilan $swal yang sudah ada di halaman masing-masing.

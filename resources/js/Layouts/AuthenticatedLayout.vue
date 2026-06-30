@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
-import { Link, usePage } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2 } from '@lucide/vue';
+import { Link, usePage, router } from '@inertiajs/vue3';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle } from '@lucide/vue';
 
 const sidebarOpen = ref(false);
 const isDark = ref(false);
@@ -35,6 +35,49 @@ const closeSidebar = () => {
     sidebarOpen.value = false;
 };
 
+const handleDemoToast = (event) => {
+    if (event.detail) {
+        showNotificationToast(event.detail);
+    }
+};
+
+const customAlert = ref({
+    show: false,
+    title: '',
+    text: '',
+    icon: 'success', // success, error, warning, question
+    confirmText: 'OK',
+    cancelText: '',
+    onConfirm: null,
+    onCancel: null
+});
+
+const handleCustomAlert = (event) => {
+    if (event.detail && event.detail.options) {
+        const opts = event.detail.options;
+        customAlert.value = {
+            show: true,
+            title: opts.title || '',
+            text: opts.text || '',
+            icon: opts.icon || 'success',
+            confirmText: opts.confirmText || 'OK',
+            cancelText: opts.cancelText || '',
+            onConfirm: () => {
+                customAlert.value.show = false;
+                if (event.detail.callback) {
+                    event.detail.callback({ isConfirmed: true });
+                }
+            },
+            onCancel: () => {
+                customAlert.value.show = false;
+                if (event.detail.callback) {
+                    event.detail.callback({ isConfirmed: false, isDismissed: true });
+                }
+            }
+        };
+    }
+};
+
 onMounted(() => {
     isDark.value = document.documentElement.classList.contains('dark');
     window.addEventListener('theme-changed', () => {
@@ -49,6 +92,15 @@ onMounted(() => {
             sidebarNav.value.scrollTop = parseInt(savedScroll, 10);
         }
     }
+
+    registerNotificationListeners();
+    window.addEventListener('show-demo-toast', handleDemoToast);
+    window.addEventListener('trigger-custom-alert', handleCustomAlert);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('show-demo-toast', handleDemoToast);
+    window.removeEventListener('trigger-custom-alert', handleCustomAlert);
 });
 
 const toggleSidebarCollapse = () => {
@@ -145,8 +197,8 @@ const menuGroups = [
         title: 'menu.services_reports',
         items: [
             { label: 'menu.supporting_services', routeName: 'services.index', icon: Activity },
-            { label: 'menu.reports_export', routeName: 'reports.index', icon: FileBarChart2 },
-            { label: 'menu.reporting_history', routeName: 'reports.history', icon: History }
+            { label: 'menu.reporting_history', routeName: 'reports.history', icon: History },
+            { label: 'menu.reports_export', routeName: 'reports.index', icon: FileBarChart2 }
         ]
     },
     {
@@ -228,18 +280,133 @@ const showSearchResults = ref(false);
 const showMobileNotifications = ref(false);
 const showDesktopNotifications = ref(false);
 const showMobileProfileDropdown = ref(false);
-const dummyNotifications = ref([
-    { id: 1, title: 'Tiket Baru Diterima', message: 'Tiket TK-20260624-0012 telah berhasil dibuat dan menunggu validasi.', time: '5 menit lalu', read: false, type: 'ticket' },
-    { id: 2, title: 'Tiket Sedang Dikerjakan', message: 'Teknisi telah mulai menangani tiket TK-20260624-0008 di ruang ICU Lt.2.', time: '32 menit lalu', read: false, type: 'progress' },
-    { id: 3, title: 'Tiket Selesai Ditangani', message: 'Tiket TK-20260623-0045 (AC tidak dingin) telah selesai diperbaiki.', time: '2 jam lalu', read: true, type: 'done' },
-    { id: 4, title: 'Registrasi Pengguna Baru', message: 'Dr. Sari Dewi mendaftar sebagai Kepala Ruangan dan menunggu persetujuan.', time: '3 jam lalu', read: true, type: 'user' },
-]);
-const unreadCount = computed(() => dummyNotifications.value.filter(n => !n.read).length);
+const pendingApprovalsCount = ref(page.props.auth?.pending_approvals_count ?? 0);
+const notifications = ref(page.props.notifications ?? []);
+
+watch(
+    () => page.props.notifications,
+    (value) => {
+        notifications.value = value ?? [];
+    }
+);
+
+watch(
+    () => page.props.auth?.pending_approvals_count,
+    (value) => {
+        pendingApprovalsCount.value = value ?? 0;
+    }
+);
+
+const unreadCount = computed(() => notifications.value.filter(notification => !notification.read_at).length);
+
+const normalizeNotificationPayload = (notification) => {
+    const title = notification.title ?? notification.data?.title ?? null;
+    const message = notification.message ?? notification.data?.message ?? null;
+    const route = notification.route ?? notification.data?.route ?? null;
+    const type = notification.type ?? notification.data?.type ?? 'user';
+
+    return {
+        id: notification.id ?? `notif-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        type,
+        title,
+        message,
+        route,
+        user_id: notification.user_id ?? notification.data?.user_id ?? null,
+        read_at: notification.read_at ?? null,
+        created_at: notification.created_at ?? new Date().toISOString(),
+        time: notification.created_at ? new Date(notification.created_at).toLocaleString() : null,
+    };
+};
+
+const toasts = ref([]);
+
+const removeToast = (id) => {
+    toasts.value = toasts.value.filter(t => t.id !== id);
+};
+
+const showNotificationToast = (normalized) => {
+    const id = Date.now() + Math.random();
+    toasts.value.push({
+        id,
+        title: normalized.title,
+        message: normalized.message,
+        type: normalized.type,
+        route: normalized.route
+    });
+
+    // Auto-remove after 6 seconds
+    setTimeout(() => {
+        removeToast(id);
+    }, 6000);
+};
+
+const registerNotificationListeners = () => {
+    if (typeof window !== 'undefined' && window.Echo && page.props.auth?.user?.id) {
+        const channelName = `App.Models.User.${page.props.auth.user.id}`;
+        console.debug('[Echo] subscribing to private channel', channelName);
+
+        window.Echo.private(channelName)
+            .notification((notification) => {
+                console.debug('[Echo] notification received', notification);
+                const normalized = normalizeNotificationPayload(notification);
+                notifications.value.unshift(normalized);
+
+                // Show real-time visual toast
+                showNotificationToast(normalized);
+
+                if (normalized.type === 'user' || normalized.route === route('users.approvals')) {
+                    pendingApprovalsCount.value += 1;
+                }
+            });
+    }
+};
+
+const markAsRead = (notif) => {
+    if (!notif.id) return;
+
+    // Mark locally first for instant UI feedback
+    const idx = notifications.value.findIndex(n => n.id === notif.id);
+    if (idx !== -1) {
+        notifications.value[idx].read_at = new Date().toISOString();
+    }
+
+    // Send to server
+    router.post(route('notifications.markAsRead', { id: notif.id }), {}, {
+        preserveScroll: true,
+        preserveState: true,
+    });
+
+    // Navigate if route exists
+    if (notif.route) {
+        showDesktopNotifications.value = false;
+        showMobileNotifications.value = false;
+        router.visit(notif.route);
+    }
+};
+
+const markAllAsRead = () => {
+    // Mark all locally first
+    notifications.value.forEach(n => {
+        if (!n.read_at) {
+            n.read_at = new Date().toISOString();
+        }
+    });
+
+    // Send to server
+    router.post(route('notifications.markAllAsRead'), {}, {
+        preserveScroll: true,
+        preserveState: true,
+    });
+};
 
 const goToMobileNotifications = () => {
-    // Open notifications panel and ensure profile dropdown is closed
     showMobileNotifications.value = true;
     showMobileProfileDropdown.value = false;
+};
+
+const goToDesktopNotifications = () => {
+    showDesktopNotifications.value = !showDesktopNotifications.value;
+    showMobileNotifications.value = false;
 };
 
 const closeMobileProfileDropdown = () => {
@@ -249,7 +416,6 @@ const closeMobileProfileDropdown = () => {
 
 const onMobileProfileOpenChange = (value) => {
     showMobileProfileDropdown.value = value;
-    // When profile dropdown opens, ensure notifications panel is closed
     if (value) {
         showMobileNotifications.value = false;
     }
@@ -487,11 +653,12 @@ const getGroupInitials = (title) => {
                                     <!-- Notification List -->
                                     <div class="max-h-80 overflow-y-auto">
                                         <div 
-                                            v-for="notif in dummyNotifications" 
+                                            v-for="notif in notifications" 
                                             :key="notif.id"
+                                            @click="markAsRead(notif)"
                                             :class="[
                                                 'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                                !notif.read ? 'bg-indigo-50/30 dark:bg-indigo-950/10' : ''
+                                                !notif.read_at ? 'bg-indigo-50/30 dark:bg-indigo-950/10' : ''
                                             ]"
                                         >
                                             <!-- Icon -->
@@ -510,8 +677,8 @@ const getGroupInitials = (title) => {
                                             <!-- Content -->
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-start justify-between gap-2">
-                                                    <p :class="['text-xs font-semibold truncate', !notif.read ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                    <span v-if="!notif.read" class="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1"></span>
+                                                    <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
+                                                    <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1"></span>
                                                 </div>
                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
                                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
@@ -521,7 +688,7 @@ const getGroupInitials = (title) => {
 
                                     <!-- Footer -->
                                     <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                        <button class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Lihat Semua Notifikasi</button>
+                                        <button @click="markAllAsRead" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Tandai Semua Sudah Dibaca</button>
                                     </div>
                                 </template>
                             </Dropdown>
@@ -683,11 +850,12 @@ const getGroupInitials = (title) => {
                                 </div>
                                 <div class="max-h-80 overflow-y-auto">
                                     <div
-                                        v-for="notif in dummyNotifications"
+                                        v-for="notif in notifications"
                                         :key="notif.id"
+                                        @click="markAsRead(notif)"
                                         :class="[
                                             'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                            !notif.read ? 'bg-indigo-50/30 dark:bg-indigo-950/10' : ''
+                                            !notif.read_at ? 'bg-indigo-50/30 dark:bg-indigo-950/10' : ''
                                         ]"
                                     >
                                         <div :class="[
@@ -704,8 +872,8 @@ const getGroupInitials = (title) => {
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-start justify-between gap-2">
-                                                <p :class="['text-xs font-semibold truncate', !notif.read ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                <span v-if="!notif.read" class="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1"></span>
+                                                <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
+                                                <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1"></span>
                                             </div>
                                             <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
                                             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
@@ -713,7 +881,7 @@ const getGroupInitials = (title) => {
                                     </div>
                                 </div>
                                 <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                    <button class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Lihat Semua Notifikasi</button>
+                                    <button @click="markAllAsRead" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Tandai Semua Sudah Dibaca</button>
                                 </div>
                             </div>
                             </Transition>
@@ -724,6 +892,115 @@ const getGroupInitials = (title) => {
 
 
         </nav>
+
+        <!-- Toast Floating Container -->
+        <div class="fixed top-24 right-6 z-[9999] flex flex-col gap-3 w-80 max-w-[calc(100vw-3rem)] pointer-events-none">
+            <TransitionGroup
+                enter-active-class="transform ease-out duration-300 transition"
+                enter-from-class="translate-y-2 opacity-0 translate-x-4"
+                enter-to-class="translate-y-0 opacity-100 translate-x-0"
+                leave-active-class="transition ease-in duration-200"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0 translate-x-4"
+            >
+                <div
+                    v-for="toast in toasts"
+                    :key="toast.id"
+                    @click="toast.route ? router.visit(toast.route) : null"
+                    :class="[
+                        'pointer-events-auto flex gap-3 p-4 rounded-2xl border shadow-lg cursor-pointer transition-all duration-200 hover:scale-[1.02]',
+                        'bg-white/95 dark:bg-slate-900/95 backdrop-blur-md',
+                        'border-slate-100 dark:border-slate-800/80',
+                        toast.route ? 'hover:border-indigo-500/50 dark:hover:border-indigo-400/50' : ''
+                    ]"
+                >
+                    <!-- Icon -->
+                    <div :class="[
+                        'h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0',
+                        toast.type === 'ticket' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500' :
+                        toast.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
+                        toast.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
+                        'bg-violet-50 dark:bg-violet-950/40 text-violet-500'
+                    ]">
+                        <Bell v-if="toast.type === 'ticket'" class="h-4.5 w-4.5" />
+                        <Clock v-else-if="toast.type === 'progress'" class="h-4.5 w-4.5" />
+                        <CheckCircle2 v-else-if="toast.type === 'done'" class="h-4.5 w-4.5" />
+                        <User v-else class="h-4.5 w-4.5" />
+                    </div>
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-extrabold text-slate-900 dark:text-white leading-normal">{{ toast.title }}</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-1 line-clamp-3">{{ toast.message }}</p>
+                    </div>
+                    <!-- Close Button -->
+                    <button @click.stop="removeToast(toast.id)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 h-5 w-5 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition flex-shrink-0">
+                        <X class="h-3 w-3" />
+                    </button>
+                </div>
+            </TransitionGroup>
+        </div>
+
+        <!-- Custom Alert Modal (Glassmorphism Swal Alternative) -->
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+            >
+                <div v-if="customAlert.show" class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                    <!-- Backdrop overlay -->
+                    <div @click="customAlert.cancelText ? customAlert.onCancel() : customAlert.onConfirm()" class="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"></div>
+
+                    <!-- Modal Card -->
+                    <div class="relative bg-white/95 dark:bg-slate-900/95 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden p-7 flex flex-col items-center text-center transform transition-all duration-200 scale-100 backdrop-blur-md">
+                        <!-- Status Icon -->
+                        <div :class="[
+                            'h-20 w-20 rounded-full flex items-center justify-center mb-5 flex-shrink-0',
+                            customAlert.icon === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
+                            customAlert.icon === 'error' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
+                            customAlert.icon === 'warning' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
+                            'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500'
+                        ]">
+                            <CheckCircle2 v-if="customAlert.icon === 'success'" class="h-10 w-10" />
+                            <AlertCircle v-else-if="customAlert.icon === 'error'" class="h-10 w-10" />
+                            <AlertTriangle v-else-if="customAlert.icon === 'warning'" class="h-10 w-10" />
+                            <HelpCircle v-else class="h-10 w-10" />
+                        </div>
+
+                        <!-- Info Content -->
+                        <h3 class="text-base font-extrabold text-slate-900 dark:text-white leading-tight px-2">{{ customAlert.title }}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-3 leading-relaxed px-1">{{ customAlert.text }}</p>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center gap-3 w-full mt-6">
+                            <button
+                                v-if="customAlert.cancelText"
+                                @click="customAlert.onCancel"
+                                class="flex-1 h-11 text-sm font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 transition duration-150 focus:outline-none"
+                            >
+                                {{ customAlert.cancelText }}
+                            </button>
+                            <button
+                                v-if="customAlert.confirmText"
+                                @click="customAlert.onConfirm"
+                                :class="[
+                                    'flex-1 h-11 text-sm font-bold rounded-xl text-white shadow-sm transition duration-150 focus:outline-none',
+                                    customAlert.icon === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                                    customAlert.icon === 'error' ? 'bg-rose-600 hover:bg-rose-700' :
+                                    customAlert.icon === 'warning' ? 'bg-amber-600 hover:bg-amber-700' :
+                                    'bg-indigo-600 hover:bg-indigo-700'
+                                ]"
+                            >
+                                {{ customAlert.confirmText }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
 
         <!-- Layout Body -->
         <div class="flex w-full relative">
@@ -867,7 +1144,7 @@ const getGroupInitials = (title) => {
                                         />
                                         <!-- Tiny dot when collapsed & closed -->
                                         <span 
-                                            v-if="item.label === 'menu.user_management' && !openMenus[item.label] && $page.props.auth.pending_approvals_count > 0"
+                                            v-if="item.label === 'menu.user_management' && !openMenus[item.label] && pendingApprovalsCount > 0"
                                             class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900"
                                         />
                                         <!-- Small chevron indicator on hover -->
@@ -911,7 +1188,7 @@ const getGroupInitials = (title) => {
                                             />
                                             <!-- Tiny Dot indicator for pending items when collapsed -->
                                             <span 
-                                                v-if="child.routeName === 'users.approvals' && openMenus[item.label] && $page.props.auth.pending_approvals_count > 0"
+                                                v-if="child.routeName === 'users.approvals' && openMenus[item.label] && pendingApprovalsCount > 0"
                                                 class="absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900"
                                             />
                                         </Link>
@@ -950,7 +1227,7 @@ const getGroupInitials = (title) => {
                                                     isChildActive(item.children)
                                                         ? 'text-indigo-600 dark:text-indigo-400'
                                                         : 'text-slate-400 group-hover:text-indigo-500',
-                                                    (item.label === 'menu.user_management' && !openMenus[item.label] && $page.props.auth.pending_approvals_count > 0)
+                                                    (item.label === 'menu.user_management' && !openMenus[item.label] && pendingApprovalsCount > 0)
                                                         ? 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'
                                                         : 'opacity-100 scale-100'
                                                 ]" 
@@ -963,10 +1240,10 @@ const getGroupInitials = (title) => {
 
                                             <!-- Parent Badge when Closed (hidden on hover, shown by default) -->
                                             <span 
-                                                v-if="item.label === 'menu.user_management' && !openMenus[item.label] && $page.props.auth.pending_approvals_count > 0"
+                                                v-if="item.label === 'menu.user_management' && !openMenus[item.label] && pendingApprovalsCount > 0"
                                                 class="w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-extrabold bg-amber-500 text-white shadow-sm absolute transition-all duration-200 group-hover:opacity-0 group-hover:scale-75"
                                             >
-                                                {{ $page.props.auth.pending_approvals_count }}
+                                                {{ pendingApprovalsCount }}
                                             </span>
                                         </div>
                                     </button>
@@ -998,10 +1275,10 @@ const getGroupInitials = (title) => {
                                             />
                                             <span class="flex-1 min-w-0 truncate">{{ __(child.label) }}</span>
                                             <span 
-                                                v-if="child.routeName === 'users.approvals' && openMenus[item.label] && $page.props.auth.pending_approvals_count > 0"
+                                                v-if="child.routeName === 'users.approvals' && openMenus[item.label] && pendingApprovalsCount > 0"
                                                 class="ml-auto w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-extrabold bg-amber-500 text-white shadow-sm flex-shrink-0"
                                             >
-                                                {{ $page.props.auth.pending_approvals_count }}
+                                                {{ pendingApprovalsCount }}
                                             </span>
                                         </Link>
                                     </div>

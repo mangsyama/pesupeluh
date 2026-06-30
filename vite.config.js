@@ -22,6 +22,7 @@ export default defineConfig({
             injectRegister: 'inline',
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json,webmanifest}'],
+                maximumFileSizeToCacheInBytes: 5000000,
             },
             manifest: {
                 name: 'Sistem Pelaporan Pesupeluh',
