@@ -10,6 +10,7 @@ sudo docker build -t pesupeluh/php:8.3-sqlsrv -f docker/php8.3-sqlsrv/Dockerfile
 sudo docker rm -f php83-fpm || true
 sudo docker run -d --name php83-fpm \
   -v /var/www/pesupeluh:/var/www/pesupeluh \
+  -v /var/www/genesys:/var/www/genesys \
   -p 127.0.0.1:9000:9000 \
   pesupeluh/php:8.3-sqlsrv
 
