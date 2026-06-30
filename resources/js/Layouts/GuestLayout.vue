@@ -117,7 +117,7 @@ const __ = (key) => {
         
         <!-- Left Column (Branding Hero, hidden on mobile) -->
         <section class="hidden md:flex relative overflow-hidden bg-cover bg-center bg-no-repeat flex-col justify-between p-12 lg:p-16 text-white select-none h-full w-full"
-            style="background-image: linear-gradient(rgba(37, 99, 235, 0.55), rgba(79, 70, 229, 0.55)), url('/images/hospital-hero.jpg');">
+            style="background-image: linear-gradient(rgba(16, 185, 129, 0.55), rgba(4, 120, 87, 0.55)), url('/images/hospital-hero.jpg');">
             <!-- Put your hospital landing image at public/images/hospital-hero.jpg -->
             
             <!-- Abstract Geometric Lines (SalesSkip-style) -->
@@ -129,7 +129,7 @@ const __ = (key) => {
 
             <!-- Top Brand Logo (Rata kiri) -->
             <div class="relative z-10 flex items-center space-x-3 bg-white/10 shadow-sm backdrop-blur-md border border-white/20 rounded-2xl px-4 py-3 max-w-[24rem]">
-                <div class="h-16 w-16 rounded-xl bg-indigo-600/0 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div class="h-16 w-16 rounded-xl bg-emerald-600/0 flex items-center justify-center flex-shrink-0 overflow-hidden">
                     <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain filter brightness-0 invert" />
                 </div>
                 <div class="flex flex-col">
@@ -164,10 +164,10 @@ const __ = (key) => {
                 <!-- Brand Logo for Mobile (Hidden on Desktop, shown only on Login page) -->
                 <div v-if="route().current('login')" class="flex md:hidden items-center space-x-3">
                     <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:filter dark:brightness-0 dark:invert" />
+                        <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain hue-rotate-[280deg] saturate-[1.2] dark:hue-rotate-0 dark:saturate-100 dark:brightness-0 dark:invert" />
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-sm font-bold tracking-widest text-slate-800 dark:text-slate-100 uppercase leading-none">Pesu Peluh</span>
+                        <span class="text-sm font-bold tracking-widest text-emerald-700 dark:text-emerald-400 uppercase leading-none">Pesu Peluh</span>
                         <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-1 leading-tight tracking-normal max-w-[185px]">
                             Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
                         </span>
@@ -179,7 +179,7 @@ const __ = (key) => {
                         :href="route('login')"
                         class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white uppercase tracking-widest transition duration-150 outline-none"
                     >
-                        <ArrowLeft class="h-4.5 w-4.5 me-1.5 text-indigo-600 dark:text-indigo-400" />
+                        <ArrowLeft class="h-4.5 w-4.5 me-1.5 text-emerald-600 dark:text-emerald-400" />
                         {{ __('global.back') }}
                     </Link>
                 </div>
@@ -192,7 +192,7 @@ const __ = (key) => {
                         class="rounded-xl p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none transition duration-150"
                         :title="isDark ? __('global.dark_mode') : __('global.light_mode')"
                     >
-                        <Moon v-if="isDark" class="h-5 w-5 text-indigo-400" />
+                        <Moon v-if="isDark" class="h-5 w-5 text-emerald-400" />
                         <Sun v-else class="h-5 w-5 text-amber-500" />
                     </button>
 

@@ -26,7 +26,7 @@ const verificationLinkSent = computed(
 
         <!-- Form Title -->
         <div class="mb-8">
-            <h1 class="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight">
+            <h1 class="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight">
                 {{ __('auth.verify_email.title') }}
             </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -46,7 +46,7 @@ const verificationLinkSent = computed(
             <div>
                 <button
                     type="submit"
-                    class="w-full text-center py-4 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                    class="w-full text-center py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >

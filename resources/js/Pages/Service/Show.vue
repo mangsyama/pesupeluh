@@ -163,7 +163,7 @@ const submitReport = () => {
     <Head :title="unit.name + ' - ' + __('Layanan')" />
 
     <AuthenticatedLayout>
-        <div class="py-4 px-4 sm:px-4 lg:px-4">
+        <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full space-y-4">
                 
                 <!-- Premium Header -->
@@ -518,3 +518,20 @@ const submitReport = () => {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+@keyframes spa-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-spa-fade-in {
+  animation: spa-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+</style>

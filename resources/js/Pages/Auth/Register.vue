@@ -310,7 +310,7 @@ onBeforeUnmount(() => {
 
         <!-- Form Title -->
         <div class="mb-8">
-            <h1 class="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight">
+            <h1 class="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight">
                 {{ __('auth.register.title') }}
             </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -319,7 +319,6 @@ onBeforeUnmount(() => {
         </div>
 
         <form @submit.prevent="submit" class="space-y-6">
-            <!-- Name Input Field -->
             <div>
                 <label for="name" class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">
                     {{ __('global.name') }}
@@ -332,7 +331,7 @@ onBeforeUnmount(() => {
                     autofocus
                     autocomplete="name"
                     :placeholder="__('auth.register.name_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.name" />
             </div>
@@ -350,7 +349,7 @@ onBeforeUnmount(() => {
                     maxlength="18"
                     required
                     :placeholder="__('auth.register.nip_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.nip" />
             </div>
@@ -366,7 +365,7 @@ onBeforeUnmount(() => {
                     v-model="form.username"
                     required
                     :placeholder="__('auth.register.username_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.username" />
             </div>
@@ -383,7 +382,7 @@ onBeforeUnmount(() => {
                     required
                     autocomplete="username"
                     :placeholder="__('auth.register.email_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.email" />
             </div>
@@ -401,7 +400,7 @@ onBeforeUnmount(() => {
                     maxlength="15"
                     required
                     :placeholder="__('auth.register.phone_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.phone_number" />
             </div>
@@ -419,7 +418,7 @@ onBeforeUnmount(() => {
                         required
                         autocomplete="new-password"
                         placeholder="••••••••"
-                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                     />
                     <button
                         type="button"
@@ -446,7 +445,7 @@ onBeforeUnmount(() => {
                         required
                         autocomplete="new-password"
                         placeholder="••••••••"
-                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                     />
                     <button
                         type="button"
@@ -463,7 +462,7 @@ onBeforeUnmount(() => {
             <!-- Profile Photo (Required) Card -->
             <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-slate-50 dark:bg-slate-900/50 space-y-4">
                 <div>
-                    <label class="text-sm font-bold text-slate-800 dark:text-slate-200 block mb-1">
+                    <label class="text-sm font-bold text-emerald-700 dark:text-emerald-400 block mb-1">
                         {{ __('auth.register.profile_photo_title') }}
                     </label>
                     <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
@@ -476,7 +475,7 @@ onBeforeUnmount(() => {
                     <button 
                         @click="setPhotoMode('upload')"
                         type="button" 
-                        :class="['flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition duration-150', photoMode === 'upload' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200']"
+                        :class="['flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition duration-150', photoMode === 'upload' ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200']"
                     >
                         <UploadCloud class="h-3.5 w-3.5 inline-block me-1" />
                         {{ __('auth.register.upload_file_tab') }}
@@ -484,7 +483,7 @@ onBeforeUnmount(() => {
                     <button 
                         @click="setPhotoMode('camera')"
                         type="button" 
-                        :class="['flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition duration-150', photoMode === 'camera' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200']"
+                        :class="['flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition duration-150', photoMode === 'camera' ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200']"
                     >
                         <Camera class="h-3.5 w-3.5 inline-block me-1" />
                         {{ __('auth.register.take_photo_tab') }}
@@ -492,8 +491,8 @@ onBeforeUnmount(() => {
                 </div>
 
                 <!-- Photo Upload Mode -->
-                <div v-if="photoMode === 'upload'" class="space-y-3">
-                    <div class="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-2 text-center hover:border-indigo-500/50 dark:hover:border-indigo-400/50 transition cursor-pointer relative overflow-hidden h-72 w-full max-w-md flex items-center justify-center bg-slate-100/50 dark:bg-slate-900/30 mx-auto">
+                <div class="photo-upload-mode" v-if="photoMode === 'upload'">
+                    <div class="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-2 text-center hover:border-emerald-500/50 dark:hover:border-emerald-400/50 transition cursor-pointer relative overflow-hidden h-72 w-full max-w-md flex items-center justify-center bg-slate-100/50 dark:bg-slate-900/30 mx-auto">
                         <input 
                             type="file" 
                             accept="image/*"
@@ -524,7 +523,7 @@ onBeforeUnmount(() => {
                     <div v-if="isPhotoCameraActive" class="relative h-72 w-full max-w-md bg-black rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center mx-auto">
                         <!-- Skeleton loading overlay -->
                         <div v-if="isPhotoCameraLoading" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center text-slate-400 z-30 animate-pulse">
-                            <Camera class="h-8 w-8 text-indigo-500 animate-bounce-slow mb-3" />
+                            <Camera class="h-8 w-8 text-emerald-500 animate-bounce-slow mb-3" />
                             <span class="text-xs font-semibold tracking-wider text-slate-300">{{ __('auth.register.opening_camera') }}</span>
                         </div>
                         
@@ -543,9 +542,9 @@ onBeforeUnmount(() => {
                             v-show="!isPhotoCameraLoading"
                             @click="capturePhoto" 
                             type="button"
-                            class="absolute bottom-4 h-12 w-12 bg-white rounded-full border-4 border-indigo-500 flex items-center justify-center hover:scale-105 active:scale-95 transition z-20 shadow-lg"
+                            class="absolute bottom-4 h-12 w-12 bg-white rounded-full border-4 border-emerald-500 flex items-center justify-center hover:scale-105 active:scale-95 transition z-20 shadow-lg"
                         >
-                            <span class="h-4.5 w-4.5 bg-indigo-500 rounded-full"></span>
+                            <span class="h-4.5 w-4.5 bg-emerald-500 rounded-full"></span>
                         </button>
                     </div>
 
@@ -570,7 +569,7 @@ onBeforeUnmount(() => {
 
             <!-- Optional Face Registration Card -->
             <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-slate-50 dark:bg-slate-900/50">
-                <label class="text-sm font-bold text-slate-800 dark:text-slate-200 block mb-1">
+                <label class="text-sm font-bold text-emerald-700 dark:text-emerald-400 block mb-1">
                     {{ __('auth.register.face_login_title') }}
                 </label>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
@@ -587,9 +586,9 @@ onBeforeUnmount(() => {
                 <button
                     @click="loadModelsAndStart"
                     type="button"
-                    class="w-full inline-flex items-center justify-center px-4 py-3 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold rounded-xl border border-slate-200 dark:border-slate-700 transition duration-150 text-sm"
+                    class="w-full inline-flex items-center justify-center px-4 py-3 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold rounded-xl border border-emerald-100 dark:border-emerald-900/30 transition duration-150 text-sm"
                 >
-                    <ScanFace class="h-5 w-5 me-2 text-indigo-600 dark:text-indigo-400" />
+                    <ScanFace class="h-5 w-5 me-2 text-emerald-600 dark:text-emerald-400" />
                     {{ hasFaceScan ? __('auth.register.retry_scan_btn') : __('auth.register.face_scan_btn') }}
                 </button>
             </div>
@@ -598,7 +597,7 @@ onBeforeUnmount(() => {
             <div class="pt-4 space-y-4">
                 <button
                     type="submit"
-                    class="w-full text-center py-4 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+                    class="w-full text-center py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >
@@ -609,7 +608,7 @@ onBeforeUnmount(() => {
                     {{ __('auth.register.already_registered') }}
                     <Link
                         :href="route('login')"
-                        class="font-bold text-indigo-600 dark:text-indigo-400 hover:underline outline-none ms-1"
+                        class="font-bold text-emerald-600 dark:text-emerald-400 hover:underline outline-none ms-1"
                     >
                         {{ __('auth.register.log_in_link') }}
                     </Link>
@@ -655,14 +654,14 @@ onBeforeUnmount(() => {
 
                 <!-- Loading / Init state -->
                 <div v-if="scanStatus === 'loading'" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center text-slate-400 z-30">
-                    <RefreshCw class="h-8 w-8 animate-spin mb-3 text-indigo-500" />
+                    <RefreshCw class="h-8 w-8 animate-spin mb-3 text-emerald-500" />
                     <span class="text-xs tracking-wide">{{ __('global.initializing') }}</span>
                 </div>
             </div>
 
             <!-- Status & Error Alert -->
             <div class="w-full mt-6 text-center min-h-[28px] max-w-sm">
-                <p v-if="scanStatus === 'scanning'" class="text-xs font-bold text-indigo-600 dark:text-indigo-600 animate-pulse">
+                <p v-if="scanStatus === 'scanning'" class="text-xs font-bold text-emerald-600 dark:text-emerald-600 animate-pulse">
                     {{ isFaceDetected ? __('auth.login.face_detected') : __('auth.login.looking_for_face') }}
                 </p>
                 <p v-else-if="scanStatus === 'failed'" class="text-xs font-bold text-rose-600 dark:text-rose-600">
@@ -676,7 +675,7 @@ onBeforeUnmount(() => {
                     v-if="scanStatus === 'failed'"
                     @click="loadModelsAndStart" 
                     type="button" 
-                    class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm transition"
+                    class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm transition"
                 >
                     {{ __('auth.register.retry_scan_btn') }}
                 </button>

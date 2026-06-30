@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { HeartPulse, Wrench, ArrowRight, Lock } from '@lucide/vue';
+import { Stethoscope, ShieldCheck, ArrowRight, Lock } from '@lucide/vue';
 import { ref, watch, getCurrentInstance, onMounted, onUnmounted, computed } from 'vue';
 
 const props = defineProps({
@@ -98,9 +98,21 @@ const nonMedikUnits = computed(() => {
     <Head :title="activeSection === 'medik' ? medikDivision?.name : (activeSection === 'non-medik' ? nonMedikDivision?.name : __('pages.services.title'))" />
 
     <AuthenticatedLayout>
-        <div class="py-4 px-4 sm:px-4 lg:px-4">
+        <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full">
                 
+                <!-- Premium Header Panel -->
+                <div v-if="activeSection === null" class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
+                    <div class="space-y-1">
+                        <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
+                            {{ __('pages.services.title') }}
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
+                            {{ __('Pilih divisi layanan penunjang untuk melaporkan kendala teknis atau kebutuhan operasional.') }}
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Main Options Container / Animated Flex Width Layout -->
                 <div 
                     class="flex flex-col md:flex-row" 
@@ -128,19 +140,19 @@ const nonMedikUnits = computed(() => {
                                 activeSection === null || activeSection === 'medik' ? 'min-w-[280px] md:min-w-[320px]' : 'min-w-0'
                             ]"
                         >
-                            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" v-if="activeSection === null" />
+                            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" v-if="activeSection === null" />
                             <div>
                                 <!-- Header Row: Icon on left, Badge on right -->
                                 <div class="flex items-center justify-between mb-4">
-                                    <div class="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                                        <HeartPulse class="h-6 w-6" />
+                                    <div class="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                                        <Stethoscope class="h-6 w-6" />
                                     </div>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 flex-shrink-0">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 flex-shrink-0">
                                         {{ __('pages.services.clinical_badge') }}
                                     </span>
                                 </div>
                                 
-                                <h3 class="text-lg font-bold text-slate-950 dark:text-white" :class="{ 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200': activeSection === null }">
+                                <h3 class="text-lg font-bold text-slate-950 dark:text-white" :class="{ 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200': activeSection === null }">
                                     {{ medikDivision?.name }}
                                 </h3>
                                 <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed" v-if="activeSection === null">
@@ -153,10 +165,10 @@ const nonMedikUnits = computed(() => {
 
                             <!-- Footer Action -->
                             <div class="mt-6 flex items-center justify-between" v-if="activeSection === null">
-                                <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                                     {{ __('pages.services.btn_enter_medik') }}
                                 </span>
-                                <div class="h-8 w-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex-shrink-0 flex items-center justify-center transition-all duration-300 group-hover:bg-indigo-600 group-hover:text-white dark:group-hover:bg-indigo-550">
+                                <div class="h-8 w-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex-shrink-0 flex items-center justify-center transition-all duration-300 group-hover:bg-emerald-600 group-hover:text-white dark:group-hover:bg-emerald-500">
                                     <ArrowRight class="h-4 w-4" />
                                 </div>
                             </div>
@@ -178,10 +190,10 @@ const nonMedikUnits = computed(() => {
                                             'group/unit relative overflow-hidden rounded-2xl p-5 flex flex-col justify-between text-left transition-all duration-300 select-none border',
                                             unit.disabled 
                                                 ? 'bg-slate-50/50 dark:bg-slate-950/20 border-slate-200/50 dark:border-slate-800/60 text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-75'
-                                                : 'bg-white dark:bg-slate-900 border-indigo-100 dark:border-indigo-950/40 hover:border-indigo-500 hover:text-indigo-600 cursor-pointer'
+                                                : 'bg-white dark:bg-slate-900 border-emerald-100 dark:border-emerald-950/40 hover:border-emerald-500 hover:text-emerald-600 cursor-pointer'
                                         ]"
                                     >
-                                        <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover/unit:opacity-100 transition-opacity duration-300" v-if="!unit.disabled" />
+                                        <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover/unit:opacity-100 transition-opacity duration-300" v-if="!unit.disabled" />
                                         
                                         <div class="relative z-10">
                                             <!-- Icon / Status -->
@@ -189,16 +201,16 @@ const nonMedikUnits = computed(() => {
                                                 'inline-flex items-center justify-center h-10 w-10 rounded-xl mb-3 transition-colors duration-300',
                                                 unit.disabled
                                                     ? 'bg-slate-100 dark:bg-slate-900/60 text-slate-400 dark:text-slate-600'
-                                                    : 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400'
+                                                    : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
                                             ]">
                                                 <Lock v-if="unit.disabled" class="h-4.5 w-4.5" />
-                                                <HeartPulse v-else class="h-4.5 w-4.5" />
+                                                <Stethoscope v-else class="h-4.5 w-4.5" />
                                             </div>
 
                                             <!-- Unit Name -->
                                             <h3 :class="[
                                                 'text-sm font-bold tracking-wide uppercase',
-                                                unit.disabled ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white group-hover/unit:text-indigo-600 dark:group-hover/unit:text-indigo-400 transition-colors duration-200'
+                                                unit.disabled ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white group-hover/unit:text-emerald-600 dark:group-hover/unit:text-emerald-400 transition-colors duration-200'
                                             ]">
                                                 {{ unit.name }}
                                             </h3>
@@ -216,9 +228,9 @@ const nonMedikUnits = computed(() => {
                                                 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide uppercase',
                                                 unit.disabled
                                                     ? 'bg-slate-100 dark:bg-slate-950 text-slate-400 dark:text-slate-500'
-                                                    : 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300'
+                                                    : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300'
                                             ]">
-                                                <span v-if="!unit.disabled" class="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                                                <span v-if="!unit.disabled" class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                                 {{ unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active') }}
                                             </span>
                                         </div>
@@ -252,7 +264,7 @@ const nonMedikUnits = computed(() => {
                                 <!-- Header Row: Icon on left, Badge on right -->
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
-                                        <Wrench class="h-6 w-6" />
+                                        <ShieldCheck class="h-6 w-6" />
                                     </div>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 flex-shrink-0">
                                         {{ __('pages.services.operational_badge') }}
@@ -311,7 +323,7 @@ const nonMedikUnits = computed(() => {
                                                     : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
                                             ]">
                                                 <Lock v-if="unit.disabled" class="h-4.5 w-4.5" />
-                                                <Wrench v-else class="h-4.5 w-4.5" />
+                                                <ShieldCheck v-else class="h-4.5 w-4.5" />
                                             </div>
 
                                             <!-- Unit Name -->
@@ -352,3 +364,20 @@ const nonMedikUnits = computed(() => {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+@keyframes spa-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-spa-fade-in {
+  animation: spa-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+</style>

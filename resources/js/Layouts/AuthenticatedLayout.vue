@@ -560,7 +560,7 @@ const getGroupInitials = (title) => {
                                     @focus="showSearchResults = true"
                                     @blur="setTimeout(() => { showSearchResults = false }, 200)"
                                     :placeholder="__('menu.search_placeholder')"
-                                    class="w-full h-11 pl-10 pr-10 border border-white dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm"
+                                    class="w-full h-11 pl-10 pr-10 border border-white dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm"
                                 />
                                 <!-- Clear Button -->
                                 <button
@@ -605,7 +605,7 @@ const getGroupInitials = (title) => {
                                 :title="__('Switch Language')"
                             >
                                 <Languages class="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
-                                <span class="uppercase text-[11px] font-extrabold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-100/30 dark:border-indigo-900/40">
+                                <span class="uppercase text-[11px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-100/30 dark:border-emerald-900/40">
                                     {{ $page.props.locale === 'id' ? 'ID' : 'EN' }}
                                 </span>
                             </Link>
@@ -618,7 +618,7 @@ const getGroupInitials = (title) => {
                                 :title="__('Switch Theme')"
                             >
                                 <Sun v-if="!isDark" class="h-5 w-5 text-amber-500" />
-                                <Moon v-else class="h-5 w-5 text-indigo-400" />
+                                <Moon v-else class="h-5 w-5 text-emerald-400" />
                             </button>
 
                             <!-- Notifikasi (Desktop) -->
@@ -658,16 +658,16 @@ const getGroupInitials = (title) => {
                                             @click="markAsRead(notif)"
                                             :class="[
                                                 'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                                !notif.read_at ? 'bg-indigo-50/30 dark:bg-indigo-950/10' : ''
+                                                !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
                                             ]"
                                         >
                                             <!-- Icon -->
                                             <div :class="[
                                                 'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                                                notif.type === 'ticket' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500' :
+                                                notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
                                                 notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
                                                 notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                                'bg-violet-50 dark:bg-violet-950/40 text-violet-500'
+                                                'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
                                             ]">
                                                 <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
                                                 <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
@@ -678,7 +678,7 @@ const getGroupInitials = (title) => {
                                             <div class="flex-1 min-w-0">
                                                 <div class="flex items-start justify-between gap-2">
                                                     <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                    <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1"></span>
+                                                    <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></span>
                                                 </div>
                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
                                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
@@ -688,7 +688,7 @@ const getGroupInitials = (title) => {
 
                                     <!-- Footer -->
                                     <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                        <button @click="markAllAsRead" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Tandai Semua Sudah Dibaca</button>
+                                        <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Tandai Semua Sudah Dibaca</button>
                                     </div>
                                 </template>
                             </Dropdown>
@@ -761,7 +761,7 @@ const getGroupInitials = (title) => {
                                     >
                                         <Languages class="h-4 w-4 text-slate-400" />
                                         <span class="flex-1 text-left font-medium">{{ __('Language') }}</span>
-                                        <span class="text-[10px] font-extrabold uppercase bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded border border-indigo-100/30 dark:border-indigo-900/40">
+                                        <span class="text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-100/30 dark:border-emerald-900/40">
                                             {{ $page.props.locale === 'id' ? 'ID' : 'EN' }}
                                         </span>
                                     </Link>
@@ -774,13 +774,13 @@ const getGroupInitials = (title) => {
                                     >
                                         <div class="flex items-center gap-3">
                                             <Sun v-if="!isDark" class="h-4 w-4 text-amber-500" />
-                                            <Moon v-else class="h-4 w-4 text-indigo-400" />
+                                            <Moon v-else class="h-4 w-4 text-emerald-400" />
                                             <span class="font-medium">{{ __('Dark Mode') }}</span>
                                         </div>
                                         <div 
                                             :class="[
                                                 'w-8 h-4 rounded-full p-0.5 transition-colors duration-200',
-                                                isDark ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-800'
+                                                isDark ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-800'
                                             ]"
                                         >
                                             <div 
@@ -855,7 +855,7 @@ const getGroupInitials = (title) => {
                                         @click="markAsRead(notif)"
                                         :class="[
                                             'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                            !notif.read_at ? 'bg-indigo-50/30 dark:bg-indigo-950/10' : ''
+                                            !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
                                         ]"
                                     >
                                         <div :class="[
@@ -873,7 +873,7 @@ const getGroupInitials = (title) => {
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-start justify-between gap-2">
                                                 <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1"></span>
+                                                <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></span>
                                             </div>
                                             <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
                                             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
@@ -881,7 +881,7 @@ const getGroupInitials = (title) => {
                                     </div>
                                 </div>
                                 <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                    <button @click="markAllAsRead" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Tandai Semua Sudah Dibaca</button>
+                                    <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Tandai Semua Sudah Dibaca</button>
                                 </div>
                             </div>
                             </Transition>
@@ -962,7 +962,7 @@ const getGroupInitials = (title) => {
                             customAlert.icon === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
                             customAlert.icon === 'error' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
                             customAlert.icon === 'warning' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                            'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500'
+                            'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
                         ]">
                             <CheckCircle2 v-if="customAlert.icon === 'success'" class="h-10 w-10" />
                             <AlertCircle v-else-if="customAlert.icon === 'error'" class="h-10 w-10" />
@@ -991,7 +991,7 @@ const getGroupInitials = (title) => {
                                     customAlert.icon === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :
                                     customAlert.icon === 'error' ? 'bg-rose-600 hover:bg-rose-700' :
                                     customAlert.icon === 'warning' ? 'bg-amber-600 hover:bg-amber-700' :
-                                    'bg-indigo-600 hover:bg-indigo-700'
+                                    'bg-emerald-600 hover:bg-emerald-700'
                                 ]"
                             >
                                 {{ customAlert.confirmText }}
@@ -1032,19 +1032,19 @@ const getGroupInitials = (title) => {
                             class="relative group h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
                             title="Expand Sidebar"
                         >
-                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:filter dark:brightness-0 dark:invert transition-all duration-200 group-hover:opacity-0" />
-                            <ChevronRight class="absolute inset-0 m-auto h-5.5 w-5.5 text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all duration-200" />
+                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain hue-rotate-[280deg] saturate-[1.2] dark:hue-rotate-0 dark:saturate-100 dark:brightness-0 dark:invert transition-all duration-200 group-hover:opacity-0" />
+                            <ChevronRight class="absolute inset-0 m-auto h-5.5 w-5.5 text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all duration-200" />
                         </button>
                     </div>
                     
                     <Link v-else :href="route('dashboard')" prefetch class="flex items-center gap-3">
                         <!-- Left Logo (Rounded Square) -->
                         <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:filter dark:brightness-0 dark:invert" />
+                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain hue-rotate-[280deg] saturate-[1.2] dark:hue-rotate-0 dark:saturate-100 dark:brightness-0 dark:invert" />
                         </div>
                         <!-- Right Text Content -->
                         <div class="flex flex-col">
-                            <span class="text-sm font-bold tracking-widest text-slate-800 dark:text-slate-100 uppercase leading-none">Pesu Peluh</span>
+                            <span class="text-sm font-bold tracking-widest text-emerald-700 dark:text-emerald-400 uppercase leading-none">Pesu Peluh</span>
                             <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-1 leading-tight tracking-normal max-w-[185px]">
                                 Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
                             </span>
@@ -1100,11 +1100,11 @@ const getGroupInitials = (title) => {
                                     sidebarCollapsed 
                                         ? 'h-11 w-11 mx-auto flex items-center justify-center rounded-xl transition-all duration-150' 
                                         : 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-150',
-                                    'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                                    'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                 ]"
                                 :title="sidebarCollapsed ? __(item.label) : ''"
                             >
-                                <component :is="item.icon" class="h-5 w-5 flex-shrink-0 text-slate-400 group-hover:text-indigo-500 transition duration-150" />
+                                <component :is="item.icon" class="h-5 w-5 flex-shrink-0 text-slate-400 group-hover:text-emerald-500 transition duration-150" />
                                 <span v-if="!sidebarCollapsed" class="flex-1 min-w-0 truncate">{{ __(item.label) }}</span>
                                 <ChevronRight v-if="!sidebarCollapsed" class="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition duration-150 text-slate-400" />
                             </a>
@@ -1128,8 +1128,8 @@ const getGroupInitials = (title) => {
                                         :class="[
                                             'relative group h-11 w-11 flex items-center justify-center rounded-xl transition-all duration-150 focus:outline-none',
                                             isChildActive(item.children)
-                                                ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300'
-                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                                                ? 'bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                         ]"
                                         :title="__(item.label)"
                                     >
@@ -1138,8 +1138,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'h-5 w-5 flex-shrink-0 transition duration-150',
                                                 isChildActive(item.children)
-                                                    ? 'text-indigo-600 dark:text-indigo-400'
-                                                    : 'text-slate-400 group-hover:text-indigo-500'
+                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                    : 'text-slate-400 group-hover:text-emerald-500'
                                             ]"
                                         />
                                         <!-- Tiny dot when collapsed & closed -->
@@ -1155,7 +1155,7 @@ const getGroupInitials = (title) => {
                                                     ? 'opacity-60 rotate-180' 
                                                     : 'opacity-0 group-hover:opacity-50',
                                                 isChildActive(item.children)
-                                                    ? 'text-indigo-500 dark:text-indigo-400'
+                                                    ? 'text-emerald-500 dark:text-emerald-400'
                                                     : 'text-slate-400'
                                             ]"
                                         />
@@ -1171,8 +1171,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'relative h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-150',
                                                 route().current(child.routeName)
-                                                    ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60'
-                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                                                    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60'
+                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                             ]"
                                             :title="__(child.label)"
                                         >
@@ -1182,8 +1182,8 @@ const getGroupInitials = (title) => {
                                                 :class="[
                                                     'h-4 w-4 flex-shrink-0 transition duration-150',
                                                     route().current(child.routeName)
-                                                        ? 'text-indigo-600 dark:text-indigo-400'
-                                                        : 'text-slate-400 group-hover:text-indigo-500'
+                                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                                        : 'text-slate-400 group-hover:text-emerald-500'
                                                 ]"
                                             />
                                             <!-- Tiny Dot indicator for pending items when collapsed -->
@@ -1202,8 +1202,8 @@ const getGroupInitials = (title) => {
                                         :class="[
                                             'w-full group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-150 text-left focus:outline-none',
                                             isChildActive(item.children)
-                                                ? 'bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300'
-                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                                                ? 'bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                         ]"
                                     >
                                         <component
@@ -1211,8 +1211,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'h-5 w-5 flex-shrink-0 transition duration-150',
                                                 isChildActive(item.children)
-                                                    ? 'text-indigo-600 dark:text-indigo-400'
-                                                    : 'text-slate-400 group-hover:text-indigo-500'
+                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                    : 'text-slate-400 group-hover:text-emerald-500'
                                             ]"
                                         />
                                         <span class="flex-1 min-w-0 truncate">{{ __(item.label) }}</span>
@@ -1225,8 +1225,8 @@ const getGroupInitials = (title) => {
                                                     'h-4 w-4 transition-all duration-200 absolute',
                                                     openMenus[item.label] ? 'rotate-180' : '',
                                                     isChildActive(item.children)
-                                                        ? 'text-indigo-600 dark:text-indigo-400'
-                                                        : 'text-slate-400 group-hover:text-indigo-500',
+                                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                                        : 'text-slate-400 group-hover:text-emerald-500',
                                                     (item.label === 'menu.user_management' && !openMenus[item.label] && pendingApprovalsCount > 0)
                                                         ? 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'
                                                         : 'opacity-100 scale-100'
@@ -1237,7 +1237,7 @@ const getGroupInitials = (title) => {
                                             >
                                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                             </svg>
-
+ 
                                             <!-- Parent Badge when Closed (hidden on hover, shown by default) -->
                                             <span 
                                                 v-if="item.label === 'menu.user_management' && !openMenus[item.label] && pendingApprovalsCount > 0"
@@ -1259,8 +1259,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition duration-150',
                                                 route().current(child.routeName)
-                                                    ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60'
-                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                                                    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60'
+                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                             ]"
                                         >
                                             <component
@@ -1269,8 +1269,8 @@ const getGroupInitials = (title) => {
                                                 :class="[
                                                     'h-4 w-4 flex-shrink-0 transition duration-150 ml-6',
                                                     route().current(child.routeName)
-                                                        ? 'text-indigo-600 dark:text-indigo-400'
-                                                        : 'text-slate-400 group-hover:text-indigo-500'
+                                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                                        : 'text-slate-400 group-hover:text-emerald-500'
                                                 ]"
                                             />
                                             <span class="flex-1 min-w-0 truncate">{{ __(child.label) }}</span>
@@ -1284,7 +1284,7 @@ const getGroupInitials = (title) => {
                                     </div>
                                 </template>
                             </div>
-
+ 
                             <!-- Internal Inertia link -->
                             <Link
                                 v-else
@@ -1296,8 +1296,8 @@ const getGroupInitials = (title) => {
                                         ? 'h-11 w-11 mx-auto flex items-center justify-center rounded-xl transition-all duration-150' 
                                         : 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
                                     isRouteActive(item)
-                                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                 ]"
                                 :title="sidebarCollapsed ? __(item.label) : ''"
                             >
@@ -1306,14 +1306,14 @@ const getGroupInitials = (title) => {
                                     :class="[
                                         'h-5 w-5 flex-shrink-0 transition duration-150',
                                         isRouteActive(item)
-                                            ? 'text-indigo-600 dark:text-indigo-400'
-                                            : 'text-slate-400 group-hover:text-indigo-500'
+                                            ? 'text-emerald-600 dark:text-emerald-400'
+                                            : 'text-slate-400 group-hover:text-emerald-500'
                                     ]"
                                 />
                                 <span v-if="!sidebarCollapsed" class="flex-1 min-w-0 truncate">{{ __(item.label) }}</span>
                                 <ChevronRight
                                     v-if="isRouteActive(item) && !sidebarCollapsed"
-                                    class="h-3.5 w-3.5 text-indigo-400"
+                                    class="h-3.5 w-3.5 text-emerald-400"
                                 />
                             </Link>
 

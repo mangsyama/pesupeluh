@@ -70,7 +70,7 @@ const stats = computed(() => {
     const nonMedikPct = Math.round((props.nonMedikTicketsCount / total) * 100);
 
     return [
-        { label: proxy.__('pages.dashboard.total_reports'), value: String(props.totalTicketsCount), change: proxy.__('pages.dashboard.week_increase'), isPositive: true, icon: FileText, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
+        { label: proxy.__('pages.dashboard.total_reports'), value: String(props.totalTicketsCount), change: proxy.__('pages.dashboard.week_increase'), isPositive: true, icon: FileText, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
         { label: proxy.__('pages.dashboard.medical_support'), value: String(props.medikTicketsCount), change: `${medikPct}% ${proxy.__('pages.dashboard.pct_of_total')}`, isPositive: true, icon: Activity, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-950/30' },
         { label: proxy.__('pages.dashboard.non_medical_support'), value: String(props.nonMedikTicketsCount), change: `${nonMedikPct}% ${proxy.__('pages.dashboard.pct_of_total')}`, isPositive: true, icon: Settings, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
         { label: proxy.__('pages.dashboard.waiting_verification'), value: String(props.pendingTicketsCount), change: proxy.__('pages.dashboard.yesterday_decrease'), isPositive: false, icon: AlertCircle, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
@@ -132,15 +132,15 @@ const categoriesBreakdown = computed(() => {
     <Head :title="__('Dashboard')" />
 
     <AuthenticatedLayout>
-        <div class="py-4 px-4 sm:px-4 lg:px-4">
+        <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full space-y-4">
 
                 <!-- Welcome Card -->
-                <div class="overflow-hidden bg-gradient-to-r from-indigo-600 to-indigo-800 dark:from-indigo-950 dark:to-slate-900 border border-transparent dark:border-slate-800 shadow-sm rounded-2xl text-white p-8 relative">
+                <div class="overflow-hidden bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-emerald-950 dark:to-slate-900 border border-transparent dark:border-slate-800 shadow-sm rounded-2xl text-white p-8 relative">
                     <!-- Text Info -->
                     <div class="relative z-10 max-w-xl">
                         <h3 class="text-2xl font-extrabold mb-1">PESU PELUH</h3>
-                        <p class="text-indigo-100 dark:text-slate-300 text-sm font-medium leading-relaxed">
+                        <p class="text-emerald-100 dark:text-slate-300 text-sm font-medium leading-relaxed">
                             {{ __('pages.dashboard.desc') }}
                         </p>
                     </div>
@@ -186,7 +186,7 @@ const categoriesBreakdown = computed(() => {
                                 <h4 class="text-base font-bold text-slate-950 dark:text-white">{{ __('pages.dashboard.recent_activities') }}</h4>
                                 <Link 
                                     :href="route('reports.history')" 
-                                    class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 flex items-center gap-1 transition-colors duration-150"
+                                    class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 flex items-center gap-1 transition-colors duration-150"
                                 >
                                     {{ __('pages.dashboard.view_all') }}
                                     <ArrowUpRight class="h-3.5 w-3.5" />
@@ -273,3 +273,21 @@ const categoriesBreakdown = computed(() => {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+@keyframes spa-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-spa-fade-in {
+  animation: spa-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+</style>
+

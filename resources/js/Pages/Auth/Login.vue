@@ -250,12 +250,12 @@ onBeforeUnmount(() => {
 
         <!-- HEADER FORM -->
         <div class="mb-8">
-            <h1 class="text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight">
+            <h1 class="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight">
                 {{ __('auth.login.title') }}
             </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                 {{ __("auth.login.subtitle") }}
-                <Link :href="route('register')" class="font-bold text-slate-800 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 underline ms-1">
+                <Link :href="route('register')" class="font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-500 underline ms-1">
                     {{ __('auth.login.create_account_link') }}
                 </Link>
             </p>
@@ -277,7 +277,7 @@ onBeforeUnmount(() => {
                     autofocus
                     autocomplete="username"
                     :placeholder="__('auth.register.username_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.username" />
             </div>
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
                         required
                         autocomplete="current-password"
                         placeholder="••••••••"
-                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                     />
                     <button
                         type="button"
@@ -312,7 +312,7 @@ onBeforeUnmount(() => {
             <!-- Remember Me Checkbox -->
             <div class="flex items-center justify-between">
                 <label class="flex items-center cursor-pointer select-none">
-                    <Checkbox name="remember" v-model:checked="form.remember" class="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-transparent" />
+                    <Checkbox name="remember" v-model:checked="form.remember" class="rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500 bg-transparent" />
                     <span class="ms-2.5 text-sm font-semibold text-slate-600 dark:text-slate-400">
                         {{ __('global.remember_me') }}
                     </span>
@@ -323,12 +323,12 @@ onBeforeUnmount(() => {
             <div class="space-y-3 pt-2">
                 <button
                     type="submit"
-                    class="w-full text-center py-4 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 focus:ring-offset-white dark:focus:ring-offset-slate-900 flex items-center justify-center gap-3"
+                    class="w-full text-center py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900 flex items-center justify-center gap-3"
                     :class="{ 'opacity-25 cursor-not-allowed': form.processing }"
                     :disabled="form.processing"
                     :aria-busy="form.processing"
                 >
-                    <RefreshCw v-if="form.processing" class="h-4 w-4 animate-spin text-white dark:text-slate-950" />
+                    <RefreshCw v-if="form.processing" class="h-4 w-4 animate-spin text-white" />
                     <span>
                         {{ form.processing ? __('auth.login.loading') : __('auth.login.log_in_btn') }}
                     </span>
@@ -338,9 +338,9 @@ onBeforeUnmount(() => {
                 <button
                     @click="startCamera"
                     type="button"
-                    class="w-full inline-flex items-center justify-center px-6 py-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold rounded-xl border border-slate-200 dark:border-slate-700 transition duration-150 text-base"
+                    class="w-full inline-flex items-center justify-center px-6 py-4 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold rounded-xl border border-emerald-100 dark:border-emerald-900/30 transition duration-150 text-base"
                 >
-                    <ScanFace class="h-6 w-6 me-2.5 text-indigo-600 dark:text-indigo-400" />
+                    <ScanFace class="h-6 w-6 me-2.5 text-emerald-600 dark:text-emerald-400" />
                     {{ __('auth.login.face_camera_btn') }}
                 </button>
             </div>
@@ -353,7 +353,7 @@ onBeforeUnmount(() => {
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
-                    class="text-sm font-bold text-slate-800 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 underline ms-1"
+                    class="text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-500 underline ms-1"
                 >
                     {{ __('auth.login.click_here') }}
                 </Link>
@@ -398,14 +398,14 @@ onBeforeUnmount(() => {
 
                 <!-- Loading / Init state -->
                 <div v-if="scanStatus === 'loading'" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center text-slate-400 z-30">
-                    <RefreshCw class="h-8 w-8 animate-spin mb-3 text-indigo-500" />
+                    <RefreshCw class="h-8 w-8 animate-spin mb-3 text-emerald-500" />
                     <span class="text-xs tracking-wide">{{ __('auth.login.matching') }}</span>
                 </div>
             </div>
 
             <!-- Status & Error Alert -->
             <div class="w-full mt-6 text-center min-h-[28px] max-w-sm">
-                <p v-if="scanStatus === 'scanning'" class="text-xs font-bold text-indigo-600 dark:text-indigo-600 animate-pulse">
+                <p v-if="scanStatus === 'scanning'" class="text-xs font-bold text-emerald-600 dark:text-emerald-600 animate-pulse">
                     {{ isFaceDetected ? __('auth.login.face_detected') : __('auth.login.looking_for_face') }}
                 </p>
                 <p v-else-if="scanStatus === 'failed'" class="text-xs font-bold text-rose-600 dark:text-rose-600">
