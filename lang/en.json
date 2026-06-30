@@ -603,5 +603,8 @@
   "The email field is required.": "The email field is required.",
   "The email must be a valid email address.": "The email must be a valid email address.",
   "The email has already been taken.": "The email has already been taken.",
-  "The current password is incorrect.": "The current password is incorrect."
+  "The current password is incorrect.": "The current password is incorrect.",
+  "Notifications": "Notifications",
+  "No notifications": "No notifications",
+  "Mark All as Read": "Mark All as Read"
 }

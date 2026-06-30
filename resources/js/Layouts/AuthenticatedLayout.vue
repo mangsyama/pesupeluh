@@ -639,57 +639,61 @@ const getGroupInitials = (title) => {
                                     </button>
                                 </template>
                                 <template #content>
-                                    <!-- Header -->
-                                    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">Notifikasi</span>
-                                            <span 
-                                                v-if="unreadCount > 0" 
-                                                class="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold"
-                                            >{{ unreadCount }}</span>
-                                        </div>
-                                    </div>
+                                     <!-- Header -->
+                                     <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                                         <div class="flex items-center gap-2">
+                                             <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ __('Notifications') }}</span>
+                                             <span 
+                                                 v-if="unreadCount > 0" 
+                                                 class="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold"
+                                             >{{ unreadCount }}</span>
+                                         </div>
+                                     </div>
 
-                                    <!-- Notification List -->
-                                    <div class="max-h-80 overflow-y-auto">
-                                        <div 
-                                            v-for="notif in notifications" 
-                                            :key="notif.id"
-                                            @click="markAsRead(notif)"
-                                            :class="[
-                                                'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                                !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
-                                            ]"
-                                        >
-                                            <!-- Icon -->
-                                            <div :class="[
-                                                'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                                                notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                                notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                                                notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                                'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
-                                            ]">
-                                                <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
-                                                <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
-                                                <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
-                                                <User v-else class="h-4 w-4" />
-                                            </div>
-                                            <!-- Content -->
-                                            <div class="flex-1 min-w-0">
-                                                <div class="flex items-start justify-between gap-2">
-                                                    <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                    <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></span>
-                                                </div>
-                                                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
-                                                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                     <!-- Notification List -->
+                                     <div class="max-h-80 overflow-y-auto">
+                                         <div v-if="notifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                             {{ __('No notifications') }}
+                                         </div>
+                                         <div 
+                                             v-else
+                                             v-for="notif in notifications" 
+                                             :key="notif.id"
+                                             @click="markAsRead(notif)"
+                                             :class="[
+                                                 'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
+                                                 !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
+                                             ]"
+                                         >
+                                             <!-- Icon -->
+                                             <div :class="[
+                                                 'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
+                                                 notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
+                                                 notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
+                                                 notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
+                                                 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
+                                             ]">
+                                                 <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
+                                                 <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
+                                                 <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
+                                                 <User v-else class="h-4 w-4" />
+                                             </div>
+                                             <!-- Content -->
+                                             <div class="flex-1 min-w-0">
+                                                 <div class="flex items-start justify-between gap-2">
+                                                     <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
+                                                     <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></span>
+                                                 </div>
+                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
+                                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
+                                             </div>
+                                         </div>
+                                     </div>
 
-                                    <!-- Footer -->
-                                    <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                        <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Tandai Semua Sudah Dibaca</button>
-                                    </div>
+                                     <!-- Footer -->
+                                     <div v-if="unreadCount > 0" class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
+                                         <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">{{ __('Mark All as Read') }}</button>
+                                     </div>
                                 </template>
                             </Dropdown>
                         </div>
@@ -830,60 +834,64 @@ const getGroupInitials = (title) => {
                                 leave-to-class="opacity-0 scale-95 translate-y-1"
                             >
                                 <div v-if="showMobileNotifications" @click.stop class="lg:hidden absolute right-0 top-full mt-2.5 z-50 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden w-[calc(100vw-2rem)]">
-                                <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <Bell class="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                        <span class="text-sm font-bold text-slate-800 dark:text-slate-200">Notifikasi</span>
-                                        <span 
-                                            v-if="unreadCount > 0" 
-                                            class="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold"
-                                        >{{ unreadCount }}</span>
-                                    </div>
-                                    <button
-                                        @click.stop="showMobileNotifications = false"
-                                        type="button"
-                                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-md"
-                                        aria-label="Tutup notifikasi"
-                                    >
-                                        <X class="h-4 w-4" />
-                                    </button>
-                                </div>
-                                <div class="max-h-80 overflow-y-auto">
-                                    <div
-                                        v-for="notif in notifications"
-                                        :key="notif.id"
-                                        @click="markAsRead(notif)"
-                                        :class="[
-                                            'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                            !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
-                                        ]"
-                                    >
-                                        <div :class="[
-                                            'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                                            notif.type === 'ticket' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500' :
-                                            notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                                            notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                            'bg-violet-50 dark:bg-violet-950/40 text-violet-500'
-                                        ]">
-                                            <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
-                                            <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
-                                            <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
-                                            <User v-else class="h-4 w-4" />
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-start justify-between gap-2">
-                                                <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></span>
-                                            </div>
-                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
-                                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                    <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Tandai Semua Sudah Dibaca</button>
-                                </div>
-                            </div>
+                                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                     <div class="flex items-center gap-3">
+                                         <Bell class="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                         <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ __('Notifications') }}</span>
+                                         <span 
+                                             v-if="unreadCount > 0" 
+                                             class="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold"
+                                         >{{ unreadCount }}</span>
+                                     </div>
+                                     <button
+                                         @click.stop="showMobileNotifications = false"
+                                         type="button"
+                                         class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-md"
+                                         aria-label="Tutup notifikasi"
+                                     >
+                                         <X class="h-4 w-4" />
+                                     </button>
+                                 </div>
+                                 <div class="max-h-80 overflow-y-auto">
+                                     <div v-if="notifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                         {{ __('No notifications') }}
+                                     </div>
+                                     <div
+                                         v-else
+                                         v-for="notif in notifications"
+                                         :key="notif.id"
+                                         @click="markAsRead(notif)"
+                                         :class="[
+                                             'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
+                                             !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
+                                         ]"
+                                     >
+                                         <div :class="[
+                                             'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
+                                             notif.type === 'ticket' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500' :
+                                             notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
+                                             notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
+                                             'bg-violet-50 dark:bg-violet-950/40 text-violet-500'
+                                         ]">
+                                             <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
+                                             <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
+                                             <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
+                                             <User v-else class="h-4 w-4" />
+                                         </div>
+                                         <div class="flex-1 min-w-0">
+                                             <div class="flex items-start justify-between gap-2">
+                                                 <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
+                                                 <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></span>
+                                             </div>
+                                             <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
+                                             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 <div v-if="unreadCount > 0" class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
+                                     <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">{{ __('Mark All as Read') }}</button>
+                                 </div>
+                             </div>
                             </Transition>
                         </div>
                     </div>
@@ -1171,8 +1179,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'relative h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-150',
                                                 route().current(child.routeName)
-                                                    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60'
-                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                                    ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-950/50 dark:text-emerald-400 dark:shadow-none'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                             ]"
                                             :title="__(child.label)"
                                         >
@@ -1182,7 +1190,7 @@ const getGroupInitials = (title) => {
                                                 :class="[
                                                     'h-4 w-4 flex-shrink-0 transition duration-150',
                                                     route().current(child.routeName)
-                                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                                        ? 'text-white dark:text-emerald-400'
                                                         : 'text-slate-400 group-hover:text-emerald-500'
                                                 ]"
                                             />
@@ -1259,8 +1267,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition duration-150',
                                                 route().current(child.routeName)
-                                                    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60'
-                                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                                    ? 'bg-emerald-600 text-white shadow-sm font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:shadow-none'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                             ]"
                                         >
                                             <component
@@ -1269,7 +1277,7 @@ const getGroupInitials = (title) => {
                                                 :class="[
                                                     'h-4 w-4 flex-shrink-0 transition duration-150 ml-6',
                                                     route().current(child.routeName)
-                                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                                        ? 'text-white dark:text-emerald-400'
                                                         : 'text-slate-400 group-hover:text-emerald-500'
                                                 ]"
                                             />
@@ -1296,7 +1304,7 @@ const getGroupInitials = (title) => {
                                         ? 'h-11 w-11 mx-auto flex items-center justify-center rounded-xl transition-all duration-150' 
                                         : 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
                                     isRouteActive(item)
-                                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                                        ? 'bg-emerald-600 text-white shadow-sm font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:shadow-none'
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                 ]"
                                 :title="sidebarCollapsed ? __(item.label) : ''"
@@ -1306,14 +1314,14 @@ const getGroupInitials = (title) => {
                                     :class="[
                                         'h-5 w-5 flex-shrink-0 transition duration-150',
                                         isRouteActive(item)
-                                            ? 'text-emerald-600 dark:text-emerald-400'
+                                            ? 'text-white dark:text-emerald-400'
                                             : 'text-slate-400 group-hover:text-emerald-500'
                                     ]"
                                 />
                                 <span v-if="!sidebarCollapsed" class="flex-1 min-w-0 truncate">{{ __(item.label) }}</span>
                                 <ChevronRight
                                     v-if="isRouteActive(item) && !sidebarCollapsed"
-                                    class="h-3.5 w-3.5 text-emerald-400"
+                                    class="h-3.5 w-3.5 text-white dark:text-emerald-400"
                                 />
                             </Link>
 

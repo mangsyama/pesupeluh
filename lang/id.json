@@ -603,5 +603,8 @@
   "The email field is required.": "Kolom email wajib diisi.",
   "The email must be a valid email address.": "Format email tidak valid.",
   "The email has already been taken.": "Email sudah digunakan.",
-  "The current password is incorrect.": "Kata sandi saat ini salah."
+  "The current password is incorrect.": "Kata sandi saat ini salah.",
+  "Notifications": "Notifikasi",
+  "No notifications": "Tidak ada notifikasi",
+  "Mark All as Read": "Tandai Semua Sudah Dibaca"
 }
