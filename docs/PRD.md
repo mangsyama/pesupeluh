@@ -55,11 +55,23 @@ Sistem menggunakan pendekatan fungsional berbasis peran (*role*). Hak akses menu
 Aplikasi wajib merender menu secara dinamis menggunakan pola hirarki data bertingkat dari database:
 `Divisions` (Medik / Non-Medik) -> `Supporting Units` (IPSRS, Gizi, Laundry, Kesling) -> `Unit Features` (Pelaporan, Kalibrasi, Usulan) -> `Feature Categories`.
 
-### Fitur Penguncian Modul (Feature Flagging)
-Akses terhadap modul di dalam aplikasi dikontrol secara dinamis berdasarkan status operasional dari masing-masing `Supporting Units`:
-- **ACTIVE**: Fitur pelaporan terbuka penuh dan dapat diakses oleh seluruh user ruangan (Saat ini eksklusif untuk IPSRS).
-- **IN_DEVELOPMENT**: Menu unit tetap muncul di aplikasi sebagai representasi hirarki, namun dalam kondisi terkunci (disabled) dengan tampilan visual premium bertuliskan "Dalam Pengembangan".
-- **INACTIVE**: Menu unit disembunyikan sepenuhnya dari antarmuka user biasa.
+### Fitur Penguncian Modul & Fitur (Feature Flagging)
+Akses terhadap modul dan fitur di dalam aplikasi dikontrol secara dinamis pada dua tingkat:
+1. **Tingkat Unit Penunjang (Supporting Unit Level)**:
+   Berdasarkan status operasional masing-masing `Supporting Units`:
+   - **ACTIVE**: Fitur pelaporan terbuka penuh dan dapat diakses oleh seluruh user ruangan (Saat ini eksklusif untuk IPSRS).
+   - **IN_DEVELOPMENT**: Menu unit tetap muncul di aplikasi sebagai representasi hirarki, namun dalam kondisi terkunci (disabled) dengan tampilan visual premium bertuliskan "Dalam Pengembangan".
+   - **INACTIVE**: Menu unit disembunyikan sepenuhnya dari antarmuka user biasa.
+
+2. **Tingkat Fitur Unit (Unit Feature Level)**:
+   Di dalam unit yang aktif (seperti IPSRS), fitur-fitur individu dikelola secara dinamis:
+   - **Aktif**: Fitur seperti *Pelaporan* merender modul formulir pengaduan aktif secara utuh.
+   - **Dalam Pengembangan**: Fitur seperti *Kalibrasi* dan *Usulan* menampilkan partial berdesain premium bertuliskan "Dalam Pengembangan" untuk mengisolasi data transaksi masa depan.
+
+### Pola Desain Registri Komponen Dinamis (Dynamic Component Registry)
+Untuk menghindari pencocokan kode kondisional yang kaku (*hardcoded if-else*) dan mempersiapkan skalabilitas lintas unit (misalnya modul khusus Gizi atau Farmasi), antarmuka detail unit menggunakan pola registri dinamis pada komponen Vue:
+- Komponen formulir didaftarkan ke dalam objek pemetaan kunci-nilai.
+- Sistem secara otomatis mencocokkan nama fitur (atau kombinasi nama unit & fitur) untuk me-render komponen partial yang sesuai menggunakan tag `<component :is="...">` Vue secara dinamis.
 
 ---
 

@@ -19,17 +19,29 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     $totalTicketsCount = \App\Models\ServiceTicket::count();
 
-    $medikTicketsCount = \App\Models\ServiceTicket::whereHas('category.unitFeature.supportingUnit', function ($q) {
-        $q->where('division_id', 1);
-    })->count();
+    // Optimize Medik and Non-Medik counts using a single aggregated query with JOIN
+    $divisionCounts = \App\Models\ServiceTicket::join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
+        ->join('unit_features', 'feature_categories.feature_id', '=', 'unit_features.id')
+        ->join('supporting_units', 'unit_features.supporting_unit_id', '=', 'supporting_units.id')
+        ->select('supporting_units.division_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
+        ->groupBy('supporting_units.division_id')
+        ->pluck('count', 'division_id');
 
-    $nonMedikTicketsCount = \App\Models\ServiceTicket::whereHas('category.unitFeature.supportingUnit', function ($q) {
-        $q->where('division_id', 2);
-    })->count();
+    $medikTicketsCount = $divisionCounts->get(1, 0);
+    $nonMedikTicketsCount = $divisionCounts->get(2, 0);
 
     $pendingTicketsCount = \App\Models\ServiceTicket::where('status', 'PENDING_VALIDATION')->count();
 
-    $recentTickets = \App\Models\ServiceTicket::with([
+    // Optimize payload by only selecting required columns and truncating description to 100 chars
+    $recentTickets = \App\Models\ServiceTicket::select([
+        'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+        \Illuminate\Support\Facades\DB::raw(
+            \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
+                ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
+                : 'SUBSTRING(problem_description, 1, 100) as problem_description'
+        )
+    ])
+    ->with([
         'reporter:id,name',
         'room:id,name',
         'category:id,name,feature_id',
@@ -41,12 +53,17 @@ Route::get('/dashboard', function () {
     ->take(4)
     ->get();
 
+    // Optimize breakdown count using a single query group by supporting_unit_id instead of loop N+1 queries
+    $unitCounts = \App\Models\ServiceTicket::join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
+        ->join('unit_features', 'feature_categories.feature_id', '=', 'unit_features.id')
+        ->select('unit_features.supporting_unit_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
+        ->groupBy('unit_features.supporting_unit_id')
+        ->pluck('count', 'supporting_unit_id');
+
     $breakdownData = \App\Models\SupportingUnit::with('division')
         ->get()
-        ->map(function ($unit) {
-            $count = \App\Models\ServiceTicket::whereHas('category.unitFeature', function ($q) use ($unit) {
-                $q->where('supporting_unit_id', $unit->id);
-            })->count();
+        ->map(function ($unit) use ($unitCounts) {
+            $count = $unitCounts->get($unit->id, 0);
 
             return [
                 'name' => $unit->name,
@@ -60,7 +77,6 @@ Route::get('/dashboard', function () {
         ->map(function ($item) use ($totalTicketsCount) {
             $percentage = $totalTicketsCount > 0 ? round(($item['count'] / $totalTicketsCount) * 100) : 0;
             
-            // Map unit name to a color
             $colors = [
                 'LABORATORIUM' => 'bg-indigo-500',
                 'KESLING'      => 'bg-emerald-500',
@@ -73,7 +89,7 @@ Route::get('/dashboard', function () {
             ];
             
             $color = $colors[strtoupper($item['name'])] ?? 'bg-slate-500';
-            
+
             return [
                 'name' => $item['name'],
                 'division_name' => $item['division_name'],
@@ -95,26 +111,23 @@ Route::get('/dashboard', function () {
 
 Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
     Route::get('/services', function () {
-        $divisions = \App\Models\Division::with('supportingUnits')->get();
         return Inertia::render('Service/Index', [
             'initialSection' => null,
-            'divisions' => $divisions
+            'divisions' => \App\Models\Division::with('supportingUnits')->get(),
         ]);
     })->name('services.index');
 
     Route::get('/services/medik', function () {
-        $divisions = \App\Models\Division::with('supportingUnits')->get();
         return Inertia::render('Service/Index', [
             'initialSection' => 'medik',
-            'divisions' => $divisions
+            'divisions' => \App\Models\Division::with('supportingUnits')->get(),
         ]);
     })->name('services.medik');
 
     Route::get('/services/non-medik', function () {
-        $divisions = \App\Models\Division::with('supportingUnits')->get();
         return Inertia::render('Service/Index', [
             'initialSection' => 'non-medik',
-            'divisions' => $divisions
+            'divisions' => \App\Models\Division::with('supportingUnits')->get(),
         ]);
     })->name('services.non-medik');
 
@@ -127,7 +140,9 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::post('/tickets/{ticket:uuid}/respond', [\App\Http\Controllers\TicketController::class, 'respond'])->name('tickets.respond');
     Route::post('/tickets/{ticket:uuid}/resolve', [\App\Http\Controllers\TicketController::class, 'resolve'])->name('tickets.resolve');
     Route::post('/tickets/{ticket:uuid}/resume', [\App\Http\Controllers\TicketController::class, 'resume'])->name('tickets.resume');
+});
 
+Route::middleware(['auth', 'verified'])->group(function () {
     // User Management
     Route::get('/users/approvals', [UserManagementController::class, 'indexApprovals'])->name('users.approvals');
     Route::patch('/users/{user}/approve', [UserManagementController::class, 'approveUser'])->name('users.approve');
@@ -142,7 +157,7 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
     Route::patch('/users/{user}/toggle-active', [UserManagementController::class, 'toggleActive'])->name('users.toggle-active');
     Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
 
-    // Manajemen Layanan
+    // Layanan Manajemen
     Route::get('/service-management', function () {
         return redirect()->route('service-management.rooms');
     })->name('service-management.index');
@@ -168,8 +183,12 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () 
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/history', [ReportController::class, 'history'])->name('reports.history');
+    Route::get('/reports/history/{ticket:uuid}', [ReportController::class, 'show'])->name('reports.show');
     Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
     Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])->name('reports.export.csv');
+
+    Route::get('/reports-management', [\App\Http\Controllers\ReportManagementController::class, 'index'])->name('reports-management.index');
+    Route::get('/reports-management/{ticket:uuid}', [\App\Http\Controllers\ReportManagementController::class, 'show'])->name('reports-management.show');
 
     Route::get('/settings', function () {
         return Inertia::render('UserSettings/Index');
@@ -210,8 +229,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 });
-
-
 
 Route::get('lang/{locale}', function ($locale) {
     if (in_array($locale, ['en', 'id'])) {
@@ -268,6 +285,7 @@ Route::post('/login-face', function (Request $request) {
         'message' => __('Face not recognized or not registered.'),
     ], 401);
 })->name('login.face');
+
 Route::get('/models/{file}', function ($file) {
     $basePath = public_path('models');
     $realBasePath = realpath($basePath);

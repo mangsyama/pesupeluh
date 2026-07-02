@@ -137,24 +137,133 @@ class DatabaseSeeder extends Seeder
                 ['feature_id' => $ipsrsPelaporanId, 'name' => 'Plumbing & Sanitasi', 'description' => 'Kran air patah/bocor, wastafel tersumbat, toilet mampet.'],
                 ['feature_id' => $ipsrsPelaporanId, 'name' => 'Alat Medis (Alkes)', 'description' => 'Kerusakan fisik atau fungsi pada alat kesehatan medis.'],
                 ['feature_id' => $ipsrsPelaporanId, 'name' => 'Sarana Fisik Gedung', 'description' => 'Pintu rusak, plafon bocor, dinding retak, kunci rusak.'],
-                // Kalibrasi
-                ['feature_id' => $ipsrsKalibrasiId, 'name' => 'Kalibrasi Tensimeter', 'description' => 'Pengujian akurasi tekanan pada tensimeter raksa/digital.'],
-                ['feature_id' => $ipsrsKalibrasiId, 'name' => 'Kalibrasi ECG / EKG', 'description' => 'Sertifikasi akurasi modul rekam jantung.'],
-                // Usulan
-                ['feature_id' => $ipsrsUsulanId, 'name' => 'Usulan Renovasi Ruangan', 'description' => 'Usulan perbaikan atau tata ruang unit.'],
             ]);
         }
 
         // 6. Create default users for testing if none exist
-        if (User::count() === 0) {
-            // Admin User
+        if (User::count() <= 1) {
+            // Delete any existing default to clean up
+            User::query()->delete();
+
+            $commonPassword = Hash::make('12345678');
+
+            // 1. Admin User
             User::create([
                 'name' => 'Administrator',
                 'nip' => '197001011995011001',
                 'username' => 'admin',
                 'email' => 'admin@example.com',
-                'password' => Hash::make('password'),
+                'password' => $commonPassword,
                 'role_id' => 1, // ADMINISTRATOR
+                'is_active' => true,
+                'approved_by' => 1,
+                'approved_at' => now(),
+            ]);
+
+            // 2. Director User
+            User::create([
+                'name' => 'Dr. Hermawan (Direktur)',
+                'nip' => '197102021996021002',
+                'username' => 'direktur',
+                'email' => 'direktur@example.com',
+                'password' => $commonPassword,
+                'role_id' => 2, // DIRECTOR
+                'is_active' => true,
+                'approved_by' => 1,
+                'approved_at' => now(),
+            ]);
+
+            // 3. Division Head
+            User::create([
+                'name' => 'Budi Santoso (Kabid Penunjang)',
+                'nip' => '197203031997031003',
+                'username' => 'kabid',
+                'email' => 'kabid@example.com',
+                'password' => $commonPassword,
+                'role_id' => 3, // DIVISION_HEAD
+                'is_active' => true,
+                'approved_by' => 1,
+                'approved_at' => now(),
+            ]);
+
+            // 4. Section Head
+            User::create([
+                'name' => 'Rina Amelia (Kasi Fasilitas)',
+                'nip' => '197304041998042004',
+                'username' => 'kasi',
+                'email' => 'kasi@example.com',
+                'password' => $commonPassword,
+                'role_id' => 4, // SECTION_HEAD
+                'is_active' => true,
+                'approved_by' => 1,
+                'approved_at' => now(),
+            ]);
+
+            // 5. Unit Head (IPRS)
+            User::create([
+                'name' => 'Hendra Wijaya (Ka. Unit IPSRS)',
+                'nip' => '197405051999051005',
+                'username' => 'kanit_ipsrs',
+                'email' => 'kanit_ipsrs@example.com',
+                'password' => $commonPassword,
+                'role_id' => 5, // UNIT_HEAD
+                'supporting_unit_id' => 8, // IPSRS
+                'is_active' => true,
+                'approved_by' => 1,
+                'approved_at' => now(),
+            ]);
+
+            // 6. Technician 1
+            User::create([
+                'name' => 'Joko Prasetyo (Teknisi IPSRS)',
+                'nip' => '197506062000061006',
+                'username' => 'teknisi1',
+                'email' => 'teknisi1@example.com',
+                'password' => $commonPassword,
+                'role_id' => 6, // TECHNICIAN
+                'supporting_unit_id' => 8, // IPSRS
+                'is_active' => true,
+                'approved_by' => 1,
+                'approved_at' => now(),
+            ]);
+
+            // 7. Technician 2
+            User::create([
+                'name' => 'Agus Setiawan (Teknisi IPSRS)',
+                'nip' => '197607072001071007',
+                'username' => 'teknisi2',
+                'email' => 'teknisi2@example.com',
+                'password' => $commonPassword,
+                'role_id' => 6, // TECHNICIAN
+                'supporting_unit_id' => 8, // IPSRS
+                'is_active' => true,
+                'approved_by' => 1,
+                'approved_at' => now(),
+            ]);
+
+            // 8. Room Head (IGD)
+            User::create([
+                'name' => 'Siti Rahmah (Karu IGD)',
+                'nip' => '197708082002082008',
+                'username' => 'karu_igd',
+                'email' => 'karu_igd@example.com',
+                'password' => $commonPassword,
+                'role_id' => 7, // ROOM_HEAD
+                'room_id' => 1, // Ruang IGD
+                'is_active' => true,
+                'approved_by' => 1,
+                'approved_at' => now(),
+            ]);
+
+            // 9. Reporter / Staff
+            User::create([
+                'name' => 'Dian Lestari (Staff Perawat)',
+                'nip' => '197809092003092009',
+                'username' => 'staf_dian',
+                'email' => 'staf_dian@example.com',
+                'password' => $commonPassword,
+                'role_id' => 8, // REPORTER
+                'room_id' => 1, // Ruang IGD
                 'is_active' => true,
                 'approved_by' => 1,
                 'approved_at' => now(),

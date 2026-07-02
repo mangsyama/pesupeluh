@@ -44,3 +44,7 @@ Homestead.yaml
 # Build artifacts
 /.codex
 /.zed
+
+# Local development scripts
+/run-dev.ps1
+

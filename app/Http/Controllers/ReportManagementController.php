@@ -1,0 +1,143 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\ServiceTicket;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+
+class ReportManagementController extends Controller
+{
+    /**
+     * Halaman index / riwayat tugas kerja operasional untuk role yang bersangkutan.
+     */
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        $roleId = (int) $user->role_id;
+        $userId = (int) $user->id;
+
+        // Validasi akses operasional: hanya Admin, Management, Kepala Unit, Teknisi, dan Kepala Ruangan
+        if (!in_array($roleId, [1, 2, 3, 4, 5, 6, 7])) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $query = ServiceTicket::select([
+            'id', 
+            'uuid', 
+            'ticket_number', 
+            'reporter_id', 
+            'room_id', 
+            'category_id', 
+            'status', 
+            'priority',
+            'problem_description',
+            'created_at',
+        ])
+        ->with([
+            'reporter:id,name',
+            'room:id,name',
+            'category:id,name,feature_id',
+            'category.unitFeature:id,name,supporting_unit_id',
+            'category.unitFeature.supportingUnit:id,name',
+        ])
+        ->whereNull('deleted_at');
+
+        // Scoping data berdasarkan peran/role:
+        if ($roleId === 1) {
+            // Admin: melihat semua
+        } elseif (in_array($roleId, [2, 3, 4])) {
+            // Direktur / Manajemen: melihat semua
+        } elseif ($roleId === 5) {
+            // Kepala Unit (IPRS/dll): melihat tiket yang berada di dalam unit penunjang mereka
+            $query->whereHas('category.unitFeature', function ($q) use ($user) {
+                $q->where('supporting_unit_id', $user->supporting_unit_id);
+            });
+        } elseif ($roleId === 6) {
+            // Teknisi: melihat tiket yang ditugaskan kepada mereka
+            $query->whereHas('assignments', function ($q) use ($userId) {
+                $q->where('technician_id', $userId);
+            });
+        } elseif ($roleId === 7) {
+            // Kepala Ruangan: melihat tiket yang dilaporkan dari ruangan mereka
+            $query->where('room_id', $user->room_id);
+        }
+
+        $query->orderByDesc('created_at');
+
+        // Filter pencarian
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('ticket_number', 'like', "%{$search}%")
+                  ->orWhere('problem_description', 'like', "%{$search}%")
+                  ->orWhereHas('reporter', fn($r) => $r->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        // Filter status
+        if ($status = $request->input('status')) {
+            if (str_contains($status, ',')) {
+                $query->whereIn('status', explode(',', $status));
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        return Inertia::render('ReportManagement/History', [
+            'tickets'  => $query->paginate(15)->withQueryString(),
+            'filters'  => $request->only(['search', 'status']),
+        ]);
+    }
+
+    /**
+     * Halaman detail operasional untuk memproses disposisi / eksekusi tiket.
+     */
+    public function show(Request $request, ServiceTicket $ticket)
+    {
+        $ticket->load([
+            'reporter:id,name,nip',
+            'validator:id,name,nip',
+            'room:id,name,location_floor',
+            'category.unitFeature.supportingUnit.division',
+            'assignments.technician:id,name,nip',
+            'attachments.user:id,name',
+        ]);
+
+        $user = $request->user();
+        $roleId = (int) $user->role_id;
+        $supportingUnitId = (int) $ticket->category->unitFeature->supporting_unit_id;
+
+        // Otorisasi akses detail operasional
+        if ($roleId === 1) {
+            // Admin: bebas akses
+        } elseif (in_array($roleId, [2, 3, 4])) {
+            // Direktur/Manajemen: bebas pantau
+        } elseif ($roleId === 5 && (int)$user->supporting_unit_id === $supportingUnitId) {
+            // Kepala unit penunjang terkait
+        } elseif ($roleId === 6 && $ticket->assignments()->where('technician_id', $user->id)->exists()) {
+            // Teknisi yang ditugaskan
+        } elseif ($roleId === 7 && $ticket->room_id === $user->room_id) {
+            // Kepala ruangan tempat kejadian
+        } else {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $technicians = [];
+        // List teknisi untuk keperluan disposisi oleh Kepala Unit atau Admin
+        if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {
+            $technicians = User::where('role_id', 6) // TECHNICIAN
+                ->where('supporting_unit_id', $supportingUnitId)
+                ->where('is_active', 1)
+                ->orderBy('name')
+                ->get(['id', 'name', 'nip']);
+        }
+
+        return Inertia::render('ReportManagement/Show', [
+            'ticket' => $ticket,
+            'technicians' => $technicians,
+            'personal' => false,
+        ]);
+    }
+}

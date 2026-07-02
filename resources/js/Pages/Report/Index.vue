@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { FileText, Download, FileSpreadsheet, BarChart3, CheckCircle2, Clock } from '@lucide/vue';
+import { FileText, Download, BarChart3, CheckCircle2, Clock } from '@lucide/vue';
 import { getCurrentInstance } from 'vue';
 
 const { proxy } = getCurrentInstance();
@@ -30,14 +30,15 @@ const exportCsv = () => {
     <AuthenticatedLayout>
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full space-y-4">
-                <!-- Stats bulan berjalan (data real) -->
+                
+                <!-- Stats bulan berjalan (data real, loaded synchronously for instant display) -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex items-center gap-4">
                         <div class="inline-flex items-center justify-center h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                             <BarChart3 class="h-5 w-5" />
                         </div>
                         <div>
-                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">{{ __('pages.reports.center.stat_total_month') }}</span>
+                            <span class="text-xs font-semibold text-slate-405 uppercase tracking-wide">{{ __('pages.reports.center.stat_total_month') }}</span>
                             <div class="text-2xl font-extrabold text-slate-950 dark:text-white mt-0.5">{{ stats.total_month }}</div>
                         </div>
                     </div>
@@ -46,7 +47,7 @@ const exportCsv = () => {
                             <CheckCircle2 class="h-5 w-5" />
                         </div>
                         <div>
-                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">{{ __('pages.reports.center.stat_verified') }}</span>
+                            <span class="text-xs font-semibold text-slate-405 uppercase tracking-wide">{{ __('pages.reports.center.stat_verified') }}</span>
                             <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">{{ stats.completed }}</div>
                         </div>
                     </div>
@@ -55,7 +56,7 @@ const exportCsv = () => {
                             <Clock class="h-5 w-5" />
                         </div>
                         <div>
-                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">{{ __('pages.reports.center.stat_pending') }}</span>
+                            <span class="text-xs font-semibold text-slate-405 uppercase tracking-wide">{{ __('pages.reports.center.stat_pending') }}</span>
                             <div class="text-2xl font-extrabold text-amber-500 mt-0.5">{{ stats.pending }}</div>
                         </div>
                     </div>
@@ -71,7 +72,7 @@ const exportCsv = () => {
                                 <FileText class="h-6 w-6" />
                             </div>
                             <h3 class="text-lg font-bold text-slate-950 dark:text-white mb-2">{{ __('pages.reports.center.pdf_title') }}</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                            <p class="text-sm text-slate-505 dark:text-slate-400 leading-relaxed mb-6">
                                 {{ __('pages.reports.center.pdf_desc') }}
                             </p>
                         </div>
@@ -90,10 +91,10 @@ const exportCsv = () => {
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
                         <div>
                             <div class="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 mb-4">
-                                <FileSpreadsheet class="h-6 w-6" />
+                                <BarChart3 class="h-6 w-6" />
                             </div>
                             <h3 class="text-lg font-bold text-slate-950 dark:text-white mb-2">{{ __('pages.reports.center.csv_title') }}</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+                            <p class="text-sm text-slate-550 dark:text-slate-400 leading-relaxed mb-6">
                                 {{ __('pages.reports.center.csv_desc') }}
                             </p>
                         </div>
@@ -109,6 +110,7 @@ const exportCsv = () => {
                     </div>
 
                 </div>
+
             </div>
         </div>
     </AuthenticatedLayout>

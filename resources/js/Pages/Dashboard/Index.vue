@@ -11,6 +11,8 @@ import {
     Settings
 } from '@lucide/vue';
 
+const { proxy } = getCurrentInstance();
+
 const props = defineProps({
     totalTicketsCount: {
         type: Number,
@@ -37,8 +39,6 @@ const props = defineProps({
         default: () => []
     }
 });
-
-const { proxy } = getCurrentInstance();
 
 const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -145,9 +145,8 @@ const categoriesBreakdown = computed(() => {
                         </p>
                     </div>
 
-                    <!-- Abstract Geometric Background Shapes (Watermark style) -->
-                    <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-                        <div class="absolute -right-16 -top-16 w-80 h-80 border-2 border-white rounded-[60px] rotate-[15deg]"></div>
+                    <!-- Decorative background patterns (pure CSS modern rings) -->
+                    <div class="absolute inset-0 opacity-10 dark:opacity-5 pointer-events-none overflow-hidden select-none">
                         <div class="absolute -right-28 -top-28 w-80 h-80 border-2 border-white rounded-[80px] rotate-[15deg]"></div>
                         <div class="absolute -right-40 -top-40 w-80 h-80 border-2 border-white rounded-[100px] rotate-[15deg]"></div>
                     </div>
@@ -161,11 +160,11 @@ const categoriesBreakdown = computed(() => {
                         class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between"
                     >
                         <div class="space-y-1">
-                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ stat.label }}</span>
+                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-505 uppercase tracking-wider">{{ stat.label }}</span>
                             <div class="text-3xl font-extrabold text-slate-950 dark:text-white">{{ stat.value }}</div>
                             <div class="flex items-center gap-1 mt-1">
                                 <TrendingUp v-if="stat.isPositive" class="h-3 w-3 text-emerald-500" />
-                                <span :class="['text-[11px] font-medium', stat.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500']">
+                                <span :class="['text-[11px] font-medium', stat.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-505']">
                                     {{ stat.change }}
                                 </span>
                             </div>
@@ -205,18 +204,18 @@ const categoriesBreakdown = computed(() => {
                                     </thead>
                                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs text-slate-700 dark:text-slate-300">
                                         <tr v-if="recentReports.length === 0">
-                                            <td colspan="4" class="py-8 text-center text-slate-400 dark:text-slate-500">
+                                            <td colspan="4" class="py-8 text-center text-slate-400 dark:text-slate-505">
                                                 {{ __('Belum ada aktivitas laporan terbaru.') }}
                                             </td>
                                         </tr>
                                         <tr v-else v-for="report in recentReports" :key="report.id" class="align-middle">
                                             <td class="py-3.5 pr-4">
                                                 <div class="font-bold text-slate-950 dark:text-white">{{ report.id }}</div>
-                                                <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate max-w-[180px]" :title="report.title">{{ report.title }}</div>
+                                                <div class="text-[11px] text-slate-405 mt-0.5 truncate max-w-[180px]" :title="report.title">{{ report.title }}</div>
                                             </td>
                                             <td class="py-3.5 px-4 whitespace-nowrap">
                                                 <div class="font-medium text-slate-800 dark:text-slate-200">{{ report.author }}</div>
-                                                <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ report.date }}</div>
+                                                <div class="text-[10px] text-slate-405 mt-0.5">{{ report.date }}</div>
                                             </td>
                                             <td class="py-3.5 px-4 whitespace-nowrap">
                                                 <span :class="[
@@ -250,11 +249,11 @@ const categoriesBreakdown = computed(() => {
                         <div>
                             <h4 class="text-base font-bold text-slate-950 dark:text-white mb-4">{{ __('pages.dashboard.unit_volume') }}</h4>
                             <div class="space-y-4">
-                                <div v-if="categoriesBreakdown.length === 0" class="text-center py-8 text-xs text-slate-400 dark:text-slate-500 font-semibold">
+                                <div v-if="categoriesBreakdown.length === 0" class="text-center py-8 text-xs text-slate-400 dark:text-slate-505 font-semibold">
                                     {{ __('Belum ada data volume pelaporan unit.') }}
                                 </div>
                                 <div v-else v-for="category in categoriesBreakdown" :key="category.name" class="space-y-1">
-                                    <div class="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    <div class="flex items-center justify-between text-xs font-semibold text-slate-705 dark:text-slate-300">
                                         <span class="truncate max-w-[170px]" :title="category.name">{{ category.name }}</span>
                                         <span>{{ category.count }} {{ __('pages.dashboard.reports_count') }}</span>
                                     </div>
@@ -268,6 +267,7 @@ const categoriesBreakdown = computed(() => {
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -290,4 +290,3 @@ const categoriesBreakdown = computed(() => {
   animation: spa-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 </style>
-

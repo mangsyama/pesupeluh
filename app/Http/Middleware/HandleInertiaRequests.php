@@ -29,13 +29,13 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        return [
+        $shared = [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                'pending_approvals_count' => $request->user() ? \App\Models\User::whereNull('approved_by')->count() : 0,
+                'pending_approvals_count' => $request->user() ? \Inertia\Inertia::defer(fn() => \App\Models\User::whereNull('approved_by')->count()) : 0,
             ],
-            'notifications' => $request->user() ? $request->user()->unreadNotifications->map(function ($notification) {
+            'notifications' => $request->user() ? \Inertia\Inertia::defer(fn() => $request->user()->unreadNotifications->map(function ($notification) {
                 return [
                     'id' => $notification->id,
                     'type' => $notification->data['type'] ?? 'user',
@@ -47,11 +47,18 @@ class HandleInertiaRequests extends Middleware
                     'created_at' => $notification->created_at,
                     'time' => $notification->created_at ? $notification->created_at->diffForHumans() : null,
                 ];
-            }) : [],
-            'unread_notifications_count' => $request->user() ? $request->user()->unreadNotifications()->count() : 0,
+            })) : [],
+            'unread_notifications_count' => $request->user() ? \Inertia\Inertia::defer(fn() => $request->user()->unreadNotifications()->count()) : 0,
             'locale' => app()->getLocale(),
             'translations' => $this->getTranslations(),
         ];
+
+        // Release session lock early for GET requests to prevent request queuing/serialization (like Genesys architecture)
+        if ($request->isMethod('GET') && $request->hasSession()) {
+            $request->session()->save();
+        }
+
+        return $shared;
     }
 
     /**

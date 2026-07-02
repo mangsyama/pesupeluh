@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle } from '@lucide/vue';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench } from '@lucide/vue';
 
 const sidebarOpen = ref(false);
 const isDark = ref(false);
@@ -180,78 +180,118 @@ const isRouteActive = (item) => {
     if (route().current(item.routeName)) {
         return true;
     }
+    if (item.routeName === 'reports-management.index' && route().current('reports-management.show')) {
+        return true;
+    }
+    if (item.routeName === 'reports.history' && route().current('reports.show')) {
+        return true;
+    }
     if (item.routeName === 'settings.index' && route().current('profile.edit')) {
+        return true;
+    }
+    if (item.routeName === 'services.index' && route().current('services.*')) {
         return true;
     }
     return false;
 };
 
-const menuGroups = [
-    {
-        title: 'menu.main_menu',
-        items: [
-            { label: 'menu.dashboard', routeName: 'dashboard', icon: LayoutDashboard }
-        ]
-    },
-    {
-        title: 'menu.services_reports',
-        items: [
-            { label: 'menu.supporting_services', routeName: 'services.index', icon: Activity },
-            { label: 'menu.reporting_history', routeName: 'reports.history', icon: History },
-            { label: 'menu.reports_export', routeName: 'reports.index', icon: FileBarChart2 }
-        ]
-    },
-    {
-        title: 'menu.master_data',
-        items: [
-            { 
-                label: 'menu.service_management', 
-                icon: Database,
-                children: [
-                    { label: 'menu.room_management', routeName: 'service-management.rooms', icon: MapPin },
-                    { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers },
-                    { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Building2 }
-                ]
-            },
-            { 
-                label: 'menu.user_management', 
-                icon: Users,
-                children: [
-                    { label: 'menu.approval', routeName: 'users.approvals', icon: ShieldAlert },
-                    { label: 'menu.super_admin', routeName: 'users.admin', icon: Shield },
-                    { label: 'menu.management', routeName: 'users.management', icon: Users },
-                    { label: 'menu.unit_head', routeName: 'users.unit-head', icon: User },
-                    { label: 'menu.technician', routeName: 'users.technician', icon: User },
-                    { label: 'menu.room_head', routeName: 'users.room-head', icon: User },
-                    { label: 'menu.reporter', routeName: 'users.reporter', icon: User }
-                ]
-            }
-        ]
-    },
-    {
+const user = computed(() => page.props.auth?.user);
+
+const menuGroups = computed(() => {
+    const roleId = Number(user.value?.role_id);
+    const groups = [
+        {
+            title: 'menu.main_menu',
+            items: [
+                { label: 'menu.dashboard', routeName: 'dashboard', icon: LayoutDashboard }
+            ]
+        },
+        {
+            title: 'menu.services_reports',
+            items: [
+                { label: 'menu.supporting_services', routeName: 'services.index', icon: Activity },
+                { label: 'menu.reporting_history', routeName: 'reports.history', icon: History }
+            ]
+        }
+    ];
+
+    // If role has operational duties, add Management item
+    if (roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4 || roleId === 5 || roleId === 6 || roleId === 7) {
+        groups[1].items.push({
+            label: 'Manajemen Laporan',
+            routeName: 'reports-management.index',
+            icon: Wrench
+        });
+    }
+
+    groups[1].items.push({
+        label: 'menu.reports_export',
+        routeName: 'reports.index',
+        icon: FileBarChart2
+    });
+
+    const isSystemAdmin = roleId === 1;
+
+    // Master data
+    if (isSystemAdmin) {
+        groups.push({
+            title: 'menu.master_data',
+            items: [
+                { 
+                    label: 'menu.service_management', 
+                    icon: Database,
+                    children: [
+                        { label: 'menu.room_management', routeName: 'service-management.rooms', icon: MapPin },
+                        { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers },
+                        { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Building2 }
+                    ]
+                },
+                { 
+                    label: 'menu.user_management', 
+                    icon: Users,
+                    children: [
+                        { label: 'menu.approval', routeName: 'users.approvals', icon: ShieldAlert },
+                        { label: 'menu.super_admin', routeName: 'users.admin', icon: Shield },
+                        { label: 'menu.management', routeName: 'users.management', icon: Users },
+                        { label: 'menu.unit_head', routeName: 'users.unit-head', icon: User },
+                        { label: 'menu.technician', routeName: 'users.technician', icon: User },
+                        { label: 'menu.room_head', routeName: 'users.room-head', icon: User },
+                        { label: 'menu.reporter', routeName: 'users.reporter', icon: User }
+                    ]
+                }
+            ]
+        });
+    }
+
+    groups.push({
         title: 'menu.system',
         items: [
             { label: 'menu.settings', routeName: 'settings.index', icon: Settings }
         ]
-    },
-    {
-        title: 'menu.design_system_group',
-        items: [
-            { 
-                label: 'menu.design_components', 
-                icon: Palette,
-                children: [
-                    { label: 'menu.ds_overview', routeName: 'design-system.index', icon: LayoutDashboard },
-                    { label: 'menu.ds_buttons', routeName: 'design-system.buttons-badges', icon: Play },
-                    { label: 'menu.ds_forms', routeName: 'design-system.forms', icon: Type },
-                    { label: 'menu.ds_modals', routeName: 'design-system.modals-alerts', icon: FileText },
-                    { label: 'menu.ds_tables', routeName: 'design-system.tables', icon: Database },
-                    { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers }
-                ]
-            }
-        ]
+    });
+
+    if (isSystemAdmin) {
+        groups.push({
+            title: 'menu.design_system_group',
+            items: [
+                { 
+                    label: 'menu.design_components', 
+                    icon: Palette,
+                    children: [
+                        { label: 'menu.ds_overview', routeName: 'design-system.index', icon: LayoutDashboard },
+                        { label: 'menu.ds_buttons', routeName: 'design-system.buttons-badges', icon: Play },
+                        { label: 'menu.ds_forms', routeName: 'design-system.forms', icon: Type },
+                        { label: 'menu.ds_modals', routeName: 'design-system.modals-alerts', icon: FileText },
+                        { label: 'menu.ds_tables', routeName: 'design-system.tables', icon: Database },
+                        { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers }
+                    ]
+                }
+            ]
+        });
     }
-];
+
+    return groups;
+});
 
 const triggerSupportBack = () => {
     window.dispatchEvent(new CustomEvent('services-back-clicked'));
@@ -262,8 +302,11 @@ const backRoute = computed(() => {
     if (route().current('profile.edit')) {
         return route('settings.index');
     }
-    if (route().current('tickets.show')) {
+    if (route().current('reports.show')) {
         return route('reports.history');
+    }
+    if (route().current('reports-management.show')) {
+        return route('reports-management.index');
     }
     if (route().current('services.units.show') && page.props.unit) {
         const isMedik = page.props.unit.division?.name?.toLowerCase().includes('medik') && 
@@ -453,7 +496,9 @@ const mobilePageTitles = [
     { routeName: 'services.units.show', label: 'Unit Penunjang' },
     { routeName: 'reports.index', label: 'Laporan & Export' },
     { routeName: 'reports.history', label: 'Riwayat Pelaporan' },
-    { routeName: 'tickets.show', label: 'Detail Tiket' },
+    { routeName: 'reports.show', label: 'Detail Laporan Saya' },
+    { routeName: 'reports-management.index', label: 'Manajemen Laporan' },
+    { routeName: 'reports-management.show', label: 'Detail Manajemen Laporan' },
     { routeName: 'service-management.rooms', label: 'Manajemen Ruangan' },
     { routeName: 'service-management.categories', label: 'Kategori Kerusakan' },
     { routeName: 'service-management.supporting-units', label: 'Layanan Penunjang' },
@@ -498,10 +543,10 @@ const getGroupInitials = (title) => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-100 dark:bg-slate-950">
+    <div class="min-h-screen bg-gray-100 dark:bg-slate-950 overflow-x-hidden">
 
         <!-- Navbar -->
-        <nav class="relative sticky top-0 z-40 w-full h-20 mobile-nav-gradient shadow-none border-none -mb-4 transition-all duration-300 ease-in-out">
+        <nav class="fixed top-0 left-0 right-0 z-40 w-full h-20 bg-gray-100/80 dark:bg-slate-950/80 backdrop-blur-md shadow-none border-b border-slate-100/50 dark:border-slate-800/50 transition-all duration-300 ease-in-out">
             <div :class="['w-full px-4 lg:pr-4 transition-all duration-300 ease-in-out', sidebarCollapsed ? 'lg:pl-[96px]' : 'lg:pl-[304px]']">
                 <div class="flex h-20 items-center justify-between gap-3">
 
@@ -509,9 +554,9 @@ const getGroupInitials = (title) => {
                     <div class="flex items-center flex-1">
                         <!-- Tombol Back (Desktop - Hanya tampil di sub-halaman layanan penunjang atau profile) -->
                         <Link
-                            v-if="route().current('services.medik') || route().current('services.non-medik') || route().current('profile.edit') || route().current('services.units.show') || route().current('tickets.show')"
+                            v-if="route().current('services.medik') || route().current('services.non-medik') || route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show')"
                             :href="backRoute"
-                            @click="route().current('profile.edit') || route().current('services.units.show') || route().current('tickets.show') ? null : triggerSupportBack"
+                            @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') ? null : triggerSupportBack"
                             class="hidden lg:inline-flex items-center justify-center h-11 w-11 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition duration-150 focus:outline-none shadow-sm border border-white dark:border-slate-800 mr-3 flex-shrink-0"
                             title="Kembali"
                         >
@@ -522,9 +567,9 @@ const getGroupInitials = (title) => {
                         <div class="lg:hidden flex items-center gap-3 mr-4 flex-shrink-0">
                             <!-- Tombol Back jika di dalam sub-halaman layanan penunjang atau profile (Mobile) -->
                             <Link
-                                v-if="route().current('services.medik') || route().current('services.non-medik') || route().current('profile.edit') || route().current('services.units.show') || route().current('tickets.show')"
+                                v-if="route().current('services.medik') || route().current('services.non-medik') || route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show')"
                                 :href="backRoute"
-                                @click="route().current('profile.edit') || route().current('services.units.show') || route().current('tickets.show') ? null : triggerSupportBack"
+                                @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') ? null : triggerSupportBack"
                                 class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-md border border-white dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition duration-150 focus:outline-none"
                                 aria-label="Kembali"
                             >
@@ -1331,7 +1376,7 @@ const getGroupInitials = (title) => {
             </aside>
 
             <!-- Main Content -->
-            <main :class="['flex-1 w-full min-h-[calc(100vh-4rem)] lg:min-h-screen transition-all duration-300 ease-in-out', sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72']">
+            <main :class="['flex-1 min-w-0 w-full pt-16 min-h-screen transition-all duration-300 ease-in-out', sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72']">
                 <!-- Page Heading slot (jika ada) -->
                 <header
                     v-if="$slots.header"
@@ -1350,31 +1395,5 @@ const getGroupInitials = (title) => {
 </template>
 
 <style scoped>
-.mobile-nav-gradient {
-    background: linear-gradient(
-        to bottom,
-        rgb(241 245 249) 0%,
-        rgba(241, 245, 249, 0.98) 15%,
-        rgba(241, 245, 249, 0.92) 30%,
-        rgba(241, 245, 249, 0.80) 45%,
-        rgba(241, 245, 249, 0.60) 60%,
-        rgba(241, 245, 249, 0.35) 75%,
-        rgba(241, 245, 249, 0.12) 90%,
-        transparent 100%
-    );
-}
-
-.dark .mobile-nav-gradient {
-    background: linear-gradient(
-        to bottom,
-        rgb(2 6 23) 0%,
-        rgb(2 6 23 / 98%) 15%,
-        rgb(2 6 23 / 92%) 30%,
-        rgb(2 6 23 / 80%) 45%,
-        rgb(2 6 23 / 60%) 60%,
-        rgb(2 6 23 / 35%) 75%,
-        rgb(2 6 23 / 12%) 90%,
-        transparent 100%
-    );
-}
+/* Navbar blur effect is now handled with backdrop-blur-md class */
 </style>

@@ -76,7 +76,7 @@ class TicketController extends Controller
     /**
      * Display ticket details and actions.
      */
-    public function show(ServiceTicket $ticket)
+    public function show(Request $request, ServiceTicket $ticket)
     {
         $ticket->load([
             'reporter:id,name,nip',
@@ -106,6 +106,7 @@ class TicketController extends Controller
         return Inertia::render('Ticket/Show', [
             'ticket' => $ticket,
             'technicians' => $technicians,
+            'personal' => $request->boolean('personal'),
         ]);
     }
 

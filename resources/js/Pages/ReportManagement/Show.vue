@@ -3,9 +3,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
-import ReporterTicketShow from './Partials/ReporterTicketShow.vue';
-import UnitHeadTicketShow from './Partials/UnitHeadTicketShow.vue';
-import TechnicianTicketShow from './Partials/TechnicianTicketShow.vue';
+import ReporterTicketShow from '@/Pages/Ticket/Partials/ReporterTicketShow.vue';
+import UnitHeadTicketShow from '@/Pages/Ticket/Partials/UnitHeadTicketShow.vue';
+import TechnicianTicketShow from '@/Pages/Ticket/Partials/TechnicianTicketShow.vue';
 
 const props = defineProps({
     ticket: {
@@ -15,41 +15,33 @@ const props = defineProps({
     technicians: {
         type: Array,
         default: () => []
-    },
-    personal: {
-        type: Boolean,
-        default: false
     }
 });
 
 const user = computed(() => usePage().props.auth.user);
 
 const activeComponent = computed(() => {
-    // Jika melihat laporan pribadi, gunakan layout list reporter biasa
-    if (props.personal) {
-        return ReporterTicketShow;
-    }
-    
     const roleId = Number(user.value?.role_id);
     if (roleId === 5 || roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4) {
         return UnitHeadTicketShow;
     } else if (roleId === 6) {
         return TechnicianTicketShow;
     } else {
+        // Room Head (Role 7) melihat detail pelapor biasa
         return ReporterTicketShow;
     }
 });
 </script>
 
 <template>
-    <Head :title="`Detail Laporan - #${ticket.ticket_number}`" />
+    <Head :title="`Manajemen Laporan - #${ticket.ticket_number}`" />
     
     <AuthenticatedLayout>
         <component 
             :is="activeComponent" 
             :ticket="ticket" 
             :technicians="technicians" 
-            :personal="personal"
+            :personal="false"
         />
     </AuthenticatedLayout>
 </template>
