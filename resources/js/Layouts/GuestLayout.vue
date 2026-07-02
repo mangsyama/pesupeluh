@@ -81,13 +81,71 @@ const handleDemoToast = (event) => {
     }
 };
 
+const typedTitle = ref('');
+const typedTagline1 = ref('');
+const typedTagline2 = ref('');
+const activeCursor = ref('title');
+
+let isTypingActive = true;
+
+const startTypingAnimation = async () => {
+    const title = 'PESU PELUH';
+    const tagline1 = 'Pengendalian Terintegrasi';
+    const tagline2 = 'Unit Penunjang Dalam Satu Sentuhan';
+    
+    while (isTypingActive) {
+        // Reset states
+        typedTitle.value = '';
+        typedTagline1.value = '';
+        typedTagline2.value = '';
+        activeCursor.value = 'title';
+        
+        // Type Title
+        for (let i = 0; i <= title.length && isTypingActive; i++) {
+            typedTitle.value = title.slice(0, i);
+            await new Promise(resolve => setTimeout(resolve, 80));
+        }
+        
+        if (!isTypingActive) break;
+        await new Promise(resolve => setTimeout(resolve, 200));
+        activeCursor.value = 'tagline1';
+        
+        // Type Tagline 1
+        for (let i = 0; i <= tagline1.length && isTypingActive; i++) {
+            typedTagline1.value = tagline1.slice(0, i);
+            await new Promise(resolve => setTimeout(resolve, 30));
+        }
+        
+        if (!isTypingActive) break;
+        await new Promise(resolve => setTimeout(resolve, 100));
+        activeCursor.value = 'tagline2';
+        
+        // Type Tagline 2
+        for (let i = 0; i <= tagline2.length && isTypingActive; i++) {
+            typedTagline2.value = tagline2.slice(0, i);
+            await new Promise(resolve => setTimeout(resolve, 25));
+        }
+        
+        if (!isTypingActive) break;
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        activeCursor.value = 'none';
+        
+        // Wait 10 seconds before typing again
+        for (let s = 0; s < 100 && isTypingActive; s++) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // check flag every 100ms
+        }
+    }
+};
+
 onMounted(() => {
     isDark.value = document.documentElement.classList.contains('dark');
     window.addEventListener('show-demo-toast', handleDemoToast);
     window.addEventListener('trigger-custom-alert', handleCustomAlert);
+    startTypingAnimation();
 });
 
 onUnmounted(() => {
+    isTypingActive = false;
     window.removeEventListener('show-demo-toast', handleDemoToast);
     window.removeEventListener('trigger-custom-alert', handleCustomAlert);
 });
@@ -117,11 +175,21 @@ const __ = (key) => {
         
         <!-- Left Column (Branding Hero, hidden on mobile) -->
         <section class="hidden md:flex relative overflow-hidden bg-cover bg-center bg-no-repeat flex-col justify-between p-12 lg:p-16 text-white select-none h-full w-full"
-            style="background-image: linear-gradient(rgba(16, 185, 129, 0.55), rgba(4, 120, 87, 0.55)), url('/images/hospital-hero.jpg');">
+            style="background-image: linear-gradient(135deg, rgba(8, 51, 40, 0.92), rgba(4, 78, 56, 0.96)), url('/images/hospital-hero.jpg');">
             <!-- Put your hospital landing image at public/images/hospital-hero.jpg -->
             
+            <!-- Ambient Glow & Tech Dot Matrix Matrix Pattern (Aesthetic Ornaments) -->
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                <!-- Glowing ambient light blobs -->
+                <div class="absolute top-[-10%] right-[-10%] w-[380px] h-[380px] bg-emerald-500/10 rounded-full blur-[110px]"></div>
+                <div class="absolute bottom-[20%] left-[-15%] w-[420px] h-[420px] bg-teal-500/15 rounded-full blur-[130px]"></div>
+                <div class="absolute top-[40%] right-[20%] w-[250px] h-[250px] bg-emerald-400/5 rounded-full blur-[90px]"></div>
+                <!-- Clean technical dot grid overlay -->
+                <div class="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:24px_24px]"></div>
+            </div>
+
             <!-- Abstract Geometric Lines (SalesSkip-style) -->
-            <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-15">
+            <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-5">
                 <div class="absolute -left-16 -bottom-16 w-[450px] h-[450px] border-2 border-white rounded-[60px] rotate-[15deg] transition-transform duration-1000 hover:scale-105"></div>
                 <div class="absolute -left-28 -bottom-28 w-[450px] h-[450px] border-2 border-white rounded-[80px] rotate-[15deg] transition-transform duration-1000 hover:scale-105"></div>
                 <div class="absolute -left-40 -bottom-40 w-[450px] h-[450px] border-2 border-white rounded-[100px] rotate-[15deg] transition-transform duration-1000 hover:scale-105"></div>
@@ -133,25 +201,58 @@ const __ = (key) => {
                     <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain filter brightness-0 invert" />
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-xl font-bold tracking-widest uppercase leading-none">PESU PELUH</span>
-                    <span class="text-xs tracking-widest leading-tight text-slate-200 mt-1">
-                        Pengendalian Terintegrasi <br/> Unit Penunjang Dalam Satu Sentuhan
+                    <span class="text-xl font-bold tracking-widest uppercase leading-none flex items-center min-h-[1.25rem]">
+                        {{ typedTitle }}
+                        <span v-if="activeCursor === 'title'" class="inline-block w-[2px] h-[1.1em] bg-white ml-0.5 animate-pulse"></span>
+                    </span>
+                    <span class="text-xs tracking-widest leading-tight text-slate-200 mt-1 flex flex-col min-h-[2rem]">
+                        <span class="flex items-center">
+                            {{ typedTagline1 }}
+                            <span v-if="activeCursor === 'tagline1'" class="inline-block w-[2px] h-[1.1em] bg-white ml-0.5 animate-pulse"></span>
+                        </span>
+                        <span class="flex items-center">
+                            {{ typedTagline2 }}
+                            <span v-if="activeCursor === 'tagline2'" class="inline-block w-[2px] h-[1.1em] bg-white ml-0.5 animate-pulse"></span>
+                        </span>
                     </span>
                 </div>
             </div>
 
-            <!-- Hero Text (Rata kiri) -->
-            <div class="relative z-10 my-auto py-12 text-left">
-                <h2 class="text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight w-full max-w-xl">
-                    {{ __('auth.login.hero_title') }}
-                </h2>
-                <p class="text-slate-200 text-base lg:text-lg leading-relaxed mt-6 max-w-xl lg:max-w-2xl">
-                    {{ __('auth.login.hero_desc') }}
-                </p>
+            <!-- Unified Main Greeting Panel (Single border-only container) -->
+            <div class="relative z-20 my-auto border border-white/15 dark:border-white/10 rounded-3xl p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full backdrop-blur-xs shadow-[inset_0_1px_2px_rgba(255,255,255,0.1)]">
+                
+                <!-- Left Side: Director Portrait and Info Card -->
+                <div class="lg:col-span-5 xl:col-span-4 flex flex-col items-center lg:border-r border-white/15 lg:pr-8 pr-0 w-full relative">
+                    <!-- Portrait image container (with solid green backdrop and glass shimmer) -->
+                    <div class="w-full aspect-[3/4] rounded-xl overflow-hidden mb-4 shadow-md max-w-[210px] bg-emerald-700 border border-emerald-600/40 relative">
+                        <img src="/images/Direktur.png" alt="dr. Ni Luh Ketut Ayu Ratnawati, M.Kes" class="w-full h-full object-cover object-center select-none pointer-events-none relative z-10" />
+                        <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 z-20 pointer-events-none"></div>
+                    </div>
+                    
+                    <!-- Integrated Text Details (Rata Tengah) -->
+                    <span class="text-[9px] uppercase tracking-widest text-emerald-300 font-extrabold block text-center">DIREKTUR RSUD GIRI ASIH</span>
+                    <h4 class="text-xs font-extrabold mt-1 text-white leading-snug text-center">dr. Ni Luh Ketut Ayu Ratnawati, M.Kes</h4>
+                    
+                    <div class="w-8 h-0.5 bg-white/20 my-2.5 rounded-full mx-auto"></div>
+                    
+                    <p class="text-[10px] text-slate-200/90 italic leading-relaxed text-center">
+                        "Melayani Dengan Kasih"
+                    </p>
+                </div>
+
+                <!-- Right Side: Core Hero Text -->
+                <div class="lg:col-span-7 xl:col-span-8 text-left space-y-6 lg:pl-4">
+                    <h2 class="text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight leading-tight w-full">
+                        {{ __('auth.login.hero_title') }}
+                    </h2>
+                    <p class="text-slate-200 text-sm lg:text-base leading-relaxed opacity-95">
+                        {{ __('auth.login.hero_desc') }}
+                    </p>
+                </div>
             </div>
 
-            <!-- Footer (Rata kiri) -->
-            <div class="relative z-10 mt-auto text-xs text-slate-300/80 font-medium">
+            <!-- Footer (Rata kiri sejajar dengan foto & logo) -->
+            <div class="relative z-10 text-xs text-slate-350 font-medium text-left">
                 &copy; 2026 PESU PELUH. {{ __('global.all_rights_reserved') }}
             </div>
         </section>
