@@ -45,6 +45,11 @@ Homestead.yaml
 /.codex
 /.zed
 
+# Generated files
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+
 # Local development scripts
 /run-dev.ps1
 
