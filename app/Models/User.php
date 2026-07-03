@@ -79,4 +79,13 @@ class User extends Authenticatable
             set: fn (?string $value) => $value ? strtolower($value) : null,
         );
     }
+
+    /**
+     * Route notifications for the Telegram channel.
+     */
+    public function routeNotificationForTelegram()
+    {
+        return config('services.telegram.chat_id');
+    }
 }
+
