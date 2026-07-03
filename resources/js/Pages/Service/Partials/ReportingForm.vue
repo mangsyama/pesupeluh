@@ -216,14 +216,14 @@ const submitReport = () => {
             <!-- Active Form -->
             <form v-else @submit.prevent="submitReport" class="space-y-4">
                 <!-- Readonly Category Display -->
-                <div class="bg-slate-50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-850 rounded-xl p-3.5 flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider">{{ __('pages.services.kategori_terpilih') }}</span>
-                        <div class="text-xs font-bold text-slate-800 dark:text-slate-150 uppercase mt-0.5">{{ activeCategory?.name }}</div>
+                <div class="bg-slate-50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-850 rounded-xl p-3.5 flex items-center justify-between gap-4">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider leading-none">{{ __('pages.services.kategori_terpilih') }}</span>
+                        <div class="text-xs font-bold text-slate-800 dark:text-slate-150 uppercase mt-2 leading-none">{{ activeCategory?.name }}</div>
                     </div>
                     <span 
                         :class="[
-                            'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
+                            'inline-flex items-center justify-center px-2.5 py-1 rounded text-[10px] font-bold uppercase leading-none shrink-0',
                             isMedik 
                                 ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400' 
                                 : 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'

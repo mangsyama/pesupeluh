@@ -3,9 +3,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
-import ReporterHistory from '@/Pages/Report/Partials/ReporterHistory.vue';
-import UnitHeadHistory from '@/Pages/Report/Partials/UnitHeadHistory.vue';
-import TechnicianHistory from '@/Pages/Report/Partials/TechnicianHistory.vue';
+import ReporterIndex from '@/Pages/Report/Partials/ReporterIndex.vue';
+import UnitHeadIndex from './Partials/UnitHeadIndex.vue';
+import TechnicianIndex from './Partials/TechnicianIndex.vue';
 
 const props = defineProps({
     tickets: {
@@ -23,12 +23,12 @@ const user = computed(() => usePage().props.auth.user);
 const activeComponent = computed(() => {
     const roleId = Number(user.value?.role_id);
     if (roleId === 5 || roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4) {
-        return UnitHeadHistory;
+        return UnitHeadIndex;
     } else if (roleId === 6) {
-        return TechnicianHistory;
+        return TechnicianIndex;
     } else {
         // Room Head (Role 7) melihat daftar laporan ruangan mereka
-        return ReporterHistory;
+        return ReporterIndex;
     }
 });
 

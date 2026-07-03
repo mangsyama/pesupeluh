@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import ReporterTicketShow from '@/Pages/Ticket/Partials/ReporterTicketShow.vue';
+import ReporterShow from './Partials/ReporterShow.vue';
 
 const props = defineProps({
     ticket: {
@@ -19,8 +19,8 @@ const props = defineProps({
     <Head :title="`Detail Laporan - #${ticket.ticket_number}`" />
     
     <AuthenticatedLayout>
-        <!-- Personal reports are strictly read-only tracker (ReporterTicketShow) -->
-        <ReporterTicketShow 
+        <!-- Personal reports are strictly read-only tracker (ReporterShow) -->
+        <ReporterShow 
             :ticket="ticket" 
             :personal="true" 
         />

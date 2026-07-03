@@ -83,4 +83,15 @@ class ServiceTicket extends Model
     {
         return $this->hasMany(TicketAttachment::class, 'ticket_id');
     }
+
+    /**
+     * Accessor & Mutator for UUID to ensure it is always lowercase.
+     */
+    protected function uuid(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: fn (?string $value) => $value ? strtolower($value) : null,
+            set: fn (?string $value) => $value ? strtolower($value) : null,
+        );
+    }
 }

@@ -12,6 +12,8 @@ use App\Exports\TicketsExport;
 
 class ReportController extends Controller
 {
+    private const FILTER_SESSION_KEY = 'reports.history.filters';
+
     /**
      * Report Center – statistik ringkasan + halaman utama.
      */
@@ -21,7 +23,7 @@ class ReportController extends Controller
         $startOfMonth = $now->copy()->startOfMonth();
         $endOfMonth = $now->copy()->endOfMonth();
 
-        return Inertia::render('Report/Index', [
+        return Inertia::render('ReportExport/Index', [
             'stats' => [
                 'total_month'    => ServiceTicket::whereBetween('created_at', [$startOfMonth, $endOfMonth])
                     ->count(),
@@ -43,6 +45,20 @@ class ReportController extends Controller
         $user = $request->user();
         $userId = (int) $user->id;
 
+        if ($request->filled('search') || $request->filled('status')) {
+            $request->session()->put(self::FILTER_SESSION_KEY, [
+                'search' => (string) $request->input('search', ''),
+                'status' => (string) $request->input('status', ''),
+            ]);
+
+            return redirect()->route('reports.history');
+        }
+
+        $filters = $request->session()->get(self::FILTER_SESSION_KEY, [
+            'search' => '',
+            'status' => '',
+        ]);
+
         $query = ServiceTicket::select([
             'id', 
             'uuid', 
@@ -56,7 +72,7 @@ class ReportController extends Controller
             'created_at',
         ])
         ->with([
-            'reporter:id,name',
+            'reporter:id,name,phone_number',
             'room:id,name',
             'category:id,name,feature_id',
             'category.unitFeature:id,name,supporting_unit_id',
@@ -68,7 +84,7 @@ class ReportController extends Controller
         $query->orderByDesc('created_at');
 
         // Filter pencarian
-        if ($search = $request->input('search')) {
+        if ($search = $filters['search']) {
             $query->where(function ($q) use ($search) {
                 $q->where('ticket_number', 'like', "%{$search}%")
                   ->orWhere('problem_description', 'like', "%{$search}%");
@@ -76,7 +92,7 @@ class ReportController extends Controller
         }
 
         // Filter status
-        if ($status = $request->input('status')) {
+        if ($status = $filters['status']) {
             if (str_contains($status, ',')) {
                 $query->whereIn('status', explode(',', $status));
             } else {
@@ -84,10 +100,23 @@ class ReportController extends Controller
             }
         }
 
-        return Inertia::render('Report/History', [
-            'tickets'  => $query->paginate(15)->withQueryString(),
-            'filters'  => $request->only(['search', 'status']),
+        return Inertia::render('Report/Index', [
+            'tickets'  => $query->paginate(15),
+            'filters'  => $filters,
+            'personal' => true,
         ]);
+    }
+
+    public function storeFilters(Request $request)
+    {
+        $filters = [
+            'search' => (string) $request->input('search', ''),
+            'status' => (string) $request->input('status', ''),
+        ];
+
+        $request->session()->put(self::FILTER_SESSION_KEY, $filters);
+
+        return redirect()->route('reports.history');
     }
 
     /**

@@ -1,11 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue';
-import { Head, Link, useForm, usePage, router } from '@inertiajs/vue3';
-import Modal from '@/Components/Modal.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
-import DangerButton from '@/Components/DangerButton.vue';
-import { compressImage } from '@/Utils/imageCompressor';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import {
     Calendar,
     User,
@@ -14,15 +9,10 @@ import {
     Clock,
     Activity,
     FileText,
-    Camera,
-    UploadCloud,
+    Search,
     X,
     CheckCircle2,
     XCircle,
-    Info,
-    Play,
-    Pause,
-    Search,
     ImageIcon,
     UserCheck
 } from '@lucide/vue';
@@ -135,107 +125,6 @@ const formatDateTime = (dateStr) => {
     });
 };
 
-const respondTicket = () => {
-    router.post(route('tickets.respond', props.ticket.uuid));
-};
-
-const resolveForm = useForm({
-    resolution_status: '',
-    notes: '',
-    attachments: []
-});
-
-const completePreviews = ref([]);
-const completeFileInput = ref(null);
-const completeCameraInput = ref(null);
-
-const showCompleteModal = ref(false);
-const showPendingModal = ref(false);
-const showCancelModal = ref(false);
-
-const openCompleteModal = () => {
-    resolveForm.clearErrors();
-    resolveForm.resolution_status = 'COMPLETED';
-    resolveForm.notes = '';
-    completePreviews.value = [];
-    resolveForm.attachments = [];
-    showCompleteModal.value = true;
-};
-
-const openPendingModal = () => {
-    resolveForm.clearErrors();
-    resolveForm.resolution_status = 'PENDING';
-    resolveForm.notes = '';
-    showPendingModal.value = true;
-};
-
-const openCancelModal = () => {
-    resolveForm.clearErrors();
-    resolveForm.resolution_status = 'CANCEL';
-    resolveForm.notes = '';
-    showCancelModal.value = true;
-};
-
-const handleCompleteFileSelect = async (e) => {
-    const files = Array.from(e.target.files || []);
-    await processCompleteFiles(files);
-    if (e.target) e.target.value = '';
-};
-
-const processCompleteFiles = async (files) => {
-    const remaining = 5 - completePreviews.value.length;
-    const toProcess = files.slice(0, remaining);
-
-    for (const file of toProcess) {
-        if (!file.type.startsWith('image/')) continue;
-        
-        let dataUrl;
-        try {
-            dataUrl = await compressImage(file);
-        } catch {
-            dataUrl = await readFileAsDataURL(file);
-        }
-
-        completePreviews.value.push({
-            name: file.name,
-            size: file.size,
-            preview: dataUrl,
-            data: dataUrl
-        });
-    }
-    resolveForm.attachments = completePreviews.value.map(p => p.data);
-};
-
-const removeCompleteAttachment = (idx) => {
-    completePreviews.value.splice(idx, 1);
-    resolveForm.attachments = completePreviews.value.map(p => p.data);
-};
-
-const readFileAsDataURL = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-};
-
-const submitResolve = (status) => {
-    resolveForm.resolution_status = status;
-    resolveForm.post(route('tickets.resolve', props.ticket.uuid), {
-        onSuccess: () => {
-            showCompleteModal.value = false;
-            showPendingModal.value = false;
-            showCancelModal.value = false;
-            resolveForm.reset();
-        }
-    });
-};
-
-const resumeTicket = () => {
-    router.post(route('tickets.resume', props.ticket.uuid));
-};
-
 // Lightbox state
 const activeLightbox = ref(null);
 const openLightbox = (url) => {
@@ -329,7 +218,7 @@ const contextLabel = computed(() => {
             <!-- Main Section Layout Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 
-                <!-- Left Column: Details & Execution Panels -->
+                <!-- Left Column: Details -->
                 <div class="lg:col-span-2 space-y-4">
                     
                     <!-- Ticket Info Container -->
@@ -343,35 +232,35 @@ const contextLabel = computed(() => {
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="space-y-1">
-                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
                                     {{ __('pages.tickets.detail.reporter') }}
                                 </span>
-                                <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <User class="h-4 w-4 text-slate-400" />
+                                <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                    <User class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                     <span class="text-xs font-semibold">{{ ticket.reporter?.name }}</span>
-                                    <span v-if="ticket.reporter?.nip" class="text-[10px] text-slate-400 dark:text-slate-505 ml-1.5">({{ ticket.reporter.nip }})</span>
+                                    <span v-if="ticket.reporter?.nip" class="text-[10px] text-slate-400 dark:text-slate-555">({{ ticket.reporter.nip }})</span>
                                 </div>
                             </div>
 
                             <div class="space-y-1">
-                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
                                     {{ __('pages.tickets.detail.room_location') }}
                                 </span>
-                                <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <MapPin class="h-4 w-4 text-slate-400" />
+                                <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                    <MapPin class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                     <span class="text-xs font-semibold">{{ ticket.room?.name }}</span>
-                                    <span v-if="ticket.room?.location_floor" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium ml-1.5">({{ ticket.room.location_floor }})</span>
+                                    <span v-if="ticket.room?.location_floor" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">({{ ticket.room.location_floor }})</span>
                                 </div>
                             </div>
 
                             <div class="space-y-1">
-                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
                                     {{ __('pages.tickets.detail.category_unit') }}
                                 </span>
-                                <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <Activity class="h-4 w-4 text-slate-400" />
+                                <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                    <Activity class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                     <span class="text-xs font-semibold">{{ ticket.category?.name }}</span>
-                                    <span class="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase ml-1.5">[{{ ticket.category?.unit_feature?.name }}]</span>
+                                    <span class="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase">[{{ ticket.category?.unit_feature?.name }}]</span>
                                 </div>
                             </div>
 
@@ -397,7 +286,7 @@ const contextLabel = computed(() => {
 
                         <!-- Reporter Attachments Media Grid -->
                         <div class="space-y-3">
-                            <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-555 tracking-wider flex items-center gap-1.5">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-550 tracking-wider flex items-center gap-1.5">
                                 <ImageIcon class="h-3.5 w-3.5" />
                                 {{ __('pages.tickets.detail.attachments') }}
                             </span>
@@ -430,13 +319,13 @@ const contextLabel = computed(() => {
                         <!-- Validation Info & Assigned Tech list -->
                         <div v-if="ticket.status !== 'PENDING_VALIDATION'" class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4">
                             <div class="space-y-1">
-                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
                                     {{ __('pages.tickets.detail.validator_label') }}
                                 </span>
-                                <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <UserCheck class="h-4 w-4 text-slate-400" />
+                                <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                    <UserCheck class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                     <span class="text-xs font-semibold">{{ ticket.validator?.name }}</span>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-550 ml-1.5">({{ formatDateTime(ticket.validated_at) }})</span>
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-550">({{ formatDateTime(ticket.validated_at) }})</span>
                                 </div>
                             </div>
 
@@ -461,86 +350,6 @@ const contextLabel = computed(() => {
                         </div>
 
                     </div>
-
-                    <!-- Action Panel Card: Technician Execution Controls -->
-                    <div v-if="ticket.status !== 'PENDING_VALIDATION' && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCEL'" class="bg-white dark:bg-slate-900 border border-violet-100 dark:border-violet-900/50 rounded-2xl p-6 shadow-sm space-y-4 animate-spa-fade-in">
-                        <div>
-                            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                                {{ __('pages.tickets.detail.work_followup') }}
-                            </h3>
-                            <div class="h-0.5 bg-slate-50 dark:bg-slate-850 mt-2"></div>
-                        </div>
-
-                        <!-- Case 1: Assigned but not arrived yet -->
-                        <div v-if="ticket.status === 'ASSIGNED'" class="space-y-3">
-                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                                {{ __('pages.tickets.detail.arrive_instruction') }}
-                            </p>
-                            <button
-                                @click="respondTicket"
-                                class="w-full h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition duration-200"
-                            >
-                                <Clock class="h-4.5 w-4.5" />
-                                <span>{{ __('pages.tickets.detail.btn_arrive') }}</span>
-                            </button>
-                        </div>
-
-                        <!-- Case 2: In progress - Work updates -->
-                        <div v-else-if="ticket.status === 'IN_PROGRESS'" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <button
-                                @click="openCompleteModal"
-                                class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 transition duration-200"
-                            >
-                                <CheckCircle2 class="h-4.5 w-4.5" />
-                                <span>{{ __('pages.tickets.detail.btn_complete') }}</span>
-                            </button>
-
-                            <button
-                                @click="openPendingModal"
-                                class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-450 transition duration-200"
-                            >
-                                <Pause class="h-4.5 w-4.5" />
-                                <span>{{ __('pages.tickets.detail.btn_pending') }}</span>
-                            </button>
-
-                            <button
-                                @click="openCancelModal"
-                                class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-500 transition duration-200"
-                            >
-                                <XCircle class="h-4.5 w-4.5" />
-                                <span>{{ __('pages.tickets.detail.btn_cancel') }}</span>
-                            </button>
-                        </div>
-
-                        <!-- Case 3: Paused / Pending -->
-                        <div v-else-if="ticket.status === 'PENDING'" class="space-y-3">
-                            <div class="p-3 border border-orange-200/50 bg-orange-50/20 dark:border-orange-900/30 dark:bg-orange-950/10 rounded-xl text-xs text-orange-700 dark:text-orange-400 flex gap-2">
-                                <Info class="h-4.5 w-4.5 flex-shrink-0" />
-                                <div>
-                                    <span class="font-bold">{{ __('pages.tickets.detail.paused_reason_label_inline') }}</span>
-                                    <p class="mt-1 font-medium leading-relaxed">{{ ticket.pending_reason }}</p>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <button
-                                    @click="resumeTicket"
-                                    class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 transition duration-200"
-                                >
-                                    <Play class="h-4.5 w-4.5" />
-                                    <span>{{ __('pages.tickets.detail.btn_resume') }}</span>
-                                </button>
-
-                                <button
-                                    @click="openCancelModal"
-                                    class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-500 transition duration-200"
-                                >
-                                    <XCircle class="h-4.5 w-4.5" />
-                                    <span>{{ __('pages.tickets.detail.btn_cancel') }}</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
 
                 <!-- Right Column: SLA Analytics & Progress Timelines -->
@@ -591,7 +400,7 @@ const contextLabel = computed(() => {
                                         <span v-if="ticket.status === 'PENDING'" class="text-[9px] text-orange-500 animate-pulse font-bold mt-1 block">
                                             {{ __('pages.tickets.detail.active_paused_sla') }}
                                         </span>
-                                        <span v-else class="text-[9px] text-slate-455 mt-1 block">
+                                        <span v-else class="text-[9px] text-slate-450 mt-1 block">
                                             {{ __('pages.tickets.detail.total_pauses_sla') }}
                                         </span>
                                     </div>
@@ -609,7 +418,7 @@ const contextLabel = computed(() => {
                                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block leading-none">
                                             {{ __('pages.tickets.detail.resolution_time_sla') }}
                                         </span>
-                                        <span v-if="ticket.resolved_at" class="text-[9px] text-slate-455 mt-1 block">
+                                        <span v-if="ticket.resolved_at" class="text-[9px] text-slate-450 mt-1 block">
                                             {{ __('pages.tickets.detail.resolved_status_sla') }}
                                         </span>
                                         <span v-else-if="ticket.status === 'PENDING'" class="text-[9px] text-orange-500 font-bold mt-1 block">
@@ -687,7 +496,7 @@ const contextLabel = computed(() => {
                                                     <p class="text-xs font-bold" :class="ticket.validated_at ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
                                                         {{ __('pages.tickets.detail.assigned_status') }}
                                                     </p>
-                                                    <p v-if="ticket.validated_at" class="text-[10px] text-slate-405 dark:text-slate-505 mt-0.5 leading-relaxed">
+                                                    <p v-if="ticket.validated_at" class="text-[10px] text-slate-400 dark:text-slate-505 mt-0.5 leading-relaxed">
                                                         {{ __('pages.tickets.detail.validator_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-350">{{ ticket.validator?.name }}</span>
                                                         <br />
                                                         {{ __('pages.tickets.detail.technician_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-350">
@@ -724,7 +533,7 @@ const contextLabel = computed(() => {
                                                     <p class="text-xs font-bold" :class="ticket.responded_at ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
                                                         {{ __('pages.tickets.detail.in_progress_status') }}
                                                     </p>
-                                                    <p v-if="ticket.responded_at" class="text-[10px] text-slate-405 dark:text-slate-505 mt-0.5 leading-relaxed">
+                                                    <p v-if="ticket.responded_at" class="text-[10px] text-slate-400 dark:text-slate-505 mt-0.5 leading-relaxed">
                                                         {{ __('pages.tickets.detail.arrived_detail_timeline') }}
                                                     </p>
                                                     <p v-else class="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
@@ -758,10 +567,10 @@ const contextLabel = computed(() => {
                                                     <p class="text-xs font-bold" :class="ticket.status === 'COMPLETED' || ticket.status === 'CANCEL' ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
                                                         {{ ticket.status === 'CANCEL' ? __('pages.tickets.detail.cancel_status') : __('pages.tickets.detail.completed_status') }}
                                                     </p>
-                                                    <p v-if="ticket.status === 'COMPLETED'" class="text-[10px] text-slate-405 dark:text-slate-505 mt-0.5 leading-relaxed">
+                                                    <p v-if="ticket.status === 'COMPLETED'" class="text-[10px] text-slate-400 dark:text-slate-505 mt-0.5 leading-relaxed">
                                                         <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ __('pages.tickets.detail.action_taken_label') }}</span> {{ ticket.completion_notes }}
                                                     </p>
-                                                    <p v-else-if="ticket.status === 'CANCEL'" class="text-[10px] text-slate-405 dark:text-slate-505 mt-0.5 leading-relaxed">
+                                                    <p v-else-if="ticket.status === 'CANCEL'" class="text-[10px] text-slate-400 dark:text-slate-505 mt-0.5 leading-relaxed">
                                                         <span class="font-bold text-rose-600 dark:text-rose-400">{{ __('pages.tickets.detail.cancel_reason_label_inline') }}</span> {{ ticket.completion_notes }}
                                                     </p>
                                                     <p v-else class="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
@@ -819,171 +628,4 @@ const contextLabel = computed(() => {
             </button>
         </div>
     </div>
-
-    <!-- Completion Modal -->
-    <Modal :show="showCompleteModal" @close="showCompleteModal = false" maxWidth="lg">
-        <div class="p-6 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                    {{ __('pages.tickets.detail.completion_modal_title') }}
-                </h3>
-                <button @click="showCompleteModal = false" class="text-slate-400 hover:text-slate-500">
-                    <X class="h-5 w-5" />
-                </button>
-            </div>
-
-            <form @submit.prevent="submitResolve('COMPLETED')" class="space-y-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {{ __('pages.tickets.detail.completion_notes_label') }} <span class="text-red-400">*</span>
-                    </label>
-                    <textarea 
-                        v-model="resolveForm.notes" 
-                        required
-                        rows="4"
-                        :placeholder="__('pages.tickets.detail.completion_notes_placeholder')"
-                        class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150"
-                    ></textarea>
-                    <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
-                </div>
-
-                <!-- Upload Proof section -->
-                <div class="space-y-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {{ __('pages.tickets.detail.upload_proof_label') }}
-                    </label>
-
-                    <!-- Hidden Inputs -->
-                    <input ref="completeFileInput" type="file" class="hidden" accept="image/*" multiple @change="handleCompleteFileSelect" />
-                    <input ref="completeCameraInput" type="file" class="hidden" accept="image/*" capture="environment" @change="handleCompleteFileSelect" />
-
-                    <!-- Photo Previews Grid -->
-                    <div v-if="completePreviews.length > 0" class="grid grid-cols-5 gap-2">
-                        <div 
-                            v-for="(p, idx) in completePreviews" 
-                            :key="idx" 
-                            class="relative rounded-xl overflow-hidden border border-slate-250 dark:border-slate-800 aspect-square bg-slate-50 dark:bg-slate-950"
-                        >
-                            <img :src="p.preview" class="w-full h-full object-cover cursor-pointer" @click="openLightbox(p.preview)" />
-                            <button
-                                type="button"
-                                @click="removeCompleteAttachment(idx)"
-                                class="absolute top-0.5 right-0.5 h-5 w-5 flex items-center justify-center rounded-md bg-black/60 hover:bg-black/80 text-white transition"
-                            >
-                                <X class="h-3 w-3" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Dropzone uploader alternative buttons -->
-                    <div v-if="completePreviews.length < 5" class="flex gap-2">
-                        <button
-                            type="button"
-                            @click="completeFileInput?.click()"
-                            class="flex-1 h-10 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-655 dark:text-slate-450"
-                        >
-                            <UploadCloud class="h-4.5 w-4.5 text-slate-400" />
-                            {{ __('pages.tickets.detail.upload_file') }}
-                        </button>
-                        <button
-                            type="button"
-                            @click="completeCameraInput?.click()"
-                            class="flex-1 h-10 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-655 dark:text-slate-450"
-                        >
-                            <Camera class="h-4.5 w-4.5 text-slate-400" />
-                            {{ __('pages.tickets.detail.camera') }}
-                        </button>
-                    </div>
-                    <div v-if="resolveForm.errors.attachments" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.attachments }}</div>
-                </div>
-
-                <div class="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
-                    <SecondaryButton type="button" @click="showCompleteModal = false">
-                        {{ __('global.cancel') }}
-                    </SecondaryButton>
-                    <PrimaryButton type="submit" :disabled="resolveForm.processing || resolveForm.attachments.length === 0">
-                        {{ __('pages.tickets.detail.submit_action') }}
-                    </PrimaryButton>
-                </div>
-            </form>
-        </div>
-    </Modal>
-
-    <!-- Pending Modal -->
-    <Modal :show="showPendingModal" @close="showPendingModal = false" maxWidth="lg">
-        <div class="p-6 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                    {{ __('pages.tickets.detail.pending_modal_title') }}
-                </h3>
-                <button @click="showPendingModal = false" class="text-slate-400 hover:text-slate-500">
-                    <X class="h-5 w-5" />
-                </button>
-            </div>
-
-            <form @submit.prevent="submitResolve('PENDING')" class="space-y-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {{ __('pages.tickets.detail.pending_reason_label') }} <span class="text-red-400">*</span>
-                    </label>
-                    <textarea 
-                        v-model="resolveForm.notes" 
-                        required
-                        rows="4"
-                        :placeholder="__('pages.tickets.detail.pending_reason_placeholder')"
-                        class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150"
-                    ></textarea>
-                    <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
-                </div>
-
-                <div class="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
-                    <SecondaryButton type="button" @click="showPendingModal = false">
-                        {{ __('global.cancel') }}
-                    </SecondaryButton>
-                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes">
-                        {{ __('pages.tickets.detail.submit_action') }}
-                    </PrimaryButton>
-                </div>
-            </form>
-        </div>
-    </Modal>
-
-    <!-- Cancel Modal -->
-    <Modal :show="showCancelModal" @close="showCancelModal = false" maxWidth="lg">
-        <div class="p-6 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="text-sm font-extrabold text-rose-600 dark:text-rose-400 uppercase tracking-wider">
-                    {{ __('pages.tickets.detail.cancel_modal_title') }}
-                </h3>
-                <button @click="showCancelModal = false" class="text-slate-400 hover:text-slate-500">
-                    <X class="h-5 w-5" />
-                </button>
-            </div>
-
-            <form @submit.prevent="submitResolve('CANCEL')" class="space-y-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {{ __('pages.tickets.detail.cancel_reason_label') }} <span class="text-red-400">*</span>
-                    </label>
-                    <textarea 
-                        v-model="resolveForm.notes" 
-                        required
-                        rows="4"
-                        :placeholder="__('pages.tickets.detail.cancel_reason_placeholder')"
-                        class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150"
-                    ></textarea>
-                    <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
-                </div>
-
-                <div class="flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
-                    <SecondaryButton type="button" @click="showCancelModal = false">
-                        {{ __('global.cancel') }}
-                    </SecondaryButton>
-                    <DangerButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes">
-                        {{ __('pages.tickets.detail.submit_action') }}
-                    </DangerButton>
-                </div>
-            </form>
-        </div>
-    </Modal>
 </template>

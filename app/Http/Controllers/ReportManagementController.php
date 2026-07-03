@@ -10,6 +10,8 @@ use Inertia\Inertia;
 
 class ReportManagementController extends Controller
 {
+    private const FILTER_SESSION_KEY = 'reports-management.filters';
+
     /**
      * Halaman index / riwayat tugas kerja operasional untuk role yang bersangkutan.
      */
@@ -19,10 +21,24 @@ class ReportManagementController extends Controller
         $roleId = (int) $user->role_id;
         $userId = (int) $user->id;
 
+        if ($request->filled('search') || $request->filled('status')) {
+            $request->session()->put(self::FILTER_SESSION_KEY, [
+                'search' => (string) $request->input('search', ''),
+                'status' => (string) $request->input('status', ''),
+            ]);
+
+            return redirect()->route('reports-management.index');
+        }
+
         // Validasi akses operasional: hanya Admin, Management, Kepala Unit, Teknisi, dan Kepala Ruangan
         if (!in_array($roleId, [1, 2, 3, 4, 5, 6, 7])) {
             abort(403, 'Unauthorized action.');
         }
+
+        $filters = $request->session()->get(self::FILTER_SESSION_KEY, [
+            'search' => '',
+            'status' => '',
+        ]);
 
         $query = ServiceTicket::select([
             'id', 
@@ -37,7 +53,7 @@ class ReportManagementController extends Controller
             'created_at',
         ])
         ->with([
-            'reporter:id,name',
+            'reporter:id,name,phone_number',
             'room:id,name',
             'category:id,name,feature_id',
             'category.unitFeature:id,name,supporting_unit_id',
@@ -68,7 +84,7 @@ class ReportManagementController extends Controller
         $query->orderByDesc('created_at');
 
         // Filter pencarian
-        if ($search = $request->input('search')) {
+        if ($search = $filters['search']) {
             $query->where(function ($q) use ($search) {
                 $q->where('ticket_number', 'like', "%{$search}%")
                   ->orWhere('problem_description', 'like', "%{$search}%")
@@ -77,7 +93,7 @@ class ReportManagementController extends Controller
         }
 
         // Filter status
-        if ($status = $request->input('status')) {
+        if ($status = $filters['status']) {
             if (str_contains($status, ',')) {
                 $query->whereIn('status', explode(',', $status));
             } else {
@@ -85,10 +101,22 @@ class ReportManagementController extends Controller
             }
         }
 
-        return Inertia::render('ReportManagement/History', [
-            'tickets'  => $query->paginate(15)->withQueryString(),
-            'filters'  => $request->only(['search', 'status']),
+        return Inertia::render('ReportManagement/Index', [
+            'tickets'  => $query->paginate(15),
+            'filters'  => $filters,
         ]);
+    }
+
+    public function storeFilters(Request $request)
+    {
+        $filters = [
+            'search' => (string) $request->input('search', ''),
+            'status' => (string) $request->input('status', ''),
+        ];
+
+        $request->session()->put(self::FILTER_SESSION_KEY, $filters);
+
+        return redirect()->route('reports-management.index');
     }
 
     /**

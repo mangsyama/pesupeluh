@@ -250,6 +250,7 @@ class DatabaseSeeder extends Seeder
                 'password' => $commonPassword,
                 'role_id' => 7, // ROOM_HEAD
                 'room_id' => 1, // Ruang IGD
+                'phone_number' => '081234567890',
                 'is_active' => true,
                 'approved_by' => 1,
                 'approved_at' => now(),
@@ -264,6 +265,7 @@ class DatabaseSeeder extends Seeder
                 'password' => $commonPassword,
                 'role_id' => 8, // REPORTER
                 'room_id' => 1, // Ruang IGD
+                'phone_number' => '089876543210',
                 'is_active' => true,
                 'approved_by' => 1,
                 'approved_at' => now(),

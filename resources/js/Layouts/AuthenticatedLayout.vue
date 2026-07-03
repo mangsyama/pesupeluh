@@ -546,7 +546,7 @@ const getGroupInitials = (title) => {
     <div class="min-h-screen bg-gray-100 dark:bg-slate-950 overflow-x-hidden">
 
         <!-- Navbar -->
-        <nav class="fixed top-0 left-0 right-0 z-40 w-full h-20 bg-gray-100/80 dark:bg-slate-950/80 backdrop-blur-md shadow-none border-b border-slate-100/50 dark:border-slate-800/50 transition-all duration-300 ease-in-out">
+        <nav class="fixed top-0 left-0 right-0 z-40 w-full h-20 bg-gray-100/80 dark:bg-slate-950/80 backdrop-blur-md shadow-none transition-all duration-300 ease-in-out">
             <div :class="['w-full px-4 lg:pr-4 transition-all duration-300 ease-in-out', sidebarCollapsed ? 'lg:pl-[96px]' : 'lg:pl-[304px]']">
                 <div class="flex h-20 items-center justify-between gap-3">
 

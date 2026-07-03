@@ -103,10 +103,16 @@ class TicketController extends Controller
                 ->get(['id', 'name', 'nip']);
         }
 
-        return Inertia::render('Ticket/Show', [
+        if ($request->boolean('personal')) {
+            return Inertia::render('Report/Show', [
+                'ticket' => $ticket,
+                'personal' => true,
+            ]);
+        }
+
+        return Inertia::render('ReportManagement/Show', [
             'ticket' => $ticket,
             'technicians' => $technicians,
-            'personal' => $request->boolean('personal'),
         ]);
     }
 

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import {
     Calendar,
     User,
@@ -14,7 +14,9 @@ import {
     CheckCircle2,
     XCircle,
     ImageIcon,
-    UserCheck
+    UserCheck,
+    Send,
+    Sparkles
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
@@ -23,6 +25,10 @@ const props = defineProps({
     ticket: {
         type: Object,
         required: true
+    },
+    technicians: {
+        type: Array,
+        default: () => []
     },
     personal: {
         type: Boolean,
@@ -125,6 +131,19 @@ const formatDateTime = (dateStr) => {
     });
 };
 
+const assignForm = useForm({
+    priority: 'ROUTINE',
+    technician_ids: []
+});
+
+const submitAssign = () => {
+    assignForm.post(route('tickets.assign', props.ticket.uuid), {
+        onSuccess: () => {
+            assignForm.reset();
+        }
+    });
+};
+
 // Lightbox state
 const activeLightbox = ref(null);
 const openLightbox = (url) => {
@@ -218,7 +237,7 @@ const contextLabel = computed(() => {
             <!-- Main Section Layout Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 
-                <!-- Left Column: Details -->
+                <!-- Left Column: Details & Disposition Form -->
                 <div class="lg:col-span-2 space-y-4">
                     
                     <!-- Ticket Info Container -->
@@ -232,35 +251,35 @@ const contextLabel = computed(() => {
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="space-y-1">
-                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
                                     {{ __('pages.tickets.detail.reporter') }}
                                 </span>
-                                <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <User class="h-4 w-4 text-slate-400" />
+                                <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                    <User class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                     <span class="text-xs font-semibold">{{ ticket.reporter?.name }}</span>
-                                    <span v-if="ticket.reporter?.nip" class="text-[10px] text-slate-400 dark:text-slate-505 ml-1.5">({{ ticket.reporter.nip }})</span>
+                                    <span v-if="ticket.reporter?.nip" class="text-[10px] text-slate-400 dark:text-slate-505">({{ ticket.reporter.nip }})</span>
                                 </div>
                             </div>
 
                             <div class="space-y-1">
-                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
                                     {{ __('pages.tickets.detail.room_location') }}
                                 </span>
-                                <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <MapPin class="h-4 w-4 text-slate-400" />
+                                <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                    <MapPin class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                     <span class="text-xs font-semibold">{{ ticket.room?.name }}</span>
-                                    <span v-if="ticket.room?.location_floor" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium ml-1.5">({{ ticket.room.location_floor }})</span>
+                                    <span v-if="ticket.room?.location_floor" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">({{ ticket.room.location_floor }})</span>
                                 </div>
                             </div>
 
                             <div class="space-y-1">
-                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
                                     {{ __('pages.tickets.detail.category_unit') }}
                                 </span>
-                                <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <Activity class="h-4 w-4 text-slate-400" />
+                                <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                    <Activity class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                     <span class="text-xs font-semibold">{{ ticket.category?.name }}</span>
-                                    <span class="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase ml-1.5">[{{ ticket.category?.unit_feature?.name }}]</span>
+                                    <span class="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase">[{{ ticket.category?.unit_feature?.name }}]</span>
                                 </div>
                             </div>
 
@@ -286,7 +305,7 @@ const contextLabel = computed(() => {
 
                         <!-- Reporter Attachments Media Grid -->
                         <div class="space-y-3">
-                            <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-550 tracking-wider flex items-center gap-1.5">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider flex items-center gap-1.5">
                                 <ImageIcon class="h-3.5 w-3.5" />
                                 {{ __('pages.tickets.detail.attachments') }}
                             </span>
@@ -319,13 +338,13 @@ const contextLabel = computed(() => {
                         <!-- Validation Info & Assigned Tech list -->
                         <div v-if="ticket.status !== 'PENDING_VALIDATION'" class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-850 pt-4">
                             <div class="space-y-1">
-                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
+                                <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
                                     {{ __('pages.tickets.detail.validator_label') }}
                                 </span>
-                                <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                    <UserCheck class="h-4 w-4 text-slate-400" />
+                                <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
+                                    <UserCheck class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                     <span class="text-xs font-semibold">{{ ticket.validator?.name }}</span>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-550 ml-1.5">({{ formatDateTime(ticket.validated_at) }})</span>
+                                    <span class="text-[10px] text-slate-400 dark:text-slate-550">({{ formatDateTime(ticket.validated_at) }})</span>
                                 </div>
                             </div>
 
@@ -350,6 +369,92 @@ const contextLabel = computed(() => {
                         </div>
 
                     </div>
+
+                    <!-- Action Panel Card: Unit Head Validation & Assignments -->
+                    <div v-if="ticket.status === 'PENDING_VALIDATION'" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 animate-spa-fade-in">
+                        <div class="flex items-center gap-2">
+                            <Sparkles class="h-5 w-5 text-indigo-500" />
+                            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                                {{ __('pages.tickets.detail.disposition_title') }}
+                            </h3>
+                        </div>
+                        <div class="h-0.5 bg-slate-50 dark:bg-slate-850"></div>
+
+                        <form @submit.prevent="submitAssign" class="space-y-4">
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    {{ __('pages.tickets.detail.select_priority') }}
+                                </label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label 
+                                        class="border rounded-xl p-3 flex items-center justify-between cursor-pointer transition select-none"
+                                        :class="[
+                                            assignForm.priority === 'ROUTINE'
+                                                ? 'border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20 text-indigo-950 dark:text-white font-bold'
+                                                : 'border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-900'
+                                        ]"
+                                    >
+                                        <span class="text-xs">{{ __('pages.tickets.detail.priority_routine') }}</span>
+                                        <input type="radio" value="ROUTINE" v-model="assignForm.priority" class="hidden" />
+                                        <CheckCircle2 v-if="assignForm.priority === 'ROUTINE'" class="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                    </label>
+
+                                    <label 
+                                        class="border rounded-xl p-3 flex items-center justify-between cursor-pointer transition select-none"
+                                        :class="[
+                                            assignForm.priority === 'URGENT'
+                                                ? 'border-rose-500 bg-rose-50/20 dark:bg-rose-950/20 text-rose-950 dark:text-white font-bold'
+                                                : 'border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-900'
+                                        ]"
+                                    >
+                                        <span class="text-xs">{{ __('pages.tickets.detail.priority_urgent') }}</span>
+                                        <input type="radio" value="URGENT" v-model="assignForm.priority" class="hidden" />
+                                        <CheckCircle2 v-if="assignForm.priority === 'URGENT'" class="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                                    </label>
+                                </div>
+                                <div v-if="assignForm.errors.priority" class="text-[10px] text-red-500 font-semibold">{{ assignForm.errors.priority }}</div>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    {{ __('pages.tickets.detail.select_technicians') }}
+                                </label>
+                                <div v-if="technicians.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <label 
+                                        v-for="tech in technicians" 
+                                        :key="tech.id" 
+                                        class="border rounded-xl p-3 flex items-center justify-between cursor-pointer transition select-none"
+                                        :class="[
+                                            assignForm.technician_ids.includes(tech.id)
+                                                ? 'border-indigo-500 bg-indigo-50/10 dark:bg-indigo-950/10 text-indigo-950 dark:text-white font-bold'
+                                                : 'border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-900'
+                                        ]"
+                                    >
+                                        <div class="flex flex-col">
+                                            <span class="text-xs font-bold uppercase tracking-wide">{{ tech.name }}</span>
+                                            <span class="text-[9px] text-slate-450 dark:text-slate-505 mt-0.5">NIP: {{ tech.nip }}</span>
+                                        </div>
+                                        <input type="checkbox" :value="tech.id" v-model="assignForm.technician_ids" class="hidden" />
+                                        <CheckCircle2 v-if="assignForm.technician_ids.includes(tech.id)" class="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                                    </label>
+                                </div>
+                                <div v-else class="text-xs text-slate-450 dark:text-slate-500 italic p-3 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/20">
+                                    {{ __('pages.tickets.detail.no_active_techs') }}
+                                </div>
+                                <div v-if="assignForm.errors.technician_ids" class="text-[10px] text-red-500 font-semibold">{{ assignForm.errors.technician_ids }}</div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                :disabled="assignForm.processing || assignForm.technician_ids.length === 0"
+                                class="w-full h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition duration-200 disabled:opacity-50"
+                            >
+                                <Send class="h-4 w-4" />
+                                <span>{{ assignForm.processing ? __('Mengirim...') : __('pages.tickets.detail.btn_assign') }}</span>
+                            </button>
+                        </form>
+                    </div>
+
                 </div>
 
                 <!-- Right Column: SLA Analytics & Progress Timelines -->
@@ -379,7 +484,7 @@ const contextLabel = computed(() => {
                                         <span v-else-if="ticket.validated_at" class="text-[9px] text-indigo-500 animate-pulse font-bold mt-1 block">
                                             {{ __('pages.tickets.detail.running_status_sla') }}
                                         </span>
-                                        <span v-else class="text-[9px] text-slate-450 mt-1 block">
+                                        <span v-else class="text-[9px] text-slate-455 mt-1 block">
                                             {{ __('pages.tickets.detail.awaiting_validate_sla') }}
                                         </span>
                                     </div>
@@ -400,7 +505,7 @@ const contextLabel = computed(() => {
                                         <span v-if="ticket.status === 'PENDING'" class="text-[9px] text-orange-500 animate-pulse font-bold mt-1 block">
                                             {{ __('pages.tickets.detail.active_paused_sla') }}
                                         </span>
-                                        <span v-else class="text-[9px] text-slate-450 mt-1 block">
+                                        <span v-else class="text-[9px] text-slate-455 mt-1 block">
                                             {{ __('pages.tickets.detail.total_pauses_sla') }}
                                         </span>
                                     </div>
@@ -418,7 +523,7 @@ const contextLabel = computed(() => {
                                         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block leading-none">
                                             {{ __('pages.tickets.detail.resolution_time_sla') }}
                                         </span>
-                                        <span v-if="ticket.resolved_at" class="text-[9px] text-slate-450 mt-1 block">
+                                        <span v-if="ticket.resolved_at" class="text-[9px] text-slate-455 mt-1 block">
                                             {{ __('pages.tickets.detail.resolved_status_sla') }}
                                         </span>
                                         <span v-else-if="ticket.status === 'PENDING'" class="text-[9px] text-orange-500 font-bold mt-1 block">
@@ -533,7 +638,7 @@ const contextLabel = computed(() => {
                                                     <p class="text-xs font-bold" :class="ticket.responded_at ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
                                                         {{ __('pages.tickets.detail.in_progress_status') }}
                                                     </p>
-                                                    <p v-if="ticket.responded_at" class="text-[10px] text-slate-400 dark:text-slate-505 mt-0.5 leading-relaxed">
+                                                    <p v-if="ticket.responded_at" class="text-[10px] text-slate-405 dark:text-slate-505 mt-0.5 leading-relaxed">
                                                         {{ __('pages.tickets.detail.arrived_detail_timeline') }}
                                                     </p>
                                                     <p v-else class="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">

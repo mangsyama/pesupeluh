@@ -109,7 +109,7 @@ Route::get('/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware(['auth', 'verified'])->prefix('dashboard')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/services', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => null,
@@ -181,13 +181,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/service-management/units/{unit}', [ServiceManagementController::class, 'updateSupportingUnit'])->name('service-management.units.update');
     Route::delete('/service-management/units/{unit}', [ServiceManagementController::class, 'destroySupportingUnit'])->name('service-management.units.destroy');
 
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/history', [ReportController::class, 'history'])->name('reports.history');
-    Route::get('/reports/history/{ticket:uuid}', [ReportController::class, 'show'])->name('reports.show');
+    Route::get('/reports/export', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
     Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])->name('reports.export.csv');
 
+    Route::get('/reports', [ReportController::class, 'history'])->name('reports.history');
+    Route::post('/reports/filters', [ReportController::class, 'storeFilters'])->name('reports.filters');
+    Route::get('/reports/{ticket:uuid}', [ReportController::class, 'show'])->name('reports.show');
+
     Route::get('/reports-management', [\App\Http\Controllers\ReportManagementController::class, 'index'])->name('reports-management.index');
+    Route::post('/reports-management/filters', [\App\Http\Controllers\ReportManagementController::class, 'storeFilters'])->name('reports-management.filters');
     Route::get('/reports-management/{ticket:uuid}', [\App\Http\Controllers\ReportManagementController::class, 'show'])->name('reports-management.show');
 
     Route::get('/settings', function () {
