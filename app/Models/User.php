@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'face_descriptor', 'role_id', 'room_id', 'supporting_unit_id', 'phone_number', 'is_active', 'nip', 'username', 'profile_photo_path', 'approved_by', 'approved_at', 'page_permissions'])]
+#[Fillable(['name', 'email', 'password', 'face_descriptor', 'role_id', 'room_id', 'supporting_unit_id', 'phone_number', 'telegram_chat_id', 'is_active', 'nip', 'username', 'profile_photo_path', 'approved_by', 'approved_at', 'page_permissions'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -114,7 +114,7 @@ class User extends Authenticatable
      */
     public function routeNotificationForTelegram()
     {
-        return config('services.telegram.chat_id');
+        return $this->telegram_chat_id;
     }
 }
 

@@ -251,6 +251,7 @@ class UserManagementController extends Controller
             'room_id' => 'nullable|exists:rooms,id',
             'supporting_unit_id' => 'nullable|exists:supporting_units,id',
             'phone_number' => 'nullable|string|max:20',
+            'telegram_chat_id' => 'nullable|string|max:50',
         ];
 
         $validated = $request->validate($rules);
@@ -279,6 +280,7 @@ class UserManagementController extends Controller
             'room_id' => 'nullable|exists:rooms,id',
             'supporting_unit_id' => 'nullable|exists:supporting_units,id',
             'phone_number' => 'nullable|string|max:20',
+            'telegram_chat_id' => 'nullable|string|max:50',
         ];
 
         $validated = $request->validate($rules);

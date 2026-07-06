@@ -37,7 +37,10 @@ return [
 
     'telegram' => [
         'token' => env('TELEGRAM_BOT_TOKEN'),
-        'chat_id' => env('TELEGRAM_ADMIN_CHAT_ID'),
+    ],
+
+    'telegram_urgent' => [
+        'token' => env('TELEGRAM_URGENT_BOT_TOKEN'),
     ],
 
 ];

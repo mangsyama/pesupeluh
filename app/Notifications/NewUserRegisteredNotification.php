@@ -22,27 +22,12 @@ class NewUserRegisteredNotification extends Notification
     {
         $channels = ['database', 'broadcast'];
 
-        // Send to Telegram if bot token and chat ID are configured
-        if (config('services.telegram.token') && config('services.telegram.chat_id')) {
-            // To prevent duplicate messages in the same group chat when notifying multiple admins,
-            // we only send via Telegram for the first administrator in the collection.
-            if (!($notifiable instanceof User) || $this->shouldSendTelegram($notifiable)) {
-                $channels[] = TelegramChannel::class;
-            }
+        // Send to Telegram if bot token is configured and the user has a telegram_chat_id
+        if (config('services.telegram.token') && $notifiable instanceof User && $notifiable->telegram_chat_id) {
+            $channels[] = TelegramChannel::class;
         }
 
         return $channels;
-    }
-
-    protected function shouldSendTelegram(User $notifiable): bool
-    {
-        static $firstAdminId = null;
-        if ($firstAdminId === null) {
-            $firstAdminId = User::whereHas('role', fn ($query) => $query->where('name', 'ADMINISTRATOR'))
-                ->orderBy('id')
-                ->value('id');
-        }
-        return $notifiable->id === $firstAdminId;
     }
 
     public function toDatabase($notifiable): array
@@ -69,9 +54,7 @@ class NewUserRegisteredNotification extends Notification
 
     public function toTelegram($notifiable)
     {
-        $chatId = $notifiable instanceof User && isset($notifiable->telegram_chat_id)
-            ? $notifiable->telegram_chat_id
-            : config('services.telegram.chat_id');
+        $chatId = $notifiable instanceof User ? $notifiable->telegram_chat_id : null;
 
         if (!$chatId) {
             return null;

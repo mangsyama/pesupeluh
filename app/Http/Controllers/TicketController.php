@@ -97,10 +97,10 @@ class TicketController extends Controller
         // Unit Head or Admin can see list of technicians to assign
         if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {
             $technicians = User::where('role_id', 6) // TECHNICIAN
-                ->where('supporting_unit_id', $supportingUnitId)
                 ->where('is_active', 1)
+                ->with('supportingUnit:id,name')
                 ->orderBy('name')
-                ->get(['id', 'name', 'nip']);
+                ->get(['id', 'name', 'nip', 'supporting_unit_id']);
         }
 
         if ($request->boolean('personal')) {
@@ -146,6 +146,18 @@ class TicketController extends Controller
             ], [
                 'assigned_at' => now(),
             ]);
+        }
+
+        // Notify assigned technicians
+        $ticket->load(['room', 'category']);
+        $technicians = \App\Models\User::whereIn('id', $validated['technician_ids'])->get();
+
+        if ($technicians->isNotEmpty()) {
+            try {
+                \Illuminate\Support\Facades\Notification::send($technicians, new \App\Notifications\TicketAssignedNotification($ticket));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Gagal mengirim notifikasi penugasan ke Teknisi: ' . $e->getMessage());
+            }
         }
 
         return redirect()->back()->with('success', 'Tiket pelaporan berhasil divalidasi dan ditugaskan.');

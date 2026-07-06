@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('profile_photo_path', 255)->nullable();
             $table->string('remember_token', 100)->nullable();
             $table->string('phone_number', 20)->nullable();
+            $table->string('telegram_chat_id', 50)->nullable();
             $table->boolean('is_active')->default(false);
             $table->text('page_permissions')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('no action');

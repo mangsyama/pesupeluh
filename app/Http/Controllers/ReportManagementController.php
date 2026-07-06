@@ -156,10 +156,10 @@ class ReportManagementController extends Controller
         // List teknisi untuk keperluan disposisi oleh Kepala Unit atau Admin
         if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {
             $technicians = User::where('role_id', 6) // TECHNICIAN
-                ->where('supporting_unit_id', $supportingUnitId)
                 ->where('is_active', 1)
+                ->with('supportingUnit:id,name')
                 ->orderBy('name')
-                ->get(['id', 'name', 'nip']);
+                ->get(['id', 'name', 'nip', 'supporting_unit_id']);
         }
 
         return Inertia::render('ReportManagement/Show', [

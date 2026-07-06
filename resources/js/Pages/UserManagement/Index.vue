@@ -118,6 +118,7 @@ const form = useForm({
     room_id: '',
     supporting_unit_id: '',
     phone_number: '',
+    telegram_chat_id: '',
 });
 
 const openAddModal = () => {
@@ -141,6 +142,7 @@ const openEditModal = (user) => {
     form.room_id = user.room_id || '';
     form.supporting_unit_id = user.supporting_unit_id || '';
     form.phone_number = user.phone_number || '';
+    form.telegram_chat_id = user.telegram_chat_id || '';
     showModal.value = true;
 };
 
@@ -368,7 +370,12 @@ const savePermissions = () => {
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">{{ user.nip || '-' }}</td>
-                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">{{ user.phone_number || '-' }}</td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
+                                        <div>{{ user.phone_number || '-' }}</div>
+                                        <div v-if="user.telegram_chat_id" class="text-[10px] text-violet-650 dark:text-violet-400 font-semibold flex items-center gap-0.5 mt-0.5" title="Telegram Chat ID terkonfigurasi">
+                                            <span>ID: {{ user.telegram_chat_id }}</span>
+                                        </div>
+                                    </td>
                                     <td class="px-6 py-4">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400">
                                             {{ user.role?.name ? __('roles.' + user.role.name) : '-' }}
@@ -540,6 +547,18 @@ const savePermissions = () => {
                                 <option v-for="room in rooms" :key="room.id" :value="room.id">{{ room.name }}</option>
                             </select>
                             <div v-if="form.errors.room_id" class="text-xs text-red-500 mt-1">{{ form.errors.room_id }}</div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Telegram Chat ID (Personal)</label>
+                            <input
+                                v-model="form.telegram_chat_id"
+                                type="text"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                placeholder="Masukkan Chat ID Telegram (contoh: 987654321)"
+                            />
+                            <div v-if="form.errors.telegram_chat_id" class="text-xs text-red-500 mt-1">{{ form.errors.telegram_chat_id }}</div>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Dapatkan via bot pembantu @userinfobot di Telegram</p>
                         </div>
 
                         <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">

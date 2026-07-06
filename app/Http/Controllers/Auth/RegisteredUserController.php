@@ -92,7 +92,11 @@ class RegisteredUserController extends Controller
 
         $adminUsers = User::whereHas('role', fn ($query) => $query->where('name', 'ADMINISTRATOR'))->get();
         if ($adminUsers->isNotEmpty()) {
-            Notification::send($adminUsers, new NewUserRegisteredNotification($user));
+            try {
+                Notification::send($adminUsers, new NewUserRegisteredNotification($user));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Gagal mengirim notifikasi Telegram/Database: ' . $e->getMessage());
+            }
         }
 
         event(new Registered($user));

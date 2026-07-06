@@ -81,6 +81,25 @@ class ServiceController extends Controller
             }
         }
 
+        // Notify Unit Heads of the supporting unit managing this category
+        $ticket->load(['reporter', 'room', 'category.unitFeature.supportingUnit']);
+        $supportingUnitId = $ticket->category?->unitFeature?->supporting_unit_id;
+
+        if ($supportingUnitId) {
+            $unitHeads = \App\Models\User::where('role_id', 5) // UNIT_HEAD
+                ->where('supporting_unit_id', $supportingUnitId)
+                ->where('is_active', 1)
+                ->get();
+
+            if ($unitHeads->isNotEmpty()) {
+                try {
+                    \Illuminate\Support\Facades\Notification::send($unitHeads, new \App\Notifications\NewTicketReportedNotification($ticket));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Gagal mengirim notifikasi tiket baru ke Kepala Unit: ' . $e->getMessage());
+                }
+            }
+        }
+
         return redirect()->route('reports.history')->with('success', 'Tiket pelaporan baru berhasil dibuat.');
     }
 }

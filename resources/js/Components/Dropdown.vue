@@ -62,6 +62,7 @@ const widthClass = computed(() => {
         56: 'w-56',
         64: 'w-64',
         96: 'w-96',
+        'mobile-nav': 'w-[calc(100vw-2rem)] sm:w-96',
     }[props.width.toString()];
 });
 

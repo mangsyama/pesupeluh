@@ -44,6 +44,7 @@ class HandleInertiaRequests extends Middleware
                     'message' => $notification->data['message'] ?? null,
                     'route' => $notification->data['route'] ?? null,
                     'user_id' => $notification->data['user_id'] ?? null,
+                    'priority' => $notification->data['priority'] ?? null,
                     'read_at' => $notification->read_at,
                     'created_at' => $notification->created_at,
                     'time' => $notification->created_at ? $notification->created_at->diffForHumans() : null,

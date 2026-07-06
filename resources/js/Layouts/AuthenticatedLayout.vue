@@ -348,6 +348,7 @@ const normalizeNotificationPayload = (notification) => {
     const message = notification.message ?? notification.data?.message ?? null;
     const route = notification.route ?? notification.data?.route ?? null;
     const type = notification.type ?? notification.data?.type ?? 'user';
+    const priority = notification.priority ?? notification.data?.priority ?? null;
 
     return {
         id: notification.id ?? `notif-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -355,6 +356,7 @@ const normalizeNotificationPayload = (notification) => {
         title,
         message,
         route,
+        priority,
         user_id: notification.user_id ?? notification.data?.user_id ?? null,
         read_at: notification.read_at ?? null,
         created_at: notification.created_at ?? new Date().toISOString(),
@@ -375,7 +377,8 @@ const showNotificationToast = (normalized) => {
         title: normalized.title,
         message: normalized.message,
         type: normalized.type,
-        route: normalized.route
+        route: normalized.route,
+        priority: normalized.priority
     });
 
     // Auto-remove after 6 seconds
@@ -721,6 +724,7 @@ const getGroupInitials = (title) => {
                                              <!-- Icon -->
                                              <div :class="[
                                                  'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
+                                                 notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
                                                  notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
                                                  notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
                                                  notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
@@ -734,8 +738,11 @@ const getGroupInitials = (title) => {
                                              <!-- Content -->
                                              <div class="flex-1 min-w-0">
                                                  <div class="flex items-start justify-between gap-2">
-                                                     <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                     <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></span>
+                                                     <div class="flex items-center gap-1.5 min-w-0">
+                                                          <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
+                                                          <span v-if="notif.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500 text-white flex-shrink-0 animate-pulse">URGENT</span>
+                                                      </div>
+                                                     <span v-if="!notif.read_at" :class="['h-2 w-2 rounded-full flex-shrink-0 mt-1', notif.priority === 'URGENT' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500']"></span>
                                                  </div>
                                                  <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
                                                  <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
@@ -862,90 +869,98 @@ const getGroupInitials = (title) => {
                                 </template>
                             </Dropdown>
                             <!-- Overlay to close notification panel on outside click -->
-                            <Transition
-                                enter-active-class="transition ease-out duration-200"
-                                enter-from-class="opacity-0"
-                                enter-to-class="opacity-100"
-                                leave-active-class="transition ease-in duration-150"
-                                leave-from-class="opacity-100"
-                                leave-to-class="opacity-0"
-                            >
-                                <div
-                                    v-if="showMobileNotifications"
-                                    class="fixed inset-0 z-50 lg:hidden"
-                                    @click="showMobileNotifications = false"
-                                    aria-hidden="true"
-                                />
-                            </Transition>
-                            <!-- Mobile notification panel inside profile wrapper for proper positioning -->
-                            <Transition
-                                enter-active-class="transition ease-out duration-200"
-                                enter-from-class="opacity-0 scale-95 translate-y-1"
-                                enter-to-class="opacity-100 scale-100 translate-y-0"
-                                leave-active-class="transition ease-in duration-150"
-                                leave-from-class="opacity-100 scale-100 translate-y-0"
-                                leave-to-class="opacity-0 scale-95 translate-y-1"
-                            >
-                                <div ref="mobileNotificationsPanel" v-if="showMobileNotifications" @click.stop class="lg:hidden absolute right-0 top-full mt-2.5 z-50 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden w-[calc(100vw-2rem)]">
-                                 <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                     <div class="flex items-center gap-3">
-                                         <Bell class="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                                         <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ __('Notifications') }}</span>
-                                         <span 
-                                             v-if="unreadCount > 0" 
-                                             class="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold"
-                                         >{{ unreadCount }}</span>
-                                     </div>
-                                     <button
-                                         @click.stop="showMobileNotifications = false"
-                                         type="button"
-                                         class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-md"
-                                         aria-label="Tutup notifikasi"
-                                     >
-                                         <X class="h-4 w-4" />
-                                     </button>
-                                 </div>
-                                 <div class="max-h-80 overflow-y-auto">
-                                     <div v-if="notifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
-                                         {{ __('No notifications') }}
-                                     </div>
-                                     <div
-                                         v-else
-                                         v-for="notif in notifications"
-                                         :key="notif.id"
-                                         @click="markAsRead(notif)"
-                                         :class="[
-                                             'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                             !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
-                                         ]"
-                                     >
-                                         <div :class="[
-                                             'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                                             notif.type === 'ticket' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500' :
-                                             notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                                             notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                             'bg-violet-50 dark:bg-violet-950/40 text-violet-500'
-                                         ]">
-                                             <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
-                                             <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
-                                             <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
-                                             <User v-else class="h-4 w-4" />
+                                                         <!-- Backdrop for closing mobile notifications dropdown on click outside -->
+                             <Transition
+                                 enter-active-class="transition ease-out duration-200"
+                                 enter-from-class="opacity-0"
+                                 enter-to-class="opacity-100"
+                                 leave-active-class="transition ease-in duration-150"
+                                 leave-from-class="opacity-100"
+                                 leave-to-class="opacity-0"
+                             >
+                                 <div
+                                     v-if="showMobileNotifications"
+                                     class="fixed inset-0 z-50 lg:hidden"
+                                     @click="showMobileNotifications = false"
+                                     aria-hidden="true"
+                                 />
+                             </Transition>
+
+                             <!-- Mobile Notifications Panel with fixed positioning to avoid screen edge collision -->
+                             <Transition
+                                 enter-active-class="transition ease-out duration-200"
+                                 enter-from-class="opacity-0 scale-95 translate-y-1"
+                                 enter-to-class="opacity-100 scale-100 translate-y-0"
+                                 leave-active-class="transition ease-in duration-150"
+                                 leave-from-class="opacity-100 scale-100 translate-y-0"
+                                 leave-to-class="opacity-0 scale-95 translate-y-1"
+                             >
+                                 <div ref="mobileNotificationsPanel" v-if="showMobileNotifications" @click.stop class="lg:hidden fixed left-4 right-4 top-[74px] z-[99] bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden w-auto">
+                                     <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                         <div class="flex items-center gap-3">
+                                             <Bell class="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                             <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ __('Notifications') }}</span>
+                                             <span 
+                                                 v-if="unreadCount > 0" 
+                                                 class="h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold"
+                                             >{{ unreadCount }}</span>
                                          </div>
-                                         <div class="flex-1 min-w-0">
-                                             <div class="flex items-start justify-between gap-2">
-                                                 <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                 <span v-if="!notif.read_at" class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0 mt-1"></span>
+                                         <button
+                                             @click.stop="showMobileNotifications = false"
+                                             type="button"
+                                             class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-md"
+                                             aria-label="Tutup notifikasi"
+                                         >
+                                             <X class="h-4 w-4" />
+                                         </button>
+                                     </div>
+                                     <div class="max-h-80 overflow-y-auto">
+                                         <div v-if="notifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                             {{ __('No notifications') }}
+                                         </div>
+                                         <div 
+                                             v-else
+                                             v-for="notif in notifications" 
+                                             :key="notif.id"
+                                             @click="markAsRead(notif)"
+                                             :class="[
+                                                 'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
+                                                 !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
+                                             ]"
+                                         >
+                                             <!-- Icon -->
+                                             <div :class="[
+                                                 'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
+                                                 notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
+                                                 notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
+                                                 notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
+                                                 notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
+                                                 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
+                                             ]">
+                                                 <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
+                                                 <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
+                                                 <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
+                                                 <User v-else class="h-4 w-4" />
                                              </div>
-                                             <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
-                                             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
+                                             <!-- Content -->
+                                             <div class="flex-1 min-w-0">
+                                                 <div class="flex items-start justify-between gap-2">
+                                                     <div class="flex items-center gap-1.5 min-w-0">
+                                                         <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
+                                                         <span v-if="notif.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500 text-white flex-shrink-0 animate-pulse">URGENT</span>
+                                                     </div>
+                                                     <span v-if="!notif.read_at" :class="['h-2 w-2 rounded-full flex-shrink-0 mt-1', notif.priority === 'URGENT' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500']"></span>
+                                                 </div>
+                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
+                                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
+                                             </div>
                                          </div>
                                      </div>
+                                     <div v-if="unreadCount > 0" class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
+                                         <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">{{ __('Mark All as Read') }}</button>
+                                     </div>
                                  </div>
-                                 <div v-if="unreadCount > 0" class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                     <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">{{ __('Mark All as Read') }}</button>
-                                 </div>
-                             </div>
-                            </Transition>
+                             </Transition>
                         </div>
                     </div>
                 </div>
@@ -970,18 +985,18 @@ const getGroupInitials = (title) => {
                     @click="toast.route ? router.visit(toast.route) : null"
                     :class="[
                         'pointer-events-auto flex gap-3 p-4 rounded-2xl border shadow-lg cursor-pointer transition-all duration-200 hover:scale-[1.02]',
-                        'bg-white/95 dark:bg-slate-900/95 backdrop-blur-md',
-                        'border-slate-100 dark:border-slate-800/80',
+                        toast.priority === 'URGENT' ? 'bg-rose-50/95 dark:bg-rose-950/90 border-rose-550/50 dark:border-rose-800/60 shadow-rose-500/10' : 'bg-white/95 dark:bg-slate-900/95 border-slate-100 dark:border-slate-800/80',
                         toast.route ? 'hover:border-indigo-500/50 dark:hover:border-indigo-400/50' : ''
                     ]"
                 >
                     <!-- Icon -->
                     <div :class="[
                         'h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0',
-                        toast.type === 'ticket' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500' :
+                        toast.priority === 'URGENT' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/25 animate-pulse' :
+                        toast.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
                         toast.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
                         toast.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                        'bg-violet-50 dark:bg-violet-950/40 text-violet-500'
+                        'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
                     ]">
                         <Bell v-if="toast.type === 'ticket'" class="h-4.5 w-4.5" />
                         <Clock v-else-if="toast.type === 'progress'" class="h-4.5 w-4.5" />
@@ -990,8 +1005,11 @@ const getGroupInitials = (title) => {
                     </div>
                     <!-- Content -->
                     <div class="flex-1 min-w-0">
-                        <p class="text-xs font-extrabold text-slate-900 dark:text-white leading-normal">{{ toast.title }}</p>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-1 line-clamp-3">{{ toast.message }}</p>
+                        <div class="flex items-center gap-1.5">
+                            <span v-if="toast.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-550 text-white flex-shrink-0">URGENT</span>
+                            <p :class="['text-xs font-extrabold leading-normal', toast.priority === 'URGENT' ? 'text-rose-950 dark:text-rose-100' : 'text-slate-900 dark:text-white']">{{ toast.title }}</p>
+                        </div>
+                        <p :class="['text-[11px] leading-relaxed mt-1 line-clamp-3', toast.priority === 'URGENT' ? 'text-rose-900 dark:text-rose-250' : 'text-slate-500 dark:text-slate-400']">{{ toast.message }}</p>
                     </div>
                     <!-- Close Button -->
                     <button @click.stop="removeToast(toast.id)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 h-5 w-5 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition flex-shrink-0">

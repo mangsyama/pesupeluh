@@ -16,7 +16,8 @@ import {
     ImageIcon,
     UserCheck,
     Send,
-    Sparkles
+    Sparkles,
+    ChevronDown
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
@@ -142,6 +143,25 @@ const submitAssign = () => {
             assignForm.reset();
         }
     });
+};
+
+const addTechnician = (event) => {
+    const value = parseInt(event.target.value);
+    if (value && !assignForm.technician_ids.includes(value)) {
+        assignForm.technician_ids.push(value);
+    }
+    event.target.value = "";
+};
+
+const removeTechnician = (id) => {
+    assignForm.technician_ids = assignForm.technician_ids.filter(techId => techId !== id);
+};
+
+const getTechnicianName = (id) => {
+    const tech = props.technicians.find(t => t.id === id);
+    if (!tech) return '';
+    const unitName = tech.supporting_unit ? ` (${tech.supporting_unit.name})` : '';
+    return `${tech.name}${unitName}`;
 };
 
 // Lightbox state
@@ -419,24 +439,43 @@ const contextLabel = computed(() => {
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                     {{ __('pages.tickets.detail.select_technicians') }}
                                 </label>
-                                <div v-if="technicians.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                    <label 
-                                        v-for="tech in technicians" 
-                                        :key="tech.id" 
-                                        class="border rounded-xl p-3 flex items-center justify-between cursor-pointer transition select-none"
-                                        :class="[
-                                            assignForm.technician_ids.includes(tech.id)
-                                                ? 'border-indigo-500 bg-indigo-50/10 dark:bg-indigo-950/10 text-indigo-950 dark:text-white font-bold'
-                                                : 'border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-900'
-                                        ]"
-                                    >
-                                        <div class="flex flex-col">
-                                            <span class="text-xs font-bold uppercase tracking-wide">{{ tech.name }}</span>
-                                            <span class="text-[9px] text-slate-450 dark:text-slate-505 mt-0.5">NIP: {{ tech.nip }}</span>
+                                <div v-if="technicians.length > 0" class="space-y-3">
+                                    <div class="relative">
+                                        <select
+                                            @change="addTechnician($event)"
+                                            class="w-full h-11 pl-4 pr-10 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none appearance-none cursor-pointer"
+                                        >
+                                            <option value="" disabled selected>{{ __('pages.tickets.detail.select_technicians') }}...</option>
+                                            <option 
+                                                v-for="tech in technicians" 
+                                                :key="tech.id" 
+                                                :value="tech.id"
+                                                :disabled="assignForm.technician_ids.includes(tech.id)"
+                                            >
+                                                {{ tech.name }} (NIP: {{ tech.nip }}) {{ tech.supporting_unit ? ' - ' + tech.supporting_unit.name : '' }}
+                                            </option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                            <ChevronDown class="h-4.5 w-4.5 text-slate-400" />
                                         </div>
-                                        <input type="checkbox" :value="tech.id" v-model="assignForm.technician_ids" class="hidden" />
-                                        <CheckCircle2 v-if="assignForm.technician_ids.includes(tech.id)" class="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                                    </label>
+                                    </div>
+
+                                    <div v-if="assignForm.technician_ids.length > 0" class="flex flex-wrap gap-1.5 p-3 border border-slate-100 dark:border-slate-800/60 rounded-xl bg-slate-50/20 dark:bg-slate-950/20">
+                                        <div 
+                                            v-for="id in assignForm.technician_ids" 
+                                            :key="id"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-750 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-200/20"
+                                        >
+                                            <span>{{ getTechnicianName(id) }}</span>
+                                            <button 
+                                                type="button" 
+                                                @click="removeTechnician(id)"
+                                                class="text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-200 focus:outline-none"
+                                            >
+                                                <X class="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div v-else class="text-xs text-slate-450 dark:text-slate-500 italic p-3 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/20">
                                     {{ __('pages.tickets.detail.no_active_techs') }}
