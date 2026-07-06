@@ -33,6 +33,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                'page_permissions' => $request->user() ? $request->user()->getEffectivePermissions() : [],
                 'pending_approvals_count' => $request->user() ? \Inertia\Inertia::defer(fn() => \App\Models\User::whereNull('approved_by')->count()) : 0,
             ],
             'notifications' => $request->user() ? \Inertia\Inertia::defer(fn() => $request->user()->unreadNotifications->map(function ($notification) {

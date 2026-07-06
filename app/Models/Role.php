@@ -7,7 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Role extends Model
 {
     public $timestamps = false;
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'page_permissions'];
+
+    protected function casts(): array
+    {
+        return [
+            'page_permissions' => 'array',
+        ];
+    }
 
     public function users()
     {

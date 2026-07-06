@@ -199,96 +199,98 @@ const isRouteActive = (item) => {
 };
 
 const user = computed(() => page.props.auth?.user);
+const permissions = computed(() => page.props.auth?.page_permissions || []);
+
+const hasAccess = (permKey) => permissions.value.includes(permKey);
 
 const menuGroups = computed(() => {
-    const roleId = Number(user.value?.role_id);
-    const groups = [
+    const can = hasAccess;
+
+    // Define ALL menu items, then filter by permissions
+    const allGroups = [
         {
             title: 'menu.main_menu',
             items: [
-                { label: 'menu.dashboard', routeName: 'dashboard', icon: LayoutDashboard }
+                { label: 'menu.dashboard', routeName: 'dashboard', icon: LayoutDashboard, permKey: 'dashboard' }
             ]
         },
         {
             title: 'menu.services_reports',
             items: [
-                { label: 'menu.supporting_services', routeName: 'services.index', icon: Activity },
-                { label: 'menu.reporting_history', routeName: 'reports.history', icon: History }
+                { label: 'menu.supporting_services', routeName: 'services.index', icon: Activity, permKey: 'services.index' },
+                { label: 'menu.reporting_history', routeName: 'reports.history', icon: History, permKey: 'reports.history' },
+                { label: 'Manajemen Laporan', routeName: 'reports-management.index', icon: Wrench, permKey: 'reports-management.index' },
+                { label: 'menu.reports_export', routeName: 'reports.index', icon: FileBarChart2, permKey: 'reports.index' },
             ]
-        }
-    ];
-
-    // If role has operational duties, add Management item
-    if (roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4 || roleId === 5 || roleId === 6 || roleId === 7) {
-        groups[1].items.push({
-            label: 'Manajemen Laporan',
-            routeName: 'reports-management.index',
-            icon: Wrench
-        });
-    }
-
-    groups[1].items.push({
-        label: 'menu.reports_export',
-        routeName: 'reports.index',
-        icon: FileBarChart2
-    });
-
-    const isSystemAdmin = roleId === 1;
-
-    // Master data
-    if (isSystemAdmin) {
-        groups.push({
+        },
+        {
             title: 'menu.master_data',
             items: [
                 { 
                     label: 'menu.service_management', 
                     icon: Database,
                     children: [
-                        { label: 'menu.room_management', routeName: 'service-management.rooms', icon: MapPin },
-                        { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers },
-                        { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Building2 }
+                        { label: 'menu.room_management', routeName: 'service-management.rooms', icon: MapPin, permKey: 'service-management.rooms' },
+                        { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers, permKey: 'service-management.categories' },
+                        { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Building2, permKey: 'service-management.supporting-units' }
                     ]
                 },
                 { 
                     label: 'menu.user_management', 
                     icon: Users,
                     children: [
-                        { label: 'menu.approval', routeName: 'users.approvals', icon: ShieldAlert },
-                        { label: 'menu.user_list', routeName: 'users.index', icon: Users }
+                        { label: 'menu.approval', routeName: 'users.approvals', icon: ShieldAlert, permKey: 'users.approvals' },
+                        { label: 'menu.user_list', routeName: 'users.index', icon: Users, permKey: 'users.index' }
                     ]
                 }
             ]
-        });
-    }
-
-    groups.push({
-        title: 'menu.system',
-        items: [
-            { label: 'menu.settings', routeName: 'settings.index', icon: Settings }
-        ]
-    });
-
-    if (isSystemAdmin) {
-        groups.push({
+        },
+        {
+            title: 'menu.system',
+            items: [
+                { label: 'menu.settings', routeName: 'settings.index', icon: Settings, permKey: 'settings.index' }
+            ]
+        },
+        {
             title: 'menu.design_system_group',
             items: [
                 { 
                     label: 'menu.design_components', 
                     icon: Palette,
+                    permKey: 'design-system.index',
                     children: [
-                        { label: 'menu.ds_overview', routeName: 'design-system.index', icon: LayoutDashboard },
-                        { label: 'menu.ds_buttons', routeName: 'design-system.buttons-badges', icon: Play },
-                        { label: 'menu.ds_forms', routeName: 'design-system.forms', icon: Type },
-                        { label: 'menu.ds_modals', routeName: 'design-system.modals-alerts', icon: FileText },
-                        { label: 'menu.ds_tables', routeName: 'design-system.tables', icon: Database },
-                        { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers }
+                        { label: 'menu.ds_overview', routeName: 'design-system.index', icon: LayoutDashboard, permKey: 'design-system.index' },
+                        { label: 'menu.ds_buttons', routeName: 'design-system.buttons-badges', icon: Play, permKey: 'design-system.index' },
+                        { label: 'menu.ds_forms', routeName: 'design-system.forms', icon: Type, permKey: 'design-system.index' },
+                        { label: 'menu.ds_modals', routeName: 'design-system.modals-alerts', icon: FileText, permKey: 'design-system.index' },
+                        { label: 'menu.ds_tables', routeName: 'design-system.tables', icon: Database, permKey: 'design-system.index' },
+                        { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers, permKey: 'design-system.index' }
                     ]
                 }
             ]
-        });
-    }
+        }
+    ];
 
-    return groups;
+    // Filter items by permissions
+    return allGroups
+        .map(group => {
+            const filteredItems = group.items
+                .map(item => {
+                    if (item.children) {
+                        const filteredChildren = item.children.filter(child => can(child.permKey));
+                        if (filteredChildren.length === 0) return null;
+                        return { ...item, children: filteredChildren };
+                    }
+                    // Single item: check its permKey
+                    if (item.permKey && !can(item.permKey)) return null;
+                    return item;
+                })
+                .filter(Boolean);
+
+            if (filteredItems.length === 0) return null;
+            return { ...group, items: filteredItems };
+        })
+        .filter(Boolean);
 });
 
 const triggerSupportBack = () => {

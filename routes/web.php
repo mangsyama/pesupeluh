@@ -107,9 +107,9 @@ Route::get('/dashboard', function () {
         'recentTickets' => $recentTickets,
         'breakdownData' => $breakdownData,
     ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'page.access'])->name('dashboard');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/services', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => null,
@@ -142,7 +142,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tickets/{ticket:uuid}/resume', [\App\Http\Controllers\TicketController::class, 'resume'])->name('tickets.resume');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     // User Management
     Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
     Route::get('/users/approvals', [UserManagementController::class, 'indexApprovals'])->name('users.approvals');
@@ -157,6 +157,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
     Route::patch('/users/{user}/toggle-active', [UserManagementController::class, 'toggleActive'])->name('users.toggle-active');
     Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
+    Route::put('/users/{user}/permissions', [UserManagementController::class, 'updatePermissions'])->name('users.update-permissions');
 
     // Layanan Manajemen
     Route::get('/service-management', function () {

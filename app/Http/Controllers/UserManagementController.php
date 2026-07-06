@@ -73,11 +73,48 @@ class UserManagementController extends Controller
         $rooms = Room::orderBy('name', 'asc')->get();
         $supportingUnits = SupportingUnit::orderBy('name', 'asc')->get();
 
+        // All available permission keys for the permission checkbox UI
+        $allPermissionKeys = [
+            [
+                'group' => 'Menu Utama',
+                'permissions' => [
+                    ['key' => 'dashboard', 'label' => 'Dashboard'],
+                ],
+            ],
+            [
+                'group' => 'Layanan & Laporan',
+                'permissions' => [
+                    ['key' => 'services.index', 'label' => 'Layanan Penunjang'],
+                    ['key' => 'reports.history', 'label' => 'Riwayat Pelaporan'],
+                    ['key' => 'reports-management.index', 'label' => 'Manajemen Laporan'],
+                    ['key' => 'reports.index', 'label' => 'Ekspor Laporan'],
+                ],
+            ],
+            [
+                'group' => 'Master Data',
+                'permissions' => [
+                    ['key' => 'service-management.rooms', 'label' => 'Manajemen Ruangan'],
+                    ['key' => 'service-management.categories', 'label' => 'Kategori Kerusakan'],
+                    ['key' => 'service-management.supporting-units', 'label' => 'Unit Penunjang'],
+                    ['key' => 'users.approvals', 'label' => 'Persetujuan Pengguna'],
+                    ['key' => 'users.index', 'label' => 'Daftar Pengguna'],
+                ],
+            ],
+            [
+                'group' => 'Sistem',
+                'permissions' => [
+                    ['key' => 'settings.index', 'label' => 'Pengaturan'],
+                    ['key' => 'design-system.index', 'label' => 'Design System'],
+                ],
+            ],
+        ];
+
         return Inertia::render('UserManagement/Index', [
             'users' => $users,
             'roles' => $roles,
             'rooms' => $rooms,
             'supportingUnits' => $supportingUnits,
+            'allPermissionKeys' => $allPermissionKeys,
         ]);
     }
 
@@ -277,5 +314,26 @@ class UserManagementController extends Controller
         $user->delete();
 
         return redirect()->back()->with('success', 'User berhasil dihapus.');
+    }
+
+    /**
+     * Update page permissions for a specific user.
+     */
+    public function updatePermissions(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'page_permissions' => 'present|array',
+            'page_permissions.*' => 'string',
+            'use_role_default' => 'boolean',
+        ]);
+
+        if ($request->boolean('use_role_default')) {
+            // Reset to role default by clearing user override
+            $user->update(['page_permissions' => null]);
+        } else {
+            $user->update(['page_permissions' => $validated['page_permissions']]);
+        }
+
+        return redirect()->back()->with('success', 'Hak akses pengguna berhasil diperbarui.');
     }
 }

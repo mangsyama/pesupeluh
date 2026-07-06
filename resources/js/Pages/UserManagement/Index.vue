@@ -2,7 +2,7 @@
 import { ref, computed, getCurrentInstance } from 'vue';
 import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X } from '@lucide/vue';
+import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw } from '@lucide/vue';
 
 const props = defineProps({
     users: {
@@ -20,6 +20,10 @@ const props = defineProps({
     supportingUnits: {
         type: Array,
         required: true,
+    },
+    allPermissionKeys: {
+        type: Array,
+        default: () => [],
     },
 });
 
@@ -207,6 +211,81 @@ const deleteUser = (user) => {
 const editUser = (user) => {
     openEditModal(user);
 };
+
+// ===== Permission Modal =====
+const showPermissionModal = ref(false);
+const permissionUser = ref(null);
+const permissionChecked = ref([]);
+const permissionUseDefault = ref(true);
+const permissionProcessing = ref(false);
+
+const getRoleDefaultPermissions = (roleId) => {
+    const role = props.roles.find(r => r.id === roleId);
+    if (role && role.page_permissions) {
+        return Array.isArray(role.page_permissions) ? role.page_permissions : JSON.parse(role.page_permissions);
+    }
+    return [];
+};
+
+const openPermissionModal = (user) => {
+    permissionUser.value = user;
+    const roleDefaults = getRoleDefaultPermissions(user.role_id);
+
+    if (user.page_permissions && Array.isArray(user.page_permissions) && user.page_permissions.length > 0) {
+        // User has custom override
+        permissionUseDefault.value = false;
+        permissionChecked.value = [...user.page_permissions];
+    } else {
+        // Using role defaults
+        permissionUseDefault.value = true;
+        permissionChecked.value = [...roleDefaults];
+    }
+    showPermissionModal.value = true;
+};
+
+const isRoleDefault = (key) => {
+    if (!permissionUser.value) return false;
+    const roleDefaults = getRoleDefaultPermissions(permissionUser.value.role_id);
+    return roleDefaults.includes(key);
+};
+
+const togglePermission = (key) => {
+    if (permissionUseDefault.value) {
+        // Switch to custom mode when user changes anything
+        permissionUseDefault.value = false;
+    }
+    const idx = permissionChecked.value.indexOf(key);
+    if (idx >= 0) {
+        permissionChecked.value.splice(idx, 1);
+    } else {
+        permissionChecked.value.push(key);
+    }
+};
+
+const resetToDefault = () => {
+    if (!permissionUser.value) return;
+    permissionUseDefault.value = true;
+    permissionChecked.value = [...getRoleDefaultPermissions(permissionUser.value.role_id)];
+};
+
+const savePermissions = () => {
+    if (!permissionUser.value) return;
+    permissionProcessing.value = true;
+
+    router.put(route('users.update-permissions', permissionUser.value.id), {
+        page_permissions: permissionChecked.value,
+        use_role_default: permissionUseDefault.value,
+    }, {
+        onSuccess: () => {
+            showPermissionModal.value = false;
+            permissionProcessing.value = false;
+            proxy.$toast('Hak akses pengguna berhasil diperbarui.', 'success');
+        },
+        onError: () => {
+            permissionProcessing.value = false;
+        },
+    });
+};
 </script>
 
 <template>
@@ -307,6 +386,13 @@ const editUser = (user) => {
                                     </td>
                                     <td class="px-6 py-4 text-right text-xs text-slate-500 dark:text-slate-400">
                                         <div class="flex items-center justify-end gap-1.5">
+                                            <button
+                                                @click="openPermissionModal(user)"
+                                                class="p-1.5 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"
+                                                title="Atur Akses Halaman"
+                                            >
+                                                <KeyRound class="h-4 w-4" />
+                                            </button>
                                             <button
                                                 @click="editUser(user)"
                                                 class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"
@@ -473,6 +559,124 @@ const editUser = (user) => {
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- Permission Modal -->
+        <Teleport to="body">
+            <div v-if="showPermissionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+                <div class="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-900/50 flex-shrink-0">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                                <KeyRound class="h-4.5 w-4.5 text-violet-500" />
+                                Pengaturan Akses Halaman
+                            </h3>
+                            <p v-if="permissionUser" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                {{ permissionUser.name }}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 ml-1">
+                                    {{ permissionUser.role?.name ? __('roles.' + permissionUser.role.name) : '-' }}
+                                </span>
+                            </p>
+                        </div>
+                        <button type="button" @click="showPermissionModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
+                            <X class="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-6 overflow-y-auto flex-1">
+                        <!-- Mode indicator -->
+                        <div class="flex items-center justify-between mb-5">
+                            <div class="flex items-center gap-2">
+                                <span :class="[
+                                    'inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors',
+                                    permissionUseDefault
+                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50'
+                                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50'
+                                ]">
+                                    {{ permissionUseDefault ? 'Menggunakan Default Role' : 'Custom Override' }}
+                                </span>
+                            </div>
+                            <button
+                                v-if="!permissionUseDefault"
+                                @click="resetToDefault"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                            >
+                                <RotateCcw class="h-3 w-3" />
+                                Reset ke Default
+                            </button>
+                        </div>
+
+                        <!-- Permission groups -->
+                        <div class="space-y-5">
+                            <div v-for="group in allPermissionKeys" :key="group.group">
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5 flex items-center gap-2">
+                                    <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
+                                    {{ group.group }}
+                                    <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
+                                </h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <label
+                                        v-for="perm in group.permissions"
+                                        :key="perm.key"
+                                        :class="[
+                                            'flex items-center gap-3 px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all duration-150 select-none group',
+                                            permissionChecked.includes(perm.key)
+                                                ? 'bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800/50 shadow-sm'
+                                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                                        ]"
+                                    >
+                                        <div class="relative flex items-center justify-center">
+                                            <input
+                                                type="checkbox"
+                                                :checked="permissionChecked.includes(perm.key)"
+                                                @change="togglePermission(perm.key)"
+                                                class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-violet-600 focus:ring-violet-500 dark:bg-slate-800 cursor-pointer"
+                                            />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <span :class="[
+                                                'text-sm font-medium',
+                                                permissionChecked.includes(perm.key)
+                                                    ? 'text-slate-900 dark:text-white'
+                                                    : 'text-slate-600 dark:text-slate-400'
+                                            ]">
+                                                {{ perm.label }}
+                                            </span>
+                                        </div>
+                                        <span
+                                            v-if="isRoleDefault(perm.key)"
+                                            class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                                        >
+                                            default
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50 flex-shrink-0">
+                        <button
+                            type="button"
+                            @click="showPermissionModal = false"
+                            class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            @click="savePermissions"
+                            :disabled="permissionProcessing"
+                            class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm rounded-xl transition duration-150 shadow-sm disabled:opacity-50 flex items-center gap-2"
+                        >
+                            <KeyRound v-if="!permissionProcessing" class="h-3.5 w-3.5" />
+                            {{ permissionProcessing ? 'Menyimpan...' : 'Simpan Akses' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </Teleport>

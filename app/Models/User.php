@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'face_descriptor', 'role_id', 'room_id', 'supporting_unit_id', 'phone_number', 'is_active', 'nip', 'username', 'profile_photo_path', 'approved_by', 'approved_at'])]
+#[Fillable(['name', 'email', 'password', 'face_descriptor', 'role_id', 'room_id', 'supporting_unit_id', 'phone_number', 'is_active', 'nip', 'username', 'profile_photo_path', 'approved_by', 'approved_at', 'page_permissions'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -40,6 +40,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'face_descriptor' => 'array',
+            'page_permissions' => 'array',
             'approved_at' => 'datetime',
             'is_active' => 'boolean',
             'role_id' => 'integer',
@@ -57,6 +58,34 @@ class User extends Authenticatable
     public function room()
     {
         return $this->belongsTo(Room::class);
+    }
+
+    /**
+     * Get the effective page permissions for this user.
+     * User override takes priority; falls back to role defaults.
+     */
+    public function getEffectivePermissions(): array
+    {
+        // If user has personal override, use that
+        if (!empty($this->page_permissions) && is_array($this->page_permissions)) {
+            return $this->page_permissions;
+        }
+
+        // Fall back to role defaults
+        $role = $this->role ?? $this->load('role')->role;
+        if ($role && is_array($role->page_permissions)) {
+            return $role->page_permissions;
+        }
+
+        return [];
+    }
+
+    /**
+     * Check if user has access to a specific page permission key.
+     */
+    public function hasPageAccess(string $permissionKey): bool
+    {
+        return in_array($permissionKey, $this->getEffectivePermissions(), true);
     }
 
     public function supportingUnit()

@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('remember_token', 100)->nullable();
             $table->string('phone_number', 20)->nullable();
             $table->boolean('is_active')->default(false);
+            $table->text('page_permissions')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('no action');
             $table->dateTimeTz('approved_at')->nullable();
             $table->dateTimeTz('created_at')->default(DB::raw(DB::getDriverName() === 'sqlsrv' ? 'SYSDATETIMEOFFSET()' : 'CURRENT_TIMESTAMP'));

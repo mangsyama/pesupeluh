@@ -17,14 +17,32 @@ class DatabaseSeeder extends Seeder
         // 1. Seed Roles
         if (DB::table('roles')->count() === 0) {
             DB::table('roles')->insert([
-                ['name' => 'ADMINISTRATOR'],
-                ['name' => 'DIRECTOR'],
-                ['name' => 'DIVISION_HEAD'],
-                ['name' => 'SECTION_HEAD'],
-                ['name' => 'UNIT_HEAD'],
-                ['name' => 'TECHNICIAN'],
-                ['name' => 'ROOM_HEAD'],
-                ['name' => 'REPORTER'],
+                ['name' => 'ADMINISTRATOR', 'page_permissions' => json_encode([
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index',
+                    'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
+                    'users.approvals', 'users.index', 'settings.index', 'design-system.index',
+                ])],
+                ['name' => 'DIRECTOR', 'page_permissions' => json_encode([
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'settings.index',
+                ])],
+                ['name' => 'DIVISION_HEAD', 'page_permissions' => json_encode([
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'settings.index',
+                ])],
+                ['name' => 'SECTION_HEAD', 'page_permissions' => json_encode([
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'settings.index',
+                ])],
+                ['name' => 'UNIT_HEAD', 'page_permissions' => json_encode([
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'settings.index',
+                ])],
+                ['name' => 'TECHNICIAN', 'page_permissions' => json_encode([
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'settings.index',
+                ])],
+                ['name' => 'ROOM_HEAD', 'page_permissions' => json_encode([
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'settings.index',
+                ])],
+                ['name' => 'REPORTER', 'page_permissions' => json_encode([
+                    'dashboard', 'services.index', 'reports.history', 'settings.index',
+                ])],
             ]);
         }
 
