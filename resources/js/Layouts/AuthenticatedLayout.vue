@@ -96,11 +96,13 @@ onMounted(() => {
     registerNotificationListeners();
     window.addEventListener('show-demo-toast', handleDemoToast);
     window.addEventListener('trigger-custom-alert', handleCustomAlert);
+    document.addEventListener('click', closeMobileNotificationsOnOutsideClick);
 });
 
 onUnmounted(() => {
     window.removeEventListener('show-demo-toast', handleDemoToast);
     window.removeEventListener('trigger-custom-alert', handleCustomAlert);
+    document.removeEventListener('click', closeMobileNotificationsOnOutsideClick);
 });
 
 const toggleSidebarCollapse = () => {
@@ -124,6 +126,7 @@ const toggleSidebarCollapse = () => {
 const getInitialOpenMenus = () => {
     const defaults = {
         'menu.user_management': route().current('users.approvals') ||
+            route().current('users.index') ||
             route().current('users.admin') ||
             route().current('users.management') ||
             route().current('users.unit-head') ||
@@ -251,12 +254,7 @@ const menuGroups = computed(() => {
                     icon: Users,
                     children: [
                         { label: 'menu.approval', routeName: 'users.approvals', icon: ShieldAlert },
-                        { label: 'menu.super_admin', routeName: 'users.admin', icon: Shield },
-                        { label: 'menu.management', routeName: 'users.management', icon: Users },
-                        { label: 'menu.unit_head', routeName: 'users.unit-head', icon: User },
-                        { label: 'menu.technician', routeName: 'users.technician', icon: User },
-                        { label: 'menu.room_head', routeName: 'users.room-head', icon: User },
-                        { label: 'menu.reporter', routeName: 'users.reporter', icon: User }
+                        { label: 'menu.user_list', routeName: 'users.index', icon: Users }
                     ]
                 }
             ]
@@ -323,6 +321,7 @@ const showSearchResults = ref(false);
 const showMobileNotifications = ref(false);
 const showDesktopNotifications = ref(false);
 const showMobileProfileDropdown = ref(false);
+const mobileNotificationsPanel = ref(null);
 const pendingApprovalsCount = ref(page.props.auth?.pending_approvals_count ?? 0);
 const notifications = ref(page.props.notifications ?? []);
 
@@ -460,6 +459,13 @@ const closeMobileProfileDropdown = () => {
 const onMobileProfileOpenChange = (value) => {
     showMobileProfileDropdown.value = value;
     if (value) {
+        showMobileNotifications.value = false;
+    }
+};
+
+const closeMobileNotificationsOnOutsideClick = (e) => {
+    if (!showMobileNotifications.value || !mobileNotificationsPanel.value) return;
+    if (e.target instanceof Node && !mobileNotificationsPanel.value.contains(e.target)) {
         showMobileNotifications.value = false;
     }
 };
@@ -864,7 +870,7 @@ const getGroupInitials = (title) => {
                             >
                                 <div
                                     v-if="showMobileNotifications"
-                                    class="fixed inset-0 z-40 lg:hidden"
+                                    class="fixed inset-0 z-50 lg:hidden"
                                     @click="showMobileNotifications = false"
                                     aria-hidden="true"
                                 />
@@ -878,7 +884,7 @@ const getGroupInitials = (title) => {
                                 leave-from-class="opacity-100 scale-100 translate-y-0"
                                 leave-to-class="opacity-0 scale-95 translate-y-1"
                             >
-                                <div v-if="showMobileNotifications" @click.stop class="lg:hidden absolute right-0 top-full mt-2.5 z-50 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden w-[calc(100vw-2rem)]">
+                                <div ref="mobileNotificationsPanel" v-if="showMobileNotifications" @click.stop class="lg:hidden absolute right-0 top-full mt-2.5 z-50 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden w-[calc(100vw-2rem)]">
                                  <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                      <div class="flex items-center gap-3">
                                          <Bell class="h-4 w-4 text-slate-500 dark:text-slate-400" />

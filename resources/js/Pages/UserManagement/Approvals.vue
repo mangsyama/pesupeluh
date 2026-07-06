@@ -336,7 +336,7 @@ const formatDate = (dateStr) => {
                                             class="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                                         >
                                             <option v-for="role in roles" :key="role.id" :value="role.id">
-                                                {{ role.name }}
+                                                {{ __('roles.' + role.name) }}
                                             </option>
                                         </select>
                                         <div v-if="form.errors.role_id" class="text-xs text-red-500 mt-1">{{ form.errors.role_id }}</div>
@@ -432,7 +432,7 @@ const formatDate = (dateStr) => {
                                     <div class="text-lg font-extrabold text-slate-900 dark:text-white leading-tight">{{ detailUser?.name ?? '-' }}</div>
                                     <div class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ detailUser?.email ?? '-' }}</div>
                                     <div class="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
-                                        {{ detailUser?.role?.name ?? 'Belum ditentukan' }}
+                                        {{ detailUser?.role?.name ? __('roles.' + detailUser.role.name) : 'Belum ditentukan' }}
                                     </div>
                                 </div>
                             </div>

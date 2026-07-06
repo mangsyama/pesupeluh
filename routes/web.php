@@ -144,6 +144,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // User Management
+    Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
     Route::get('/users/approvals', [UserManagementController::class, 'indexApprovals'])->name('users.approvals');
     Route::patch('/users/{user}/approve', [UserManagementController::class, 'approveUser'])->name('users.approve');
     Route::get('/users/admin', [UserManagementController::class, 'indexAdmin'])->name('users.admin');

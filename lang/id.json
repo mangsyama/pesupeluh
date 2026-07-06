@@ -206,11 +206,25 @@
       "desc_reporter": "Daftar akun staf / pelapor umum yang berwenang membuat laporan kerusakan.",
       "search_placeholder_tpl": "Cari nama {role}...",
       "search_all_placeholder": "Cari nama, email, NIP...",
+      "add_user_btn": "Tambah Pengguna",
+      "edit_user_title": "Edit Pengguna",
+      "add_user_title": "Tambah Pengguna",
       "add_role_btn": "Tambah {role}",
       "edit_role_title": "Edit {role}",
       "add_role_title": "Tambah {role}",
       "approval_title": "Persetujuan Registrasi Pengguna",
       "approval_desc": "Tinjau NIP dan foto fisik pendaftar sebelum menyetujui peran dan menempatkan unit/ruangan.",
+      "user_list_title": "Daftar Pengguna",
+      "user_list_desc": "Lihat akun pengguna yang disetujui berdasarkan peran.",
+      "tabs": {
+        "all": "Semua",
+        "admin": "Admin",
+        "management": "Manajemen",
+        "unit_head": "Kepala Unit",
+        "technician": "Teknisi",
+        "room_head": "Kepala Ruangan",
+        "reporter": "Pelapor"
+      },
       "suspend_account": "Suspend Akun",
       "activate_account": "Aktifkan Akun",
       "table": {
@@ -267,8 +281,7 @@
         "reject_warning": "Pendaftaran untuk {name} akan ditolak dan dihapus secara permanen dari sistem.",
         "yes_reject": "Ya, Tolak",
         "reject_success": "Pendaftaran user berhasil ditolak.",
-        "saving": "Menyimpan...",
-        "approve_btn": "Setujui & Aktifkan",
+        "saving": "Menyimpan...",        "edit_not_available": "Fitur edit belum tersedia.",        "approve_btn": "Setujui & Aktifkan",
         "approve_action": "Setujui",
         "reject_action": "Tolak"
       }
@@ -576,6 +589,7 @@
     "supporting_units": "Layanan Penunjang",
     "user_management": "Manajemen Pengguna",
     "approval": "Persetujuan",
+    "user_list": "Daftar Pengguna",
     "super_admin": "Super Admin",
     "management": "Manajemen",
     "unit_head": "Kepala Unit",
@@ -604,6 +618,16 @@
   "The email must be a valid email address.": "Format email tidak valid.",
   "The email has already been taken.": "Email sudah digunakan.",
   "The current password is incorrect.": "Kata sandi saat ini salah.",
+  "roles": {
+    "ADMINISTRATOR": "SUPER ADMIN",
+    "DIRECTOR": "DIREKTUR",
+    "DIVISION_HEAD": "KABID",
+    "SECTION_HEAD": "KASI",
+    "UNIT_HEAD": "KEPALA UNIT",
+    "TECHNICIAN": "TEKNISI",
+    "ROOM_HEAD": "KEPALA RUANGAN",
+    "REPORTER": "STAFF"
+  },
   "Notifications": "Notifikasi",
   "No notifications": "Tidak ada notifikasi",
   "Mark All as Read": "Tandai Semua Sudah Dibaca"

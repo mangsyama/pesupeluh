@@ -260,7 +260,7 @@ const deleteUser = (user) => {
                         <!-- Role -->
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400">
-                                {{ user.role ? user.role.name : roleName }}
+                                {{ user.role ? __('roles.' + user.role.name) : roleName }}
                             </span>
                         </td>
 
@@ -378,7 +378,7 @@ const deleteUser = (user) => {
                                 class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                             >
                                 <option v-for="r in roles" :key="r.id" :value="r.id">
-                                    {{ r.name }}
+                                    {{ __('roles.' + r.name) }}
                                 </option>
                             </select>
                             <div v-if="form.errors.role_id" class="text-xs text-red-500 mt-1">{{ form.errors.role_id }}</div>

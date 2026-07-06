@@ -23,6 +23,7 @@ const props = defineProps({
 const emit = defineEmits(['update:open']);
 
 const internalOpen = ref(false);
+const dropdownRoot = ref(null);
 const open = computed({
     get: () => props.open ?? internalOpen.value,
     set: (value) => {
@@ -39,8 +40,21 @@ const closeOnEscape = (e) => {
     }
 };
 
-onMounted(() => document.addEventListener('keydown', closeOnEscape));
-onUnmounted(() => document.removeEventListener('keydown', closeOnEscape));
+const closeOnOutsideClick = (e) => {
+    if (!open.value || !dropdownRoot.value) return;
+    if (e.target instanceof Node && !dropdownRoot.value.contains(e.target)) {
+        open.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('keydown', closeOnEscape);
+    document.addEventListener('click', closeOnOutsideClick);
+});
+onUnmounted(() => {
+    document.removeEventListener('keydown', closeOnEscape);
+    document.removeEventListener('click', closeOnOutsideClick);
+});
 
 const widthClass = computed(() => {
     return {
@@ -63,7 +77,7 @@ const alignmentClasses = computed(() => {
 </script>
 
 <template>
-    <div class="relative">
+    <div ref="dropdownRoot" class="relative">
         <div @click="open = !open">
             <slot name="trigger" />
         </div>
@@ -88,7 +102,6 @@ const alignmentClasses = computed(() => {
                 class="absolute z-50 mt-2.5 rounded-xl shadow-xl"
                 :class="[widthClass, alignmentClasses]"
                 style="display: none"
-                @click="open = false"
             >
                 <div
                     class="rounded-xl border border-slate-100 dark:border-slate-800"

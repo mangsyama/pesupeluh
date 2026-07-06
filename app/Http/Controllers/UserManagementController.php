@@ -60,6 +60,28 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Display a listing of all approved users by role.
+     */
+    public function index()
+    {
+        $users = User::with(['role', 'room', 'supportingUnit'])
+            ->whereNotNull('approved_by')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $roles = Role::orderBy('id', 'asc')->get();
+        $rooms = Room::orderBy('name', 'asc')->get();
+        $supportingUnits = SupportingUnit::orderBy('name', 'asc')->get();
+
+        return Inertia::render('UserManagement/Index', [
+            'users' => $users,
+            'roles' => $roles,
+            'rooms' => $rooms,
+            'supportingUnits' => $supportingUnits,
+        ]);
+    }
+
+    /**
      * Display a listing of admin users.
      */
     public function indexAdmin()
