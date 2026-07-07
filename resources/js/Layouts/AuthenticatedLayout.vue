@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench } from '@lucide/vue';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye } from '@lucide/vue';
 
 const sidebarOpen = ref(false);
 const isDark = ref(false);
@@ -227,44 +227,20 @@ const menuGroups = computed(() => {
             title: 'menu.master_data',
             items: [
                 { 
-                    label: 'menu.service_management', 
-                    icon: Database,
-                    children: [
-                        { label: 'menu.room_management', routeName: 'service-management.rooms', icon: MapPin, permKey: 'service-management.rooms' },
-                        { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers, permKey: 'service-management.categories' },
-                        { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Building2, permKey: 'service-management.supporting-units' }
-                    ]
-                },
-                { 
                     label: 'menu.user_management', 
                     icon: Users,
                     children: [
                         { label: 'menu.approval', routeName: 'users.approvals', icon: ShieldAlert, permKey: 'users.approvals' },
                         { label: 'menu.user_list', routeName: 'users.index', icon: Users, permKey: 'users.index' }
                     ]
-                }
-            ]
-        },
-        {
-            title: 'menu.system',
-            items: [
-                { label: 'menu.settings', routeName: 'settings.index', icon: Settings, permKey: 'settings.index' }
-            ]
-        },
-        {
-            title: 'menu.design_system_group',
-            items: [
+                },
                 { 
-                    label: 'menu.design_components', 
-                    icon: Palette,
-                    permKey: 'design-system.index',
+                    label: 'menu.service_management', 
+                    icon: Database,
                     children: [
-                        { label: 'menu.ds_overview', routeName: 'design-system.index', icon: LayoutDashboard, permKey: 'design-system.index' },
-                        { label: 'menu.ds_buttons', routeName: 'design-system.buttons-badges', icon: Play, permKey: 'design-system.index' },
-                        { label: 'menu.ds_forms', routeName: 'design-system.forms', icon: Type, permKey: 'design-system.index' },
-                        { label: 'menu.ds_modals', routeName: 'design-system.modals-alerts', icon: FileText, permKey: 'design-system.index' },
-                        { label: 'menu.ds_tables', routeName: 'design-system.tables', icon: Database, permKey: 'design-system.index' },
-                        { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers, permKey: 'design-system.index' }
+                        { label: 'menu.room_management', routeName: 'service-management.rooms', icon: MapPin, permKey: 'service-management.rooms' },
+                        { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers, permKey: 'service-management.categories' },
+                        { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Building2, permKey: 'service-management.supporting-units' }
                     ]
                 }
             ]
@@ -299,7 +275,7 @@ const triggerSupportBack = () => {
 
 const page = usePage();
 const backRoute = computed(() => {
-    if (route().current('profile.edit')) {
+    if (route().current('profile.edit') || route().current('design-system.*')) {
         return route('settings.index');
     }
     if (route().current('reports.show')) {
@@ -316,6 +292,16 @@ const backRoute = computed(() => {
     return route('services.index');
 });
 
+const showBackButton = computed(() => {
+    return route().current('services.medik') || 
+           route().current('services.non-medik') || 
+           route().current('profile.edit') || 
+           route().current('services.units.show') || 
+           route().current('reports.show') || 
+           route().current('reports-management.show') ||
+           route().current('design-system.*');
+});
+
 const globalSearchQuery = ref('');
 const showSearchResults = ref(false);
 
@@ -325,23 +311,61 @@ const showDesktopNotifications = ref(false);
 const showMobileProfileDropdown = ref(false);
 const mobileNotificationsPanel = ref(null);
 const pendingApprovalsCount = ref(page.props.auth?.pending_approvals_count ?? 0);
-const notifications = ref(page.props.notifications ?? []);
+const getCachedNotifications = () => {
+    if (typeof window !== 'undefined') {
+        const cached = sessionStorage.getItem('cached-notifications');
+        if (cached) {
+            try {
+                return JSON.parse(cached);
+            } catch (e) {
+                return [];
+            }
+        }
+    }
+    return [];
+};
+
+const notifications = ref(page.props.notifications && Array.isArray(page.props.notifications) ? page.props.notifications : getCachedNotifications());
 
 watch(
     () => page.props.notifications,
     (value) => {
-        notifications.value = value ?? [];
+        if (value && Array.isArray(value)) {
+            notifications.value = value;
+        }
     }
+);
+
+watch(
+    notifications,
+    (newVal) => {
+        try {
+            sessionStorage.setItem('cached-notifications', JSON.stringify(newVal));
+        } catch (e) {
+            // ignore
+        }
+    },
+    { deep: true }
 );
 
 watch(
     () => page.props.auth?.pending_approvals_count,
     (value) => {
-        pendingApprovalsCount.value = value ?? 0;
+        if (value !== undefined && value !== null) {
+            pendingApprovalsCount.value = value;
+        }
     }
 );
 
 const unreadCount = computed(() => notifications.value.filter(notification => !notification.read_at).length);
+
+const pendingReportsCount = computed(() => {
+    return notifications.value.filter(n => 
+        !n.read_at && 
+        n.type !== 'user' && 
+        !(n.route && n.route.includes('users.approvals'))
+    ).length;
+});
 
 const normalizeNotificationPayload = (notification) => {
     const title = notification.title ?? notification.data?.title ?? null;
@@ -497,6 +521,7 @@ const searchableItems = [
     { label: 'Sistem Desain - Modal & Alert', routeName: 'design-system.modals-alerts', description: 'Koleksi modal popup transisi & notifikasi SweetAlert2' },
     { label: 'Sistem Desain - Tabel & Pagination', routeName: 'design-system.tables', description: 'Desain layout tabel data, pagination, & state data kosong' },
     { label: 'Sistem Desain - Kartu Statistik', routeName: 'design-system.cards', description: 'Koleksi layout kartu data statistik & visualisasi grid' },
+    { label: 'Notifikasi Saya', routeName: 'notifications.index', description: 'Semua riwayat notifikasi sistem dan tugas' },
 ];
 
 const mobilePageTitles = [
@@ -528,6 +553,7 @@ const mobilePageTitles = [
     { routeName: 'design-system.modals-alerts', label: 'Sistem Desain - Modal & Alert' },
     { routeName: 'design-system.tables', label: 'Sistem Desain - Tabel & Pagination' },
     { routeName: 'design-system.cards', label: 'Sistem Desain - Kartu Statistik' },
+    { routeName: 'notifications.index', label: 'Semua Notifikasi' },
 ];
 
 const currentPageTitle = computed(() => {
@@ -565,9 +591,9 @@ const getGroupInitials = (title) => {
                     <div class="flex items-center flex-1">
                         <!-- Tombol Back (Desktop - Hanya tampil di sub-halaman layanan penunjang atau profile) -->
                         <Link
-                            v-if="route().current('services.medik') || route().current('services.non-medik') || route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show')"
+                            v-if="showBackButton"
                             :href="backRoute"
-                            @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') ? null : triggerSupportBack"
+                            @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') || route().current('design-system.*') ? null : triggerSupportBack"
                             class="hidden lg:inline-flex items-center justify-center h-11 w-11 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition duration-150 focus:outline-none shadow-sm border border-white dark:border-slate-800 mr-3 flex-shrink-0"
                             title="Kembali"
                         >
@@ -578,9 +604,9 @@ const getGroupInitials = (title) => {
                         <div class="lg:hidden flex items-center gap-3 mr-4 flex-shrink-0">
                             <!-- Tombol Back jika di dalam sub-halaman layanan penunjang atau profile (Mobile) -->
                             <Link
-                                v-if="route().current('services.medik') || route().current('services.non-medik') || route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show')"
+                                v-if="showBackButton"
                                 :href="backRoute"
-                                @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') ? null : triggerSupportBack"
+                                @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') || route().current('design-system.*') ? null : triggerSupportBack"
                                 class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-md border border-white dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition duration-150 focus:outline-none"
                                 aria-label="Kembali"
                             >
@@ -748,12 +774,31 @@ const getGroupInitials = (title) => {
                                                  <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
                                              </div>
                                          </div>
-                                     </div>
-
-                                     <!-- Footer -->
-                                     <div v-if="unreadCount > 0" class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                         <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">{{ __('Mark All as Read') }}</button>
-                                     </div>
+                                     </div>                                      
+                                      <!-- Footer -->
+                                      <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/50 dark:bg-slate-900/50">
+                                          <button 
+                                              v-if="unreadCount > 0" 
+                                              @click="markAllAsRead" 
+                                              class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition duration-150"
+                                          >
+                                              <Check class="h-3.5 w-3.5" />
+                                              {{ __('Mark All as Read') }}
+                                          </button>
+                                          <div v-else class="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                                              <CheckCheck class="h-3.5 w-3.5 text-emerald-500" />
+                                              Semua terbaca
+                                          </div>
+                                          
+                                          <Link 
+                                              :href="route('notifications.index')" 
+                                              @click="showDesktopNotifications = false"
+                                              class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition duration-150"
+                                          >
+                                              <Eye class="h-3.5 w-3.5" />
+                                              Lihat Semua
+                                          </Link>
+                                      </div>
                                 </template>
                             </Dropdown>
                         </div>
@@ -799,6 +844,17 @@ const getGroupInitials = (title) => {
                                     >
                                         <User class="h-4 w-4 text-slate-400" />
                                         <span>{{ __('Profile') }}</span>
+                                    </Link>
+
+                                    <!-- Pengaturan -->
+                                    <Link
+                                        v-if="hasAccess('settings.index')"
+                                        :href="route('settings.index')"
+                                        prefetch
+                                        class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800/80 transition duration-150"
+                                    >
+                                        <Settings class="h-4 w-4 text-slate-400" />
+                                        <span>{{ __('menu.settings') }}</span>
                                     </Link>
 
                                     <!-- Notifikasi (Mobile) -->
@@ -956,9 +1012,30 @@ const getGroupInitials = (title) => {
                                              </div>
                                          </div>
                                      </div>
-                                     <div v-if="unreadCount > 0" class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-center">
-                                         <button @click="markAllAsRead" class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">{{ __('Mark All as Read') }}</button>
-                                     </div>
+                                      <!-- Footer -->
+                                      <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/50 dark:bg-slate-900/50">
+                                          <button 
+                                              v-if="unreadCount > 0" 
+                                              @click="markAllAsRead" 
+                                              class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition duration-150"
+                                          >
+                                              <Check class="h-3.5 w-3.5" />
+                                              {{ __('Mark All as Read') }}
+                                          </button>
+                                          <div v-else class="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                                              <CheckCheck class="h-3.5 w-3.5 text-emerald-500" />
+                                              Semua terbaca
+                                          </div>
+                                          
+                                          <Link 
+                                              :href="route('notifications.index')" 
+                                              @click="showMobileNotifications = false"
+                                              class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition duration-150"
+                                          >
+                                              <Eye class="h-3.5 w-3.5" />
+                                              Lihat Semua
+                                          </Link>
+                                      </div>
                                  </div>
                              </Transition>
                         </div>
@@ -1372,8 +1449,8 @@ const getGroupInitials = (title) => {
                                 @click="closeSidebar"
                                 :class="[
                                     sidebarCollapsed 
-                                        ? 'h-11 w-11 mx-auto flex items-center justify-center rounded-xl transition-all duration-150' 
-                                        : 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150',
+                                        ? 'h-11 w-11 mx-auto flex items-center justify-center rounded-xl transition-all duration-150 relative' 
+                                        : 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 relative',
                                     isRouteActive(item)
                                         ? 'bg-emerald-600 text-white shadow-sm font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:shadow-none'
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
@@ -1390,9 +1467,34 @@ const getGroupInitials = (title) => {
                                     ]"
                                 />
                                 <span v-if="!sidebarCollapsed" class="flex-1 min-w-0 truncate">{{ __(item.label) }}</span>
-                                <ChevronRight
-                                    v-if="isRouteActive(item) && !sidebarCollapsed"
-                                    class="h-3.5 w-3.5 text-white dark:text-emerald-400"
+                                
+                                <!-- Badge/Icon Container for regular link -->
+                                <div v-if="!sidebarCollapsed" class="relative w-5 h-5 flex items-center justify-center ml-auto flex-shrink-0">
+                                    <!-- Badge for reports management -->
+                                    <span 
+                                        v-if="item.routeName === 'reports-management.index' && pendingReportsCount > 0"
+                                        :class="[
+                                            'w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-extrabold bg-amber-500 text-white shadow-sm absolute transition-all duration-200',
+                                            isRouteActive(item) ? 'opacity-100 scale-100 group-hover:opacity-0 group-hover:scale-75' : 'opacity-100 scale-100'
+                                        ]"
+                                    >
+                                        {{ pendingReportsCount }}
+                                    </span>
+
+                                    <!-- ChevronRight (panah ke kanan) ketika aktif -->
+                                    <ChevronRight
+                                        v-if="isRouteActive(item)"
+                                        :class="[
+                                            'h-3.5 w-3.5 text-white dark:text-emerald-400 absolute transition-all duration-200',
+                                            (item.routeName === 'reports-management.index' && pendingReportsCount > 0) ? 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100' : 'opacity-100'
+                                        ]"
+                                    />
+                                </div>
+
+                                <!-- Tiny dot when collapsed -->
+                                <span 
+                                    v-if="item.routeName === 'reports-management.index' && pendingReportsCount > 0 && sidebarCollapsed"
+                                    class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-slate-900"
                                 />
                             </Link>
 

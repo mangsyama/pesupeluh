@@ -81,21 +81,24 @@ class ServiceController extends Controller
             }
         }
 
-        // Notify Unit Heads of the supporting unit managing this category
+        // Notify Unit Heads of the supporting unit managing this category and all active Administrators
         $ticket->load(['reporter', 'room', 'category.unitFeature.supportingUnit']);
         $supportingUnitId = $ticket->category?->unitFeature?->supporting_unit_id;
 
         if ($supportingUnitId) {
-            $unitHeads = \App\Models\User::where('role_id', 5) // UNIT_HEAD
-                ->where('supporting_unit_id', $supportingUnitId)
-                ->where('is_active', 1)
+            $recipients = \App\Models\User::where('is_active', 1)
+                ->where(function ($query) use ($supportingUnitId) {
+                    $query->where(function ($q) use ($supportingUnitId) {
+                        $q->where('role_id', 5)->where('supporting_unit_id', $supportingUnitId);
+                    })->orWhere('role_id', 1); // Administrator
+                })
                 ->get();
 
-            if ($unitHeads->isNotEmpty()) {
+            if ($recipients->isNotEmpty()) {
                 try {
-                    \Illuminate\Support\Facades\Notification::send($unitHeads, new \App\Notifications\NewTicketReportedNotification($ticket));
+                    \Illuminate\Support\Facades\Notification::send($recipients, new \App\Notifications\NewTicketReportedNotification($ticket));
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::error('Gagal mengirim notifikasi tiket baru ke Kepala Unit: ' . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::error('Gagal mengirim notifikasi tiket baru: ' . $e->getMessage());
                 }
             }
         }

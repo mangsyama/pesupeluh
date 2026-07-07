@@ -1,8 +1,20 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
-import { User, Bell, Globe } from '@lucide/vue';
+import { ref, onMounted, computed } from 'vue';
+import { User, Bell, Globe, Palette, LayoutDashboard, Play, Type, FileText, Database, Layers } from '@lucide/vue';
+
+const permissions = computed(() => page.props.auth?.page_permissions || []);
+const hasAccess = (permKey) => permissions.value.includes(permKey);
+
+const designPages = [
+    { label: 'menu.ds_overview', routeName: 'design-system.index', icon: LayoutDashboard, description: 'Ringkasan panduan warna, tema dark mode, & tipografi.' },
+    { label: 'menu.ds_buttons', routeName: 'design-system.buttons-badges', icon: Play, description: 'Koleksi komponen tombol, animasi loading, & badge status.' },
+    { label: 'menu.ds_forms', routeName: 'design-system.forms', icon: Type, description: 'Koleksi komponen input form, select, checkbox, & upload file.' },
+    { label: 'menu.ds_modals', routeName: 'design-system.modals-alerts', icon: FileText, description: 'Koleksi modal popup transisi & notifikasi SweetAlert2.' },
+    { label: 'menu.ds_tables', routeName: 'design-system.tables', icon: Database, description: 'Desain layout tabel data, pagination, & state data kosong.' },
+    { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers, description: 'Koleksi layout kartu data statistik & visualisasi grid.' },
+];
 
 const page = usePage();
 const notificationEnabled = ref(true);
@@ -127,6 +139,35 @@ const switchLang = (event) => {
                                 />
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Sistem Desain (Hanya jika memiliki akses) -->
+                <div v-if="hasAccess('design-system.index')" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2 mb-4">
+                        <Palette class="h-4.5 w-4.5 text-indigo-500" />
+                        {{ __('Sistem Desain & Komponen') }}
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 max-w-xl leading-relaxed">
+                        Akses ke galeri komponen UI, tata letak desain, panduan warna, dan elemen antarmuka yang digunakan dalam aplikasi.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <Link 
+                            v-for="item in designPages" 
+                            :key="item.routeName"
+                            :href="route(item.routeName)"
+                            class="group flex flex-col justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-indigo-150 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition duration-150"
+                        >
+                            <div>
+                                <div class="flex items-center gap-2.5">
+                                    <div class="h-8 w-8 rounded-lg flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+                                        <component :is="item.icon" class="h-4 w-4" />
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">{{ __(item.label) }}</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">{{ item.description }}</p>
+                            </div>
+                        </Link>
                     </div>
                 </div>
             </div>

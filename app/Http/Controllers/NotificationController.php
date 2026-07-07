@@ -32,4 +32,29 @@ class NotificationController extends Controller
 
         return back();
     }
+
+    /**
+     * Display all notifications for the authenticated user.
+     */
+    public function index(Request $request)
+    {
+        $notifications = $request->user()->notifications()->paginate(15)->through(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'type' => $notification->data['type'] ?? 'user',
+                'title' => $notification->data['title'] ?? null,
+                'message' => $notification->data['message'] ?? null,
+                'route' => $notification->data['route'] ?? null,
+                'user_id' => $notification->data['user_id'] ?? null,
+                'priority' => $notification->data['priority'] ?? null,
+                'read_at' => $notification->read_at,
+                'created_at' => $notification->created_at,
+                'time' => $notification->created_at ? $notification->created_at->diffForHumans() : null,
+            ];
+        });
+
+        return \Inertia\Inertia::render('Notifications/Index', [
+            'allNotifications' => $notifications,
+        ]);
+    }
 }
