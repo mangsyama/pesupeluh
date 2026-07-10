@@ -7,7 +7,18 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import Swal from 'sweetalert2';
-import { registerSW } from 'virtual:pwa-register';
+
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+    });
+}
+
+if (typeof window !== 'undefined' && 'caches' in window) {
+    caches.keys().then((cacheNames) => {
+        cacheNames.forEach((cacheName) => caches.delete(cacheName));
+    });
+}
 
 if (typeof window !== 'undefined') {
     if (import.meta.env.VITE_REVERB_APP_KEY) {
@@ -23,31 +34,11 @@ if (typeof window !== 'undefined') {
             authEndpoint: '/broadcasting/auth',
             auth: {
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                    'X-CSRF-TOKEN': window.getCsrfToken?.(),
                 },
             },
         });
     }
-}
-
-// Register PWA Service Worker
-if (typeof window !== 'undefined') {
-    registerSW({
-        immediate: true,
-        onRegisteredSW(swUrl, registration) {
-            console.debug('[PWA] Service worker registered:', swUrl, registration);
-        },
-        onRegisterError(error) {
-            console.error('[PWA] Service worker registration failed:', error);
-        },
-        onNeedRefresh() {
-            console.debug('[PWA] New service worker available, reloading page...');
-            window.location.reload();
-        },
-        onOfflineReady() {
-            console.debug('[PWA] Offline ready');
-        },
-    });
 }
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';

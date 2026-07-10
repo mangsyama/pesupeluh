@@ -1,0 +1,16 @@
+.git
+node_modules
+vendor
+!vendor/tightenco/ziggy
+.env
+storage/*.key
+storage/*.sqlite
+storage/framework/cache/data
+storage/logs
+tests
+.github
+/.gitlab
+/.idea
+npm-debug.log
+yarn-error.log
+/.vscode
