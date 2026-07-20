@@ -1,0 +1,26 @@
+1. Perubahan Ringan (Hanya Kode PHP / Controller / Blade / View)
+Jika hanya ada perbaikan bug logika PHP atau tampilan HTML/Blade (tanpa menambah library atau ubah struktur database):
+bash
+git pull origin main
+⚡ Langsung berubah tanpa restart Docker! Karena folder project Anda di-mount langsung (live sync) ke dalam container PHP & Nginx.
+
+2. Perubahan Lengkap (Ada Migration / Asset Frontend JS-CSS / Package Baru)
+Jika perubahan mencakup Database Migration, file JS/CSS (Vite), atau Composer/NPM package baru, jalankan alur berikut:
+bash
+# 1. Pull perubahan dari Git
+git pull origin main
+# 2. Build ulang container (agar NPM build & Composer install berjalan)
+docker compose build php
+docker compose up -d
+# 3. Jalankan migrasi database (jika ada tabel/kolom baru)
+docker exec pesupeluh-php php artisan migrate --force
+# 4. Bersihkan cache Laravel
+docker exec pesupeluh-php php artisan config:clear
+docker exec pesupeluh-php php artisan cache:clear
+
+
+💡 Tips Perintah 1-Liner (Otomatis & Praktis)
+Anda bisa langsung menjalankan perintah ini di terminal setiap kali selesai git pull:
+bash
+git pull && docker compose build php && docker compose up -d && docker exec pesupeluh-php php artisan migrate --force
+Perintah di atas akan otomatis meng-update kode, men-compile ulang asset frontend jika ada, me-restart container jika diperlukan, dan menjalankan migrasi database dengan aman.

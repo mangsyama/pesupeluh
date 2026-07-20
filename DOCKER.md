@@ -24,7 +24,8 @@ docker compose up -d
 Then open:
 
 ```bash
-http://localhost:8081
+http://127.0.0.1/login   # Port 80 (default)
+http://127.0.0.1:8081/login # Port 8081 (alternative)
 ```
 
 Notes:

@@ -1,53 +1,63 @@
-# Multi-stage Dockerfile for Laravel (pesupeluh)
+# Production Dockerfile for Laravel (pesupeluh) with PHP 8.3 + SQL Server support
 
-# 1) Build frontend assets with Node
-FROM node:20-alpine AS node_builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --legacy-peer-deps
-COPY resources resources
-COPY vite.config.js .
-COPY vendor/tightenco/ziggy vendor/tightenco/ziggy
-RUN npm run build
-
-# 2) Install PHP dependencies with Composer
-# 3) Production image with PHP-FPM
 FROM php:8.3-fpm
-WORKDIR /var/www/html
 
-# Install system dependencies and PHP extensions
-RUN apt-get update && apt-get install -y \
-    git \
-    zip \
-    unzip \
-    libzip-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libwebp-dev \
-    libfreetype6-dev \
-    libonig-dev \
-    libxml2-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
-    && pecl install redis || true \
-    && docker-php-ext-enable redis || true \
-    && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        apt-transport-https \
+        gnupg \
+        dirmngr \
+        curl \
+        git \
+        unzip \
+        libzip-dev \
+        libpng-dev \
+        libjpeg-dev \
+        libwebp-dev \
+        libfreetype6-dev \
+        libonig-dev \
+        libxml2-dev \
+        libicu-dev \
+        sqlite3 \
+        libsqlite3-dev \
+        unixodbc-dev \
+        libssl-dev \
+        build-essential \
+        pkg-config \
+        make \
+        gcc \
+        gnupg2 \
+    ; \
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor --batch -o /usr/share/keyrings/microsoft-prod.gpg; \
+    curl -fsSL https://packages.microsoft.com/config/debian/12/prod.list > /etc/apt/sources.list.d/mssql-release.list; \
+    apt-get update; \
+    ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18; \
+    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
+    docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip; \
+    pecl channel-update pecl.php.net || true; \
+    pecl install redis sqlsrv pdo_sqlsrv; \
+    docker-php-ext-enable redis sqlsrv pdo_sqlsrv; \
+    apt-get purge -y --auto-remove build-essential make gcc pkg-config dirmngr || true; \
+    rm -rf /var/lib/apt/lists/* /tmp/pear; \
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copy application code
-COPY . /var/www/html
+# Install Node.js and npm for Vite assets
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g npm@10
 
-# Install Composer via official installer and run composer install
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
- && php composer-setup.php --install-dir=/usr/local/bin --filename=composer \
- && php -r "unlink('composer-setup.php');" \
- && rm -f bootstrap/cache/packages.php bootstrap/cache/services.php \
- && COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --prefer-dist --no-progress --no-interaction \
- && php artisan package:discover --ansi
+WORKDIR /var/www/pesupeluh
+COPY . /var/www/pesupeluh
 
-# Copy built frontend from node stage (if exists)
-COPY --from=node_builder /app/public /var/www/html/public
-
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
+RUN mkdir -p /var/www/pesupeluh/bootstrap/cache /var/www/pesupeluh/storage/framework/cache /var/www/pesupeluh/storage/framework/sessions /var/www/pesupeluh/storage/framework/views /var/www/pesupeluh/storage/logs /var/www/pesupeluh/database && \
+    chown -R www-data:www-data /var/www/pesupeluh/storage /var/www/pesupeluh/bootstrap/cache /var/www/pesupeluh/database || true && \
+    COMPOSER_ALLOW_SUPERUSER=1 composer install --no-interaction --prefer-dist --no-progress --no-scripts && \
+    npm install --legacy-peer-deps && \
+    npm run build && \
+    php artisan package:discover --ansi || true
 
 EXPOSE 9000
 CMD ["php-fpm"]
