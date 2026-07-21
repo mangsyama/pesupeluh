@@ -12,12 +12,12 @@ services:
       - ./storage:/var/www/pesupeluh/storage
       - ./bootstrap/cache:/var/www/pesupeluh/bootstrap/cache
       - ./database:/var/www/pesupeluh/database
+      - ./.env:/var/www/pesupeluh/.env
     expose:
       - "9000"
     command: >
       sh -c "cd /var/www/pesupeluh &&
-      if [ ! -f .env ]; then cp .env.example .env; fi &&
-      php artisan key:generate --force || true &&
+      if [ -z \"\$(grep APP_KEY= .env | cut -d= -f2)\" ]; then php artisan key:generate --force; fi &&
       php artisan migrate --force || true &&
       php-fpm"
     depends_on:
@@ -37,5 +37,3 @@ services:
   redis:
     image: redis:7-alpine
     container_name: pesupeluh-redis
-    ports:
-      - "6379:6379"
