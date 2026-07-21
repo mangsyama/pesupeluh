@@ -13,6 +13,7 @@ services:
       - ./bootstrap/cache:/var/www/pesupeluh/bootstrap/cache
       - ./database:/var/www/pesupeluh/database
       - ./.env:/var/www/pesupeluh/.env
+      - ./vendor:/var/www/pesupeluh/vendor
     expose:
       - "9000"
     command: >
@@ -51,6 +52,7 @@ services:
       - ./bootstrap/cache:/var/www/pesupeluh/bootstrap/cache
       - ./database:/var/www/pesupeluh/database
       - ./.env:/var/www/pesupeluh/.env
+      - ./vendor:/var/www/pesupeluh/vendor
     expose:
       - "8080"
     command: php artisan reverb:start --host=0.0.0.0 --port=8080
@@ -71,6 +73,7 @@ services:
       - ./bootstrap/cache:/var/www/pesupeluh/bootstrap/cache
       - ./database:/var/www/pesupeluh/database
       - ./.env:/var/www/pesupeluh/.env
+      - ./vendor:/var/www/pesupeluh/vendor
     command: php artisan queue:work --tries=3 --timeout=30
     depends_on:
       - php
