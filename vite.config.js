@@ -63,4 +63,7 @@ export default defineConfig({
             }
         }),
     ],
+    optimizeDeps: {
+        exclude: ['@vladmandic/face-api'],
+    },
 });

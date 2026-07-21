@@ -21,15 +21,16 @@ if (typeof window !== 'undefined' && 'caches' in window) {
 }
 
 if (typeof window !== 'undefined') {
+    console.debug('[Echo] initializing, key:', import.meta.env.VITE_REVERB_APP_KEY, 'host:', import.meta.env.VITE_REVERB_HOST, 'port:', import.meta.env.VITE_REVERB_PORT);
     if (import.meta.env.VITE_REVERB_APP_KEY) {
         window.Pusher = Pusher;
         window.Echo = new Echo({
             broadcaster: 'reverb',
             key: import.meta.env.VITE_REVERB_APP_KEY,
             wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
-            wsPort: import.meta.env.VITE_REVERB_PORT ? Number(import.meta.env.VITE_REVERB_PORT) : 80,
-            wssPort: import.meta.env.VITE_REVERB_PORT ? Number(import.meta.env.VITE_REVERB_PORT) : 443,
-            forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+            wsPort: import.meta.env.VITE_REVERB_PORT ? Number(import.meta.env.VITE_REVERB_PORT) : (window.location.port ? Number(window.location.port) : 80),
+            wssPort: import.meta.env.VITE_REVERB_PORT ? Number(import.meta.env.VITE_REVERB_PORT) : (window.location.port ? Number(window.location.port) : 443),
+            forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? (window.location.protocol === 'https:' ? 'https' : 'http')) === 'https',
             enabledTransports: ['ws', 'wss'],
             authEndpoint: '/broadcasting/auth',
             auth: {
@@ -38,6 +39,8 @@ if (typeof window !== 'undefined') {
                 },
             },
         });
+    } else {
+        console.warn('[Echo] key not found, skipping initialization');
     }
 }
 

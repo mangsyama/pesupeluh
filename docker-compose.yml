@@ -37,3 +37,41 @@ services:
   redis:
     image: redis:7-alpine
     container_name: pesupeluh-redis
+
+  reverb:
+    build:
+      context: .
+      dockerfile: docker/php8.3-sqlsrv/Dockerfile
+    container_name: pesupeluh-reverb
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    volumes:
+      - ./storage:/var/www/pesupeluh/storage
+      - ./bootstrap/cache:/var/www/pesupeluh/bootstrap/cache
+      - ./database:/var/www/pesupeluh/database
+      - ./.env:/var/www/pesupeluh/.env
+    expose:
+      - "8080"
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    depends_on:
+      - php
+      - redis
+
+  queue-worker:
+    build:
+      context: .
+      dockerfile: docker/php8.3-sqlsrv/Dockerfile
+    container_name: pesupeluh-queue-worker
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    volumes:
+      - ./storage:/var/www/pesupeluh/storage
+      - ./bootstrap/cache:/var/www/pesupeluh/bootstrap/cache
+      - ./database:/var/www/pesupeluh/database
+      - ./.env:/var/www/pesupeluh/.env
+    command: php artisan queue:work --tries=3 --timeout=30
+    depends_on:
+      - php
+      - redis
