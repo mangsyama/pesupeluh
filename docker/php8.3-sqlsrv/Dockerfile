@@ -34,13 +34,15 @@ RUN set -eux; \
     apt-get update; \
     ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18; \
     docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp; \
-    docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip; \
+    docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip opcache; \
     pecl channel-update pecl.php.net || true; \
     pecl install redis sqlsrv pdo_sqlsrv; \
-    docker-php-ext-enable redis sqlsrv pdo_sqlsrv; \
+    docker-php-ext-enable redis sqlsrv pdo_sqlsrv opcache; \
     apt-get purge -y --auto-remove build-essential make gcc pkg-config dirmngr || true; \
     rm -rf /var/lib/apt/lists/* /tmp/pear; \
     curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 # Install Node.js and npm for Vite assets
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \

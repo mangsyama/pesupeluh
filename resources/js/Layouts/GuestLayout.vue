@@ -278,10 +278,12 @@ const __ = (key) => {
                 <div v-else class="flex items-center">
                     <Link
                         :href="route('login')"
-                        class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white uppercase tracking-widest transition duration-150 outline-none"
+                        prefetch
+                        class="rounded-xl px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none flex items-center space-x-1.5 transition duration-150"
+                        :title="__('global.back')"
                     >
-                        <ArrowLeft class="h-4.5 w-4.5 me-1.5 text-emerald-600 dark:text-emerald-400" />
-                        {{ __('global.back') }}
+                        <ArrowLeft class="h-5 w-5" />
+                        <span class="text-xs font-bold uppercase tracking-wide">{{ __('global.back') }}</span>
                     </Link>
                 </div>
                 
@@ -300,6 +302,7 @@ const __ = (key) => {
                     <!-- Language Switcher (Inertia Link for SPA) -->
                     <Link
                         :href="route('lang.switch', $page.props.locale === 'id' ? 'en' : 'id')"
+                        prefetch
                         class="rounded-xl p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none flex items-center space-x-1.5 transition duration-150"
                         :title="__('global.switch_language')"
                     >

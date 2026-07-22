@@ -1,25 +1,25 @@
 <script setup>
 import { ref, computed, getCurrentInstance } from 'vue';
-import { Head, useForm, usePage, router } from '@inertiajs/vue3';
+import { Head, useForm, usePage, router, Deferred } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw } from '@lucide/vue';
 
 const props = defineProps({
     users: {
         type: Array,
-        required: true,
+        default: () => [],
     },
     roles: {
         type: Array,
-        required: true,
+        default: () => [],
     },
     rooms: {
         type: Array,
-        required: true,
+        default: () => [],
     },
     supportingUnits: {
         type: Array,
-        required: true,
+        default: () => [],
     },
     allPermissionKeys: {
         type: Array,
@@ -71,7 +71,7 @@ const roleFilter = {
 
 const filteredUsers = computed(() => {
     const query = searchQuery.value.trim().toLowerCase();
-    let list = props.users;
+    let list = props.users || [];
 
     if (currentTab.value !== 'all') {
         const ids = roleFilter[currentTab.value] || [];
@@ -296,6 +296,7 @@ const savePermissions = () => {
     <AuthenticatedLayout>
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full">
+                <!-- Header Panel (ALWAYS VISIBLE) -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="space-y-1">
                         <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
@@ -314,7 +315,9 @@ const savePermissions = () => {
                     </button>
                 </div>
 
+                <!-- Table Card Container -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden mb-4">
+                    <!-- Filter Tabs & Search Header (ALWAYS VISIBLE) -->
                     <div class="flex flex-col gap-4 p-5 border-b border-slate-100 dark:border-slate-800/60">
                         <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-2 bg-slate-100/80 dark:bg-slate-950/45 p-1 rounded-xl">
                             <button
@@ -337,6 +340,8 @@ const savePermissions = () => {
                             />
                         </div>
                     </div>
+
+                    <!-- Table Rows Scoped Deferred Skeleton Loading -->
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -350,87 +355,113 @@ const savePermissions = () => {
                                     <th class="px-6 py-4 text-right">{{ __('pages.user_management.table.actions') }}</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
-                                <tr v-if="filteredUsers.length === 0">
-                                    <td colspan="7" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
-                                        {{ __('pages.user_management.table.empty_role').replace('{role}', __('pages.user_management.user_list_title')) }}
-                                    </td>
-                                </tr>
-                                <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="h-9 w-9 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
-                                                <img v-if="user.profile_photo_path" :src="user.profile_photo_path" class="h-full w-full object-cover" />
-                                                <User v-else class="h-4.5 w-4.5" />
-                                            </div>
-                                            <div>
-                                                <div class="font-semibold text-slate-950 dark:text-white">{{ user.name }}</div>
-                                                <div class="text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">{{ user.nip || '-' }}</td>
-                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
-                                        <div>{{ user.phone_number || '-' }}</div>
-                                        <div v-if="user.telegram_chat_id" class="text-[10px] text-violet-650 dark:text-violet-400 font-semibold flex items-center gap-0.5 mt-0.5" title="Telegram Chat ID terkonfigurasi">
-                                            <span>ID: {{ user.telegram_chat_id }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400">
-                                            {{ user.role?.name ? __('roles.' + user.role.name) : '-' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
-                                        <div v-if="user.supporting_unit" class="font-semibold text-slate-700 dark:text-slate-300">{{ user.supporting_unit.name }}</div>
-                                        <div v-if="user.room" class="text-[11px] text-slate-500 dark:text-slate-400">{{ user.room.name }}</div>
-                                        <span v-if="!user.supporting_unit && !user.room" class="text-slate-400 dark:text-slate-600">-</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold', getStatusBadge(user.is_active)]">
-                                            {{ user.is_active ? __('global.verified') : __('global.pending') }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-right text-xs text-slate-500 dark:text-slate-400">
-                                        <div class="flex items-center justify-end gap-1.5">
-                                            <button
-                                                @click="openPermissionModal(user)"
-                                                class="p-1.5 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"
-                                                title="Atur Akses Halaman"
-                                            >
-                                                <KeyRound class="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                @click="editUser(user)"
-                                                class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"
-                                                :title="__('Edit')"
-                                            >
-                                                <Edit2 class="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                @click="toggleStatus(user)"
-                                                :class="[
-                                                    'p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150',
-                                                    user.is_active
-                                                        ? 'text-slate-400 hover:text-amber-600 dark:hover:text-amber-400'
-                                                        : 'text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'
-                                                ]"
-                                                :title="user.is_active ? __('pages.user_management.suspend_account') : __('pages.user_management.activate_account')"
-                                            >
-                                                <UserX v-if="user.is_active" class="h-4 w-4" />
-                                                <UserCheck v-else class="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                @click="deleteUser(user)"
-                                                class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"
-                                                :title="__('pages.user_management.alerts.yes_revoke')"
-                                            >
-                                                <Trash2 class="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
+                            <Deferred data="users">
+                                <template #fallback>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
+                                        <tr v-for="i in 5" :key="'user-skel-' + i" class="py-4">
+                                            <td class="px-6 py-4">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-800 flex-shrink-0"></div>
+                                                    <div class="space-y-1.5 flex-1">
+                                                        <div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                                        <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
+                                            <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
+                                            <td class="px-6 py-4"><div class="h-6 w-20 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td>
+                                            <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
+                                            <td class="px-6 py-4 text-center"><div class="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto"></div></td>
+                                            <td class="px-6 py-4 text-right"><div class="h-6 w-24 bg-slate-100 dark:bg-slate-800/60 rounded ml-auto"></div></td>
+                                        </tr>
+                                    </tbody>
+                                </template>
+
+                                <template #default>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                                        <tr v-if="filteredUsers.length === 0">
+                                            <td colspan="7" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
+                                                {{ __('pages.user_management.table.empty_role').replace('{role}', __('pages.user_management.user_list_title')) }}
+                                            </td>
+                                        </tr>
+                                        <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
+                                            <td class="px-6 py-4">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="h-9 w-9 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                                                        <img v-if="user.profile_photo_path" :src="user.profile_photo_path" class="h-full w-full object-cover" />
+                                                        <User v-else class="h-4.5 w-4.5" />
+                                                    </div>
+                                                    <div>
+                                                        <div class="font-semibold text-slate-950 dark:text-white">{{ user.name }}</div>
+                                                        <div class="text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">{{ user.nip || '-' }}</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
+                                                <div>{{ user.phone_number || '-' }}</div>
+                                                <div v-if="user.telegram_chat_id" class="text-[10px] text-violet-650 dark:text-violet-400 font-semibold flex items-center gap-0.5 mt-0.5" title="Telegram Chat ID terkonfigurasi">
+                                                    <span>ID: {{ user.telegram_chat_id }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400">
+                                                    {{ user.role?.name ? __('roles.' + user.role.name) : '-' }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
+                                                <div v-if="user.supporting_unit" class="font-semibold text-slate-700 dark:text-slate-300">{{ user.supporting_unit.name }}</div>
+                                                <div v-if="user.room" class="text-[11px] text-slate-500 dark:text-slate-400">{{ user.room.name }}</div>
+                                                <span v-if="!user.supporting_unit && !user.room" class="text-slate-400 dark:text-slate-600">-</span>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold', getStatusBadge(user.is_active)]">
+                                                    {{ user.is_active ? __('global.verified') : __('global.pending') }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right text-xs text-slate-500 dark:text-slate-400">
+                                                <div class="flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        @click="openPermissionModal(user)"
+                                                        class="p-1.5 text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"
+                                                        title="Atur Akses Halaman"
+                                                    >
+                                                        <KeyRound class="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        @click="editUser(user)"
+                                                        class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"
+                                                        :title="__('Edit')"
+                                                    >
+                                                        <Edit2 class="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        @click="toggleStatus(user)"
+                                                        :class="[
+                                                            'p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150',
+                                                            user.is_active
+                                                                ? 'text-slate-400 hover:text-amber-600 dark:hover:text-amber-400'
+                                                                : 'text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                                        ]"
+                                                        :title="user.is_active ? __('pages.user_management.suspend_account') : __('pages.user_management.activate_account')"
+                                                    >
+                                                        <UserX v-if="user.is_active" class="h-4 w-4" />
+                                                        <UserCheck v-else class="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        @click="deleteUser(user)"
+                                                        class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"
+                                                        :title="__('pages.user_management.alerts.yes_revoke')"
+                                                    >
+                                                        <Trash2 class="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </template>
+                            </Deferred>
                         </table>
                     </div>
                 </div>
@@ -441,7 +472,7 @@ const savePermissions = () => {
             <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
                 <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-900/50">
-                        <h3 class="text-base font-bold text-slate-950 dark:text-white">
+                        <h3 class="text-base font-bold text-slate-955 dark:text-white">
                             {{ isEditing ? __('pages.user_management.edit_user_title') : __('pages.user_management.add_user_title') }}
                         </h3>
                         <button type="button" @click="showModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
@@ -589,7 +620,7 @@ const savePermissions = () => {
                     <!-- Header -->
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-900/50 flex-shrink-0">
                         <div>
-                            <h3 class="text-base font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                            <h3 class="text-base font-bold text-slate-955 dark:text-white flex items-center gap-2">
                                 <KeyRound class="h-4.5 w-4.5 text-violet-500" />
                                 Pengaturan Akses Halaman
                             </h3>

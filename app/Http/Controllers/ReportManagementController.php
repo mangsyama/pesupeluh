@@ -102,7 +102,7 @@ class ReportManagementController extends Controller
         }
 
         return Inertia::render('ReportManagement/Index', [
-            'tickets'  => $query->paginate(15),
+            'tickets'  => Inertia::defer(fn() => $query->paginate(15)),
             'filters'  => $filters,
         ]);
     }
@@ -124,15 +124,6 @@ class ReportManagementController extends Controller
      */
     public function show(Request $request, ServiceTicket $ticket)
     {
-        $ticket->load([
-            'reporter:id,name,nip',
-            'validator:id,name,nip',
-            'room:id,name,location_floor',
-            'category.unitFeature.supportingUnit.division',
-            'assignments.technician:id,name,nip',
-            'attachments.user:id,name',
-        ]);
-
         $user = $request->user();
         $roleId = (int) $user->role_id;
         $supportingUnitId = (int) $ticket->category->unitFeature->supporting_unit_id;
@@ -152,19 +143,25 @@ class ReportManagementController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $technicians = [];
-        // List teknisi untuk keperluan disposisi oleh Kepala Unit atau Admin
-        if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {
-            $technicians = User::where('role_id', 6) // TECHNICIAN
-                ->where('is_active', 1)
-                ->with('supportingUnit:id,name')
-                ->orderBy('name')
-                ->get(['id', 'name', 'nip', 'supporting_unit_id']);
-        }
-
         return Inertia::render('ReportManagement/Show', [
-            'ticket' => $ticket,
-            'technicians' => $technicians,
+            'ticket' => Inertia::defer(fn() => $ticket->load([
+                'reporter:id,name,nip',
+                'validator:id,name,nip',
+                'room:id,name,location_floor',
+                'category.unitFeature.supportingUnit.division',
+                'assignments.technician:id,name,nip',
+                'attachments.user:id,name',
+            ])),
+            'technicians' => Inertia::defer(function() use ($roleId, $user, $supportingUnitId) {
+                if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {
+                    return User::where('role_id', 6) // TECHNICIAN
+                        ->where('is_active', 1)
+                        ->with('supportingUnit:id,name')
+                        ->orderBy('name')
+                        ->get(['id', 'name', 'nip', 'supporting_unit_id']);
+                }
+                return [];
+            }),
             'personal' => false,
         ]);
     }

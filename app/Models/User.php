@@ -60,24 +60,30 @@ class User extends Authenticatable
         return $this->belongsTo(Room::class);
     }
 
+    protected ?array $memoizedPermissions = null;
+
     /**
      * Get the effective page permissions for this user.
      * User override takes priority; falls back to role defaults.
      */
     public function getEffectivePermissions(): array
     {
+        if ($this->memoizedPermissions !== null) {
+            return $this->memoizedPermissions;
+        }
+
         // If user has personal override, use that
         if (!empty($this->page_permissions) && is_array($this->page_permissions)) {
-            return $this->page_permissions;
+            return $this->memoizedPermissions = $this->page_permissions;
         }
 
         // Fall back to role defaults
         $role = $this->role ?? $this->load('role')->role;
         if ($role && is_array($role->page_permissions)) {
-            return $role->page_permissions;
+            return $this->memoizedPermissions = $role->page_permissions;
         }
 
-        return [];
+        return $this->memoizedPermissions = [];
     }
 
     /**

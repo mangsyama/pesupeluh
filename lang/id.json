@@ -34,6 +34,8 @@
     }
   },
   "auth": {
+    "failed": "Nama pengguna atau kata sandi yang Anda masukkan salah.",
+    "These credentials do not match our records.": "Nama pengguna atau kata sandi yang Anda masukkan salah.",
     "login": {
       "title": "Masuk ke Akun Anda",
       "subtitle": "Belum memiliki akun?",
@@ -82,7 +84,8 @@
       "face_scan_btn": "Daftarkan Wajah",
       "retry_scan_btn": "Ulangi Pindai Wajah",
       "already_registered": "Sudah terdaftar?",
-      "log_in_link": "Masuk"
+      "log_in_link": "Masuk",
+      "loading": "Memproses Pendaftaran..."
     },
     "confirm_password": {
       "title": "Konfirmasi Kata Sandi",
@@ -106,8 +109,14 @@
       "link_sent_msg": "Tautan verifikasi baru telah dikirim ke alamat email yang Anda berikan saat mendaftar.",
       "resend_btn": "Kirim Ulang Email Verifikasi",
       "logout_btn": "Keluar"
-    }
+    },
+    "logout_processing": "Memproses Keluar...",
+    "logout_title": "Mengakhiri Sesi...",
+    "logout_desc": "Harap tunggu, akun Anda sedang dikeluarkan dari sistem."
   },
+  "auth.logout_processing": "Memproses Keluar...",
+  "auth.logout_title": "Mengakhiri Sesi...",
+  "auth.logout_desc": "Harap tunggu, akun Anda sedang dikeluarkan dari sistem.",
   "pages": {
     "dashboard": {
       "welcome": "Selamat Datang,",

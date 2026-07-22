@@ -16,96 +16,305 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/dashboard', function () {
-    $totalTicketsCount = \App\Models\ServiceTicket::count();
+Route::get('/dashboard', function (Request $request) {
+    if ($request->hasSession()) {
+        $request->session()->save();
+    }
 
-    // Optimize Medik and Non-Medik counts using a single aggregated query with JOIN
-    $divisionCounts = \App\Models\ServiceTicket::join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
-        ->join('unit_features', 'feature_categories.feature_id', '=', 'unit_features.id')
-        ->join('supporting_units', 'unit_features.supporting_unit_id', '=', 'supporting_units.id')
-        ->select('supporting_units.division_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
-        ->groupBy('supporting_units.division_id')
-        ->pluck('count', 'division_id');
-
-    $medikTicketsCount = $divisionCounts->get(1, 0);
-    $nonMedikTicketsCount = $divisionCounts->get(2, 0);
-
-    $pendingTicketsCount = \App\Models\ServiceTicket::where('status', 'PENDING_VALIDATION')->count();
-
-    // Optimize payload by only selecting required columns and truncating description to 100 chars
-    $recentTickets = \App\Models\ServiceTicket::select([
-        'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
-        \Illuminate\Support\Facades\DB::raw(
-            \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
-                ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
-                : 'SUBSTRING(problem_description, 1, 100) as problem_description'
-        )
-    ])
-    ->with([
-        'reporter:id,name',
-        'room:id,name',
-        'category:id,name,feature_id',
-        'category.unitFeature:id,name,supporting_unit_id',
-        'category.unitFeature.supportingUnit:id,name,division_id',
-        'category.unitFeature.supportingUnit.division:id,name',
-    ])
-    ->latest()
-    ->take(4)
-    ->get();
-
-    // Optimize breakdown count using a single query group by supporting_unit_id instead of loop N+1 queries
-    $unitCounts = \App\Models\ServiceTicket::join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
-        ->join('unit_features', 'feature_categories.feature_id', '=', 'unit_features.id')
-        ->select('unit_features.supporting_unit_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
-        ->groupBy('unit_features.supporting_unit_id')
-        ->pluck('count', 'supporting_unit_id');
-
-    $breakdownData = \App\Models\SupportingUnit::with('division')
-        ->get()
-        ->map(function ($unit) use ($unitCounts) {
-            $count = $unitCounts->get($unit->id, 0);
-
-            return [
-                'name' => $unit->name,
-                'division_name' => $unit->division->name,
-                'count' => $count,
-            ];
-        })
-        ->sortByDesc('count')
-        ->values()
-        ->take(5)
-        ->map(function ($item) use ($totalTicketsCount) {
-            $percentage = $totalTicketsCount > 0 ? round(($item['count'] / $totalTicketsCount) * 100) : 0;
-            
-            $colors = [
-                'LABORATORIUM' => 'bg-indigo-500',
-                'KESLING'      => 'bg-emerald-500',
-                'IPSRS'        => 'bg-amber-500',
-                'FARMASI'      => 'bg-sky-500',
-                'RADIOLOGI'    => 'bg-teal-500',
-                'GIZI'         => 'bg-pink-500',
-                'LAUNDRY'      => 'bg-purple-500',
-                'CSSD'         => 'bg-slate-500',
-            ];
-            
-            $color = $colors[strtoupper($item['name'])] ?? 'bg-slate-500';
-
-            return [
-                'name' => $item['name'],
-                'division_name' => $item['division_name'],
-                'count' => $item['count'],
-                'percentage' => $percentage,
-                'color' => $color,
-            ];
-        });
+    $user = $request->user()->load(['role', 'supportingUnit', 'room']);
+    $roleName = $user->role->name ?? 'REPORTER';
 
     return Inertia::render('Dashboard/Index', [
-        'totalTicketsCount' => $totalTicketsCount,
-        'medikTicketsCount' => $medikTicketsCount,
-        'nonMedikTicketsCount' => $nonMedikTicketsCount,
-        'pendingTicketsCount' => $pendingTicketsCount,
-        'recentTickets' => $recentTickets,
-        'breakdownData' => $breakdownData,
+        'userRole' => $roleName,
+        'dashboardStats' => Inertia::defer(function () use ($user, $roleName) {
+            $baseQuery = \App\Models\ServiceTicket::query();
+
+            // Apply role-based scoping
+            if ($roleName === 'REPORTER') {
+                $baseQuery->where('reporter_id', $user->id);
+            } elseif (in_array($roleName, ['UNIT_HEAD', 'TECHNICIAN']) && $user->supporting_unit_id) {
+                $unitId = $user->supporting_unit_id;
+                $baseQuery->whereHas('category.unitFeature', function ($q) use ($unitId) {
+                    $q->where('supporting_unit_id', $unitId);
+                });
+            } elseif ($roleName === 'ROOM_HEAD' && $user->room_id) {
+                $baseQuery->where('room_id', $user->room_id);
+            }
+
+            // 1. STAFF / REPORTER
+            if ($roleName === 'REPORTER') {
+                $counts = (clone $baseQuery)
+                    ->selectRaw("
+                        COUNT(*) as total_count,
+                        SUM(CASE WHEN status IN ('ASSIGNED', 'IN_PROGRESS') THEN 1 ELSE 0 END) as in_progress_count,
+                        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completed_count,
+                        SUM(CASE WHEN status = 'PENDING_VALIDATION' THEN 1 ELSE 0 END) as pending_count
+                    ")
+                    ->first();
+
+                $totalTicketsCount = (int) ($counts->total_count ?? 0);
+                $inProgressCount = (int) ($counts->in_progress_count ?? 0);
+                $completedCount = (int) ($counts->completed_count ?? 0);
+                $pendingTicketsCount = (int) ($counts->pending_count ?? 0);
+
+                $recentTickets = (clone $baseQuery)
+                    ->select([
+                        'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                        \Illuminate\Support\Facades\DB::raw(
+                            \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
+                                ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
+                                : 'SUBSTRING(problem_description, 1, 100) as problem_description'
+                        )
+                    ])
+                    ->with([
+                        'reporter:id,name',
+                        'room:id,name',
+                        'category:id,name,feature_id',
+                        'category.unitFeature:id,name,supporting_unit_id',
+                        'category.unitFeature.supportingUnit:id,name,division_id',
+                        'category.unitFeature.supportingUnit.division:id,name',
+                    ])
+                    ->latest()
+                    ->take(4)
+                    ->get();
+
+                return [
+                    'role' => 'REPORTER',
+                    'stat1' => ['label' => 'Total Laporan Saya', 'value' => $totalTicketsCount, 'type' => 'total'],
+                    'stat2' => ['label' => 'Dalam Pengerjaan', 'value' => $inProgressCount, 'type' => 'progress'],
+                    'stat3' => ['label' => 'Selesai Dikerjakan', 'value' => $completedCount, 'type' => 'completed'],
+                    'stat4' => ['label' => 'Menunggu Verifikasi', 'value' => $pendingTicketsCount, 'type' => 'pending'],
+                    'recentTickets' => $recentTickets,
+                    'breakdownData' => [],
+                ];
+            }
+
+            // 2. KEPALA UNIT / TEKNISI
+            if (in_array($roleName, ['UNIT_HEAD', 'TECHNICIAN'])) {
+                $counts = (clone $baseQuery)
+                    ->selectRaw("
+                        COUNT(*) as total_count,
+                        SUM(CASE WHEN status IN ('ASSIGNED', 'IN_PROGRESS') THEN 1 ELSE 0 END) as in_progress_count,
+                        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completed_count,
+                        SUM(CASE WHEN status = 'PENDING_VALIDATION' THEN 1 ELSE 0 END) as pending_count
+                    ")
+                    ->first();
+
+                $totalTicketsCount = (int) ($counts->total_count ?? 0);
+                $inProgressCount = (int) ($counts->in_progress_count ?? 0);
+                $completedCount = (int) ($counts->completed_count ?? 0);
+                $pendingTicketsCount = (int) ($counts->pending_count ?? 0);
+
+                $categoryCounts = (clone $baseQuery)
+                    ->join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
+                    ->select('feature_categories.name as name', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
+                    ->groupBy('feature_categories.id', 'feature_categories.name')
+                    ->orderByDesc('count')
+                    ->take(5)
+                    ->get();
+
+                $breakdownData = $categoryCounts->map(function ($cat, $index) use ($totalTicketsCount) {
+                    $percentage = $totalTicketsCount > 0 ? round(($cat->count / $totalTicketsCount) * 100) : 0;
+                    $palette = ['bg-indigo-500', 'bg-emerald-500', 'bg-sky-500', 'bg-amber-500', 'bg-teal-500'];
+                    return [
+                        'name' => $cat->name,
+                        'division_name' => 'Kategori Unit',
+                        'count' => (int) $cat->count,
+                        'percentage' => $percentage,
+                        'color' => $palette[$index % count($palette)],
+                    ];
+                });
+
+                $recentTickets = (clone $baseQuery)
+                    ->select([
+                        'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                        \Illuminate\Support\Facades\DB::raw(
+                            \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
+                                ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
+                                : 'SUBSTRING(problem_description, 1, 100) as problem_description'
+                        )
+                    ])
+                    ->with([
+                        'reporter:id,name',
+                        'room:id,name',
+                        'category:id,name,feature_id',
+                        'category.unitFeature:id,name,supporting_unit_id',
+                        'category.unitFeature.supportingUnit:id,name,division_id',
+                        'category.unitFeature.supportingUnit.division:id,name',
+                    ])
+                    ->latest()
+                    ->take(4)
+                    ->get();
+
+                $unitName = $user->supportingUnit->name ?? 'Unit';
+
+                return [
+                    'role' => $roleName,
+                    'unitName' => $unitName,
+                    'stat1' => ['label' => "Total Laporan {$unitName}", 'value' => $totalTicketsCount, 'type' => 'total'],
+                    'stat2' => ['label' => 'Dalam Pengerjaan', 'value' => $inProgressCount, 'type' => 'progress'],
+                    'stat3' => ['label' => 'Selesai Dikerjakan', 'value' => $completedCount, 'type' => 'completed'],
+                    'stat4' => ['label' => 'Menunggu Disposisi', 'value' => $pendingTicketsCount, 'type' => 'pending'],
+                    'recentTickets' => $recentTickets,
+                    'breakdownData' => $breakdownData,
+                ];
+            }
+
+            // 3. KEPALA RUANGAN
+            if ($roleName === 'ROOM_HEAD') {
+                $counts = (clone $baseQuery)
+                    ->selectRaw("
+                        COUNT(*) as total_count,
+                        SUM(CASE WHEN status IN ('ASSIGNED', 'IN_PROGRESS') THEN 1 ELSE 0 END) as in_progress_count,
+                        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completed_count,
+                        SUM(CASE WHEN status = 'PENDING_VALIDATION' THEN 1 ELSE 0 END) as pending_count
+                    ")
+                    ->first();
+
+                $totalTicketsCount = (int) ($counts->total_count ?? 0);
+                $inProgressCount = (int) ($counts->in_progress_count ?? 0);
+                $completedCount = (int) ($counts->completed_count ?? 0);
+                $pendingTicketsCount = (int) ($counts->pending_count ?? 0);
+
+                $categoryCounts = (clone $baseQuery)
+                    ->join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
+                    ->select('feature_categories.name as name', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
+                    ->groupBy('feature_categories.id', 'feature_categories.name')
+                    ->orderByDesc('count')
+                    ->take(5)
+                    ->get();
+
+                $breakdownData = $categoryCounts->map(function ($cat, $index) use ($totalTicketsCount) {
+                    $percentage = $totalTicketsCount > 0 ? round(($cat->count / $totalTicketsCount) * 100) : 0;
+                    $palette = ['bg-indigo-500', 'bg-emerald-500', 'bg-sky-500', 'bg-amber-500', 'bg-teal-500'];
+                    return [
+                        'name' => $cat->name,
+                        'division_name' => 'Kategori Ruangan',
+                        'count' => (int) $cat->count,
+                        'percentage' => $percentage,
+                        'color' => $palette[$index % count($palette)],
+                    ];
+                });
+
+                $recentTickets = (clone $baseQuery)
+                    ->select([
+                        'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                        \Illuminate\Support\Facades\DB::raw(
+                            \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
+                                ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
+                                : 'SUBSTRING(problem_description, 1, 100) as problem_description'
+                        )
+                    ])
+                    ->with([
+                        'reporter:id,name',
+                        'room:id,name',
+                        'category:id,name,feature_id',
+                        'category.unitFeature:id,name,supporting_unit_id',
+                        'category.unitFeature.supportingUnit:id,name,division_id',
+                        'category.unitFeature.supportingUnit.division:id,name',
+                    ])
+                    ->latest()
+                    ->take(4)
+                    ->get();
+
+                $roomName = $user->room->name ?? 'Ruangan';
+
+                return [
+                    'role' => 'ROOM_HEAD',
+                    'roomName' => $roomName,
+                    'stat1' => ['label' => "Total Laporan {$roomName}", 'value' => $totalTicketsCount, 'type' => 'total'],
+                    'stat2' => ['label' => 'Dalam Pengerjaan', 'value' => $inProgressCount, 'type' => 'progress'],
+                    'stat3' => ['label' => 'Selesai Dikerjakan', 'value' => $completedCount, 'type' => 'completed'],
+                    'stat4' => ['label' => 'Menunggu Validasi', 'value' => $pendingTicketsCount, 'type' => 'pending'],
+                    'recentTickets' => $recentTickets,
+                    'breakdownData' => $breakdownData,
+                ];
+            }
+
+            // 4. GLOBAL (ADMINISTRATOR, DIRECTOR, DIVISION_HEAD, SECTION_HEAD)
+            $ticketCounts = \Illuminate\Support\Facades\DB::table('service_tickets')
+                ->selectRaw("
+                    COUNT(*) as total_count,
+                    SUM(CASE WHEN status = 'PENDING_VALIDATION' THEN 1 ELSE 0 END) as pending_count
+                ")
+                ->first();
+
+            $totalTicketsCount = (int) ($ticketCounts->total_count ?? 0);
+            $pendingTicketsCount = (int) ($ticketCounts->pending_count ?? 0);
+
+            $unitCounts = \Illuminate\Support\Facades\DB::table('service_tickets')
+                ->join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
+                ->join('unit_features', 'feature_categories.feature_id', '=', 'unit_features.id')
+                ->join('supporting_units', 'unit_features.supporting_unit_id', '=', 'supporting_units.id')
+                ->select('supporting_units.id as unit_id', 'supporting_units.division_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
+                ->groupBy('supporting_units.id', 'supporting_units.division_id')
+                ->get();
+
+            $medikTicketsCount = (int) $unitCounts->where('division_id', 1)->sum('count');
+            $nonMedikTicketsCount = (int) $unitCounts->where('division_id', 2)->sum('count');
+
+            $unitCountMap = $unitCounts->pluck('count', 'unit_id');
+            $breakdownData = \App\Models\SupportingUnit::with('division:id,name')
+                ->get()
+                ->map(function ($unit) use ($unitCountMap, $totalTicketsCount) {
+                    $count = (int) ($unitCountMap->get($unit->id) ?? 0);
+                    $percentage = $totalTicketsCount > 0 ? round(($count / $totalTicketsCount) * 100) : 0;
+                    
+                    $colors = [
+                        'LABORATORIUM' => 'bg-indigo-500',
+                        'KESLING'      => 'bg-emerald-500',
+                        'IPSRS'        => 'bg-amber-500',
+                        'FARMASI'      => 'bg-sky-500',
+                        'RADIOLOGI'    => 'bg-teal-500',
+                        'GIZI'         => 'bg-pink-500',
+                        'LAUNDRY'      => 'bg-purple-500',
+                        'CSSD'         => 'bg-slate-500',
+                    ];
+                    
+                    $color = $colors[strtoupper($unit->name)] ?? 'bg-slate-500';
+
+                    return [
+                        'name' => $unit->name,
+                        'division_name' => $unit->division->name ?? '',
+                        'count' => $count,
+                        'percentage' => $percentage,
+                        'color' => $color,
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values()
+                ->take(5);
+
+            $recentTickets = \App\Models\ServiceTicket::select([
+                'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                \Illuminate\Support\Facades\DB::raw(
+                    \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
+                        ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
+                        : 'SUBSTRING(problem_description, 1, 100) as problem_description'
+                )
+            ])
+            ->with([
+                'reporter:id,name',
+                'room:id,name',
+                'category:id,name,feature_id',
+                'category.unitFeature:id,name,supporting_unit_id',
+                'category.unitFeature.supportingUnit:id,name,division_id',
+                'category.unitFeature.supportingUnit.division:id,name',
+            ])
+            ->latest()
+            ->take(4)
+            ->get();
+
+            return [
+                'role' => 'GLOBAL',
+                'stat1' => ['label' => 'Total Laporan', 'value' => $totalTicketsCount, 'type' => 'total'],
+                'stat2' => ['label' => 'Penunjang Medik', 'value' => $medikTicketsCount, 'type' => 'medik'],
+                'stat3' => ['label' => 'Penunjang Non-Medik', 'value' => $nonMedikTicketsCount, 'type' => 'non_medik'],
+                'stat4' => ['label' => 'Menunggu Verifikasi', 'value' => $pendingTicketsCount, 'type' => 'pending'],
+                'recentTickets' => $recentTickets,
+                'breakdownData' => $breakdownData,
+            ];
+        }),
     ]);
 })->middleware(['auth', 'verified', 'page.access'])->name('dashboard');
 
@@ -113,21 +322,21 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/services', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => null,
-            'divisions' => \App\Models\Division::with('supportingUnits')->get(),
+            'divisions' => Inertia::defer(fn() => \App\Models\Division::with('supportingUnits')->get()),
         ]);
     })->name('services.index');
 
     Route::get('/services/medik', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => 'medik',
-            'divisions' => \App\Models\Division::with('supportingUnits')->get(),
+            'divisions' => Inertia::defer(fn() => \App\Models\Division::with('supportingUnits')->get()),
         ]);
     })->name('services.medik');
 
     Route::get('/services/non-medik', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => 'non-medik',
-            'divisions' => \App\Models\Division::with('supportingUnits')->get(),
+            'divisions' => Inertia::defer(fn() => \App\Models\Division::with('supportingUnits')->get()),
         ]);
     })->name('services.non-medik');
 

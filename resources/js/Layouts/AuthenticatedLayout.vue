@@ -9,6 +9,17 @@ const sidebarOpen = ref(false);
 const isDark = ref(false);
 const sidebarCollapsed = ref(false);
 const sidebarNav = ref(null);
+const isLoggingOut = ref(false);
+
+const handleLogout = () => {
+    if (isLoggingOut.value) return;
+    isLoggingOut.value = true;
+    router.post(route('logout'), {}, {
+        onFinish: () => {
+            isLoggingOut.value = false;
+        },
+    });
+};
 
 const saveSidebarScroll = () => {
     if (sidebarNav.value && !sidebarCollapsed.value) {
@@ -593,6 +604,7 @@ const getGroupInitials = (title) => {
                         <Link
                             v-if="showBackButton"
                             :href="backRoute"
+                            prefetch
                             @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') || route().current('design-system.*') ? null : triggerSupportBack"
                             class="hidden lg:inline-flex items-center justify-center h-11 w-11 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition duration-150 focus:outline-none shadow-sm border border-white dark:border-slate-800 mr-3 flex-shrink-0"
                             title="Kembali"
@@ -606,6 +618,7 @@ const getGroupInitials = (title) => {
                             <Link
                                 v-if="showBackButton"
                                 :href="backRoute"
+                                prefetch
                                 @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') || route().current('design-system.*') ? null : triggerSupportBack"
                                 class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-md border border-white dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition duration-150 focus:outline-none"
                                 aria-label="Kembali"
@@ -664,6 +677,7 @@ const getGroupInitials = (title) => {
                                      v-for="item in filteredSearchItems" 
                                      :key="item.routeName"
                                      :href="route(item.routeName)"
+                                     prefetch
                                      class="flex flex-col px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition duration-150"
                                  >
                                      <span class="text-xs font-bold text-slate-900 dark:text-white">{{ __(item.label) }}</span>
@@ -912,16 +926,20 @@ const getGroupInitials = (title) => {
                                         </div>
                                     </button>
 
-                                    <!-- Logout -->
-                                    <Link
-                                        :href="route('logout')"
-                                        method="post"
-                                        as="button"
-                                        class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition duration-150"
-                                    >
-                                        <LogOut class="h-4 w-4" />
-                                        <span>{{ __('Log out') }}</span>
-                                    </Link>
+                                     <!-- Logout -->
+                                     <button
+                                         type="button"
+                                         @click="handleLogout"
+                                         :disabled="isLoggingOut"
+                                         class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition duration-150 text-left disabled:opacity-60 cursor-pointer"
+                                     >
+                                         <svg v-if="isLoggingOut" class="animate-spin h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                         </svg>
+                                         <LogOut v-else class="h-4 w-4 flex-shrink-0" />
+                                         <span>{{ isLoggingOut ? __('auth.logout_processing') : __('Log out') }}</span>
+                                     </button>
                                 </template>
                             </Dropdown>
                             <!-- Overlay to close notification panel on outside click -->
@@ -1519,6 +1537,31 @@ const getGroupInitials = (title) => {
                 <slot />
             </main>
         </div>
+
+        <!-- Fullscreen Logout Loading Backdrop Overlay -->
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+            >
+                <div v-if="isLoggingOut" class="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-950/60 backdrop-blur-md text-white select-none">
+                    <div class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-xs text-center">
+                        <div class="relative flex items-center justify-center">
+                            <div class="w-12 h-12 rounded-full border-4 border-red-200 dark:border-red-900/60 border-t-red-600 dark:border-t-red-400 animate-spin"></div>
+                            <LogOut class="h-5 w-5 text-red-600 dark:text-red-400 absolute" />
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-extrabold text-slate-900 dark:text-white">{{ __('auth.logout_title') }}</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ __('auth.logout_desc') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
     </div>
 </template>
 

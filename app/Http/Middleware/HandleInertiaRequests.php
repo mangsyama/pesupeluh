@@ -22,6 +22,8 @@ class HandleInertiaRequests extends Middleware
         return parent::version($request);
     }
 
+    protected static ?array $cachedTranslations = null;
+
     /**
      * Define the props that are shared by default.
      *
@@ -29,14 +31,21 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $shared = [
+        // Release session lock early for GET requests to prevent request queuing/serialization
+        if ($request->isMethod('GET') && $request->hasSession()) {
+            $request->session()->save();
+        }
+
+        $user = $request->user();
+
+        return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
-                'page_permissions' => $request->user() ? $request->user()->getEffectivePermissions() : [],
-                'pending_approvals_count' => $request->user() ? \Inertia\Inertia::defer(fn() => \App\Models\User::whereNull('approved_by')->count()) : 0,
+                'user' => $user,
+                'page_permissions' => $user ? $user->getEffectivePermissions() : [],
+                'pending_approvals_count' => $user ? \Inertia\Inertia::defer(fn() => \App\Models\User::whereNull('approved_by')->count()) : 0,
             ],
-            'notifications' => $request->user() ? \Inertia\Inertia::defer(fn() => $request->user()->unreadNotifications->map(function ($notification) {
+            'notifications' => $user ? \Inertia\Inertia::defer(fn() => $user->unreadNotifications()->take(10)->get()->map(function ($notification) {
                 return [
                     'id' => $notification->id,
                     'type' => $notification->data['type'] ?? 'user',
@@ -50,17 +59,10 @@ class HandleInertiaRequests extends Middleware
                     'time' => $notification->created_at ? $notification->created_at->diffForHumans() : null,
                 ];
             })) : [],
-            'unread_notifications_count' => $request->user() ? \Inertia\Inertia::defer(fn() => $request->user()->unreadNotifications()->count()) : 0,
+            'unread_notifications_count' => $user ? \Inertia\Inertia::defer(fn() => $user->unreadNotifications()->count()) : 0,
             'locale' => app()->getLocale(),
             'translations' => $this->getTranslations(),
         ];
-
-        // Release session lock early for GET requests to prevent request queuing/serialization (like Genesys architecture)
-        if ($request->isMethod('GET') && $request->hasSession()) {
-            $request->session()->save();
-        }
-
-        return $shared;
     }
 
     /**
@@ -69,12 +71,16 @@ class HandleInertiaRequests extends Middleware
     protected function getTranslations(): array
     {
         $locale = app()->getLocale();
+        if (isset(self::$cachedTranslations[$locale])) {
+            return self::$cachedTranslations[$locale];
+        }
+
         $file = base_path("lang/{$locale}.json");
 
         if (file_exists($file)) {
-            return json_decode(file_get_contents($file), true) ?? [];
+            return self::$cachedTranslations[$locale] = json_decode(file_get_contents($file), true) ?? [];
         }
 
-        return [];
+        return self::$cachedTranslations[$locale] = [];
     }
 }

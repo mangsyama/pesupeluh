@@ -19,20 +19,14 @@ class UserManagementController extends Controller
      */
     public function indexApprovals()
     {
-        $users = User::with(['role', 'room', 'supportingUnit'])
-            ->whereNull('approved_by')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $roles = Role::orderBy('id', 'asc')->get();
-        $rooms = Room::orderBy('name', 'asc')->get();
-        $supportingUnits = SupportingUnit::orderBy('name', 'asc')->get();
-
         return Inertia::render('UserManagement/Approvals', [
-            'users' => $users,
-            'roles' => $roles,
-            'rooms' => $rooms,
-            'supportingUnits' => $supportingUnits,
+            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
+                ->whereNull('approved_by')
+                ->orderBy('id', 'desc')
+                ->get()),
+            'roles' => Inertia::defer(fn() => Role::orderBy('id', 'asc')->get()),
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
         ]);
     }
 
@@ -64,15 +58,6 @@ class UserManagementController extends Controller
      */
     public function index()
     {
-        $users = User::with(['role', 'room', 'supportingUnit'])
-            ->whereNotNull('approved_by')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $roles = Role::orderBy('id', 'asc')->get();
-        $rooms = Room::orderBy('name', 'asc')->get();
-        $supportingUnits = SupportingUnit::orderBy('name', 'asc')->get();
-
         // All available permission keys for the permission checkbox UI
         $allPermissionKeys = [
             [
@@ -110,10 +95,13 @@ class UserManagementController extends Controller
         ];
 
         return Inertia::render('UserManagement/Index', [
-            'users' => $users,
-            'roles' => $roles,
-            'rooms' => $rooms,
-            'supportingUnits' => $supportingUnits,
+            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
+                ->whereNotNull('approved_by')
+                ->orderBy('id', 'desc')
+                ->get()),
+            'roles' => Inertia::defer(fn() => Role::orderBy('id', 'asc')->get()),
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
             'allPermissionKeys' => $allPermissionKeys,
         ]);
     }
@@ -123,14 +111,12 @@ class UserManagementController extends Controller
      */
     public function indexAdmin()
     {
-        $users = User::with(['role'])
-            ->where('role_id', 1)
-            ->whereNotNull('approved_by')
-            ->orderBy('id', 'desc')
-            ->get();
-
         return Inertia::render('UserManagement/Admin', [
-            'users' => $users,
+            'users' => Inertia::defer(fn() => User::with(['role'])
+                ->where('role_id', 1)
+                ->whereNotNull('approved_by')
+                ->orderBy('id', 'desc')
+                ->get()),
         ]);
     }
 
@@ -139,17 +125,13 @@ class UserManagementController extends Controller
      */
     public function indexManagement()
     {
-        $users = User::with(['role'])
-            ->whereIn('role_id', [2, 3, 4])
-            ->whereNotNull('approved_by')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $managementRoles = Role::whereIn('id', [2, 3, 4])->orderBy('id', 'asc')->get();
-
         return Inertia::render('UserManagement/Management', [
-            'users' => $users,
-            'managementRoles' => $managementRoles,
+            'users' => Inertia::defer(fn() => User::with(['role'])
+                ->whereIn('role_id', [2, 3, 4])
+                ->whereNotNull('approved_by')
+                ->orderBy('id', 'desc')
+                ->get()),
+            'managementRoles' => Inertia::defer(fn() => Role::whereIn('id', [2, 3, 4])->orderBy('id', 'asc')->get()),
         ]);
     }
 
@@ -158,19 +140,14 @@ class UserManagementController extends Controller
      */
     public function indexUnitHead()
     {
-        $users = User::with(['role', 'room', 'supportingUnit'])
-            ->where('role_id', 5)
-            ->whereNotNull('approved_by')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $rooms = Room::orderBy('name', 'asc')->get();
-        $supportingUnits = SupportingUnit::orderBy('name', 'asc')->get();
-
         return Inertia::render('UserManagement/UnitHead', [
-            'users' => $users,
-            'rooms' => $rooms,
-            'supportingUnits' => $supportingUnits,
+            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
+                ->where('role_id', 5)
+                ->whereNotNull('approved_by')
+                ->orderBy('id', 'desc')
+                ->get()),
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
         ]);
     }
 
@@ -179,19 +156,14 @@ class UserManagementController extends Controller
      */
     public function indexTechnician()
     {
-        $users = User::with(['role', 'room', 'supportingUnit'])
-            ->where('role_id', 6)
-            ->whereNotNull('approved_by')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $rooms = Room::orderBy('name', 'asc')->get();
-        $supportingUnits = SupportingUnit::orderBy('name', 'asc')->get();
-
         return Inertia::render('UserManagement/Technician', [
-            'users' => $users,
-            'rooms' => $rooms,
-            'supportingUnits' => $supportingUnits,
+            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
+                ->where('role_id', 6)
+                ->whereNotNull('approved_by')
+                ->orderBy('id', 'desc')
+                ->get()),
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
         ]);
     }
 
@@ -200,19 +172,14 @@ class UserManagementController extends Controller
      */
     public function indexRoomHead()
     {
-        $users = User::with(['role', 'room', 'supportingUnit'])
-            ->where('role_id', 7)
-            ->whereNotNull('approved_by')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $rooms = Room::orderBy('name', 'asc')->get();
-        $supportingUnits = SupportingUnit::orderBy('name', 'asc')->get();
-
         return Inertia::render('UserManagement/RoomHead', [
-            'users' => $users,
-            'rooms' => $rooms,
-            'supportingUnits' => $supportingUnits,
+            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
+                ->where('role_id', 7)
+                ->whereNotNull('approved_by')
+                ->orderBy('id', 'desc')
+                ->get()),
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
         ]);
     }
 
@@ -221,19 +188,14 @@ class UserManagementController extends Controller
      */
     public function indexReporter()
     {
-        $users = User::with(['role', 'room', 'supportingUnit'])
-            ->where('role_id', 8)
-            ->whereNotNull('approved_by')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $rooms = Room::orderBy('name', 'asc')->get();
-        $supportingUnits = SupportingUnit::orderBy('name', 'asc')->get();
-
         return Inertia::render('UserManagement/Reporter', [
-            'users' => $users,
-            'rooms' => $rooms,
-            'supportingUnits' => $supportingUnits,
+            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
+                ->where('role_id', 8)
+                ->whereNotNull('approved_by')
+                ->orderBy('id', 'desc')
+                ->get()),
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
         ]);
     }
 

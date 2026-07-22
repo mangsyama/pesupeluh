@@ -2,6 +2,7 @@
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { AlertTriangle } from '@lucide/vue';
 
 defineProps({
     status: {
@@ -14,7 +15,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route('password.email'));
+    // Feature currently disabled
 };
 </script>
 
@@ -32,6 +33,14 @@ const submit = () => {
             </p>
         </div>
 
+        <!-- Warning Alert Banner for Disabled Feature -->
+        <div class="mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex items-start gap-3">
+            <AlertTriangle class="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div class="text-xs text-amber-800 dark:text-amber-300 leading-relaxed font-semibold">
+                Fitur atur ulang kata sandi mandiri via email sementara belum tersedia. Silakan hubungi Administrator sistem untuk bantuan pemulihan kata sandi akun Anda.
+            </div>
+        </div>
+
         <div
             v-if="status"
             class="mb-6 text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/30"
@@ -39,7 +48,7 @@ const submit = () => {
             {{ status }}
         </div>
 
-        <form @submit.prevent="submit" class="space-y-6">
+        <form @submit.prevent class="space-y-6">
             <!-- Email Input Field -->
             <div>
                 <label for="email" class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">
@@ -49,22 +58,20 @@ const submit = () => {
                     id="email"
                     type="email"
                     v-model="form.email"
-                    required
-                    autofocus
+                    disabled
                     autocomplete="username"
                     :placeholder="__('auth.register.email_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 opacity-60 cursor-not-allowed outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.email" />
             </div>
 
             <!-- Submit action -->
-            <div class="pt-2">
+            <div class="pt-2 space-y-4">
                 <button
-                    type="submit"
-                    class="w-full text-center py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
+                    type="button"
+                    disabled
+                    class="w-full text-center py-4 bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold rounded-xl text-base tracking-wide cursor-not-allowed select-none outline-none border border-slate-300 dark:border-slate-700/50"
                 >
                     {{ __('auth.forgot_password.send_link_btn') }}
                 </button>

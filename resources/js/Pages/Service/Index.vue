@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, Deferred, router } from '@inertiajs/vue3';
 import { 
     Stethoscope, 
     ShieldCheck, 
@@ -29,26 +29,13 @@ const props = defineProps({
 });
 
 const activeSection = ref(props.initialSection);
-const isBacking = ref(false);
 
 watch(() => props.initialSection, (newVal) => {
-    if (newVal === null && activeSection.value !== null) {
-        isBacking.value = true;
-        activeSection.value = null;
-        setTimeout(() => {
-            isBacking.value = false;
-        }, 100);
-    } else {
-        activeSection.value = newVal;
-    }
+    activeSection.value = newVal;
 });
 
 const handleBackClicked = () => {
-    isBacking.value = true;
     activeSection.value = null;
-    setTimeout(() => {
-        isBacking.value = false;
-    }, 100);
 };
 
 onMounted(() => {
@@ -75,11 +62,11 @@ const handleUnitClick = (unit) => {
 };
 
 const medikDivision = computed(() => {
-    return props.divisions.find(d => d.name.toLowerCase().includes('medik') && !d.name.toLowerCase().includes('non-medik'));
+    return (props.divisions || []).find(d => d.name.toLowerCase().includes('medik') && !d.name.toLowerCase().includes('non-medik'));
 });
 
 const nonMedikDivision = computed(() => {
-    return props.divisions.find(d => d.name.toLowerCase().includes('non-medik'));
+    return (props.divisions || []).find(d => d.name.toLowerCase().includes('non-medik'));
 });
 
 const medikUnits = computed(() => {
@@ -148,33 +135,39 @@ const getUnitIcon = (name, divisionName) => {
                     </div>
                 </div>
 
-                    <!-- Main Options Container / Animated Flex Width Layout -->
+                <Deferred data="divisions">
+                    <template #fallback>
+                        <!-- Skeleton Division Cards Loading -->
+                        <div class="flex flex-col md:flex-row gap-4 animate-pulse">
+                            <div v-for="i in 2" :key="i" class="w-full md:w-1/2 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                                <div class="flex justify-between items-center mb-4">
+                                    <div class="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+                                    <div class="h-6 w-24 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+                                </div>
+                                <div class="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div class="h-4 w-3/4 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
+                                <div class="h-4 w-1/2 bg-slate-100 dark:bg-slate-800/40 rounded"></div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Main Options Container / Instant Width Layout -->
                     <div 
                         class="flex flex-col md:flex-row" 
-                        :class="[
-                            isBacking ? 'transition-none duration-0' : 'transition-all duration-500 ease-in-out',
-                            activeSection === null ? 'gap-4' : 'gap-0'
-                        ]"
+                        :class="[activeSection === null ? 'gap-4' : 'gap-0']"
                     >
                         <!-- Card 1: Penunjang Medik -->
                         <component
+                            v-if="activeSection === null || activeSection === 'medik'"
                             :is="activeSection === null ? Link : 'div'"
                             :href="activeSection === null ? route('services.medik') : undefined"
                             prefetch
                             class="group relative overflow-hidden bg-white dark:bg-slate-900 border border-white dark:border-slate-800/80 rounded-2xl flex flex-col justify-between"
                             :class="[
-                                isBacking ? 'transition-none duration-0' : 'transition-all duration-500 ease-in-out',
-                                activeSection === null ? 'cursor-pointer hover:border-slate-200 dark:hover:border-slate-700 shadow-sm' : 'cursor-default border-white dark:border-slate-800/80 shadow-sm',
-                                activeSection === 'medik' ? 'w-full p-6' : (activeSection === 'non-medik' ? 'w-0 h-0 md:w-0 md:h-0 opacity-0 pointer-events-none overflow-hidden p-0 border-0 border-transparent shadow-none' : 'w-full md:w-1/2 p-6')
+                                activeSection === null ? 'cursor-pointer hover:border-slate-200 dark:hover:border-slate-700 shadow-sm w-full md:w-1/2 p-6' : 'cursor-default border-white dark:border-slate-800/80 shadow-sm w-full p-6'
                             ]"
                         >
-                            <div 
-                                class="w-full flex flex-col h-full"
-                                :class="[
-                                    isBacking ? 'transition-none duration-0' : 'transition-all duration-500 ease-in-out',
-                                    activeSection === null || activeSection === 'medik' ? 'min-w-[280px] md:min-w-[320px]' : 'min-w-0'
-                                ]"
-                            >
+                            <div class="w-full flex flex-col h-full">
                                 <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" v-if="activeSection === null" />
                                 <div>
                                     <!-- Header Row: Icon on left, Badge on right -->
@@ -208,13 +201,10 @@ const getUnitIcon = (name, divisionName) => {
                                     </div>
                                 </div>
 
-                                <!-- Sub-units (Nested inside card with smooth CSS max-height transition) -->
+                                <!-- Sub-units -->
                                 <div 
-                                    class="overflow-hidden"
-                                    :class="[
-                                        isBacking ? 'transition-none duration-0' : 'transition-all duration-500 ease-in-out',
-                                        activeSection === 'medik' ? 'max-h-[1500px] opacity-100 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80' : 'max-h-0 opacity-0 mt-0 pt-0 border-t-0 border-transparent'
-                                    ]"
+                                    v-if="activeSection === 'medik'"
+                                    class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80"
                                 >
                                     <div class="grid grid-cols-1 min-[450px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                                         <div 
@@ -279,23 +269,16 @@ const getUnitIcon = (name, divisionName) => {
 
                         <!-- Card 2: Penunjang Non-Medik -->
                         <component
+                            v-if="activeSection === null || activeSection === 'non-medik'"
                             :is="activeSection === null ? Link : 'div'"
                             :href="activeSection === null ? route('services.non-medik') : undefined"
                             prefetch
                             class="group relative overflow-hidden bg-white dark:bg-slate-900 border border-white dark:border-slate-800/80 rounded-2xl flex flex-col justify-between"
                             :class="[
-                                isBacking ? 'transition-none duration-0' : 'transition-all duration-500 ease-in-out',
-                                activeSection === null ? 'cursor-pointer hover:border-slate-200 dark:hover:border-slate-700 shadow-sm' : 'cursor-default border-white dark:border-slate-800/80 shadow-sm',
-                                activeSection === 'non-medik' ? 'w-full p-6' : (activeSection === 'medik' ? 'w-0 h-0 md:w-0 md:h-0 opacity-0 pointer-events-none overflow-hidden p-0 border-0 border-transparent shadow-none' : 'w-full md:w-1/2 p-6')
+                                activeSection === null ? 'cursor-pointer hover:border-slate-200 dark:hover:border-slate-700 shadow-sm w-full md:w-1/2 p-6' : 'cursor-default border-white dark:border-slate-800/80 shadow-sm w-full p-6'
                             ]"
                         >
-                            <div 
-                                class="w-full flex flex-col h-full"
-                                :class="[
-                                    isBacking ? 'transition-none duration-0' : 'transition-all duration-500 ease-in-out',
-                                    activeSection === null || activeSection === 'non-medik' ? 'min-w-[280px] md:min-w-[320px]' : 'min-w-0'
-                                ]"
-                            >
+                            <div class="w-full flex flex-col h-full">
                                 <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" v-if="activeSection === null" />
                                 <div>
                                     <div class="flex items-center justify-between mb-4">
@@ -328,13 +311,10 @@ const getUnitIcon = (name, divisionName) => {
                                     </div>
                                 </div>
 
-                                <!-- Sub-units (Nested inside card with smooth CSS max-height transition) -->
+                                <!-- Sub-units -->
                                 <div 
-                                    class="overflow-hidden"
-                                    :class="[
-                                        isBacking ? 'transition-none duration-0' : 'transition-all duration-500 ease-in-out',
-                                        activeSection === 'non-medik' ? 'max-h-[1500px] opacity-100 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80' : 'max-h-0 opacity-0 mt-0 pt-0 border-t-0 border-transparent'
-                                    ]"
+                                    v-if="activeSection === 'non-medik'"
+                                    class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80"
                                 >
                                     <div class="grid grid-cols-1 min-[450px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                                         <div 
@@ -397,6 +377,7 @@ const getUnitIcon = (name, divisionName) => {
                             </div>
                         </component>
                     </div>
+                </Deferred>
 
             </div>
         </div>

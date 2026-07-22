@@ -17,9 +17,8 @@ class ServiceManagementController extends Controller
      */
     public function indexRooms()
     {
-        $rooms = Room::orderBy('name', 'asc')->get();
         return Inertia::render('ServiceManagement/Rooms', [
-            'rooms' => $rooms,
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
         ]);
     }
 
@@ -28,12 +27,9 @@ class ServiceManagementController extends Controller
      */
     public function indexCategories()
     {
-        $categories = FeatureCategory::with(['unitFeature.supportingUnit'])->orderBy('id', 'desc')->get();
-        $unitFeatures = UnitFeature::with(['supportingUnit'])->orderBy('name', 'asc')->get();
-
         return Inertia::render('ServiceManagement/Categories', [
-            'categories' => $categories,
-            'unitFeatures' => $unitFeatures,
+            'categories' => Inertia::defer(fn() => FeatureCategory::with(['unitFeature.supportingUnit'])->orderBy('id', 'desc')->get()),
+            'unitFeatures' => Inertia::defer(fn() => UnitFeature::with(['supportingUnit'])->orderBy('name', 'asc')->get()),
         ]);
     }
 
@@ -42,9 +38,8 @@ class ServiceManagementController extends Controller
      */
     public function indexSupportingUnits()
     {
-        $divisions = Division::with(['supportingUnits'])->orderBy('name', 'asc')->get();
         return Inertia::render('ServiceManagement/SupportingUnits', [
-            'divisions' => $divisions,
+            'divisions' => Inertia::defer(fn() => Division::with(['supportingUnits'])->orderBy('name', 'asc')->get()),
         ]);
     }
 

@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { ref, computed, watchEffect } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
 import { compressImage } from '@/Utils/imageCompressor';
 import { 
     Send, 
@@ -9,7 +9,12 @@ import {
     UploadCloud,
     X,
     Camera,
-    Video
+    Video,
+    Lock,
+    Building2,
+    ChevronDown,
+    Search,
+    Check
 } from '@lucide/vue';
 
 const props = defineProps({
@@ -31,6 +36,16 @@ const props = defineProps({
     }
 });
 
+const page = usePage();
+const currentUser = computed(() => page.props.auth?.user || null);
+
+// Check if logged in user has an assigned room
+const userAssignedRoom = computed(() => {
+    const roomId = currentUser.value?.room_id;
+    if (!roomId) return null;
+    return props.rooms.find(r => r.id === roomId) || currentUser.value?.room || null;
+});
+
 // Selected category ID
 const selectedCategoryId = ref(null);
 
@@ -45,6 +60,44 @@ const form = useForm({
     problem_description: '',
     attachments: []
 });
+
+// Auto-select room if user has an assigned room
+watchEffect(() => {
+    if (userAssignedRoom.value) {
+        form.room_id = userAssignedRoom.value.id;
+    }
+});
+
+// Searchable dropdown state for users without an assigned room
+const isRoomDropdownOpen = ref(false);
+const roomSearchQuery = ref('');
+
+const filteredRooms = computed(() => {
+    const q = roomSearchQuery.value.trim().toLowerCase();
+    if (!q) return props.rooms;
+    return props.rooms.filter(r => 
+        (r.name && r.name.toLowerCase().includes(q)) || 
+        (r.location_floor && r.location_floor.toLowerCase().includes(q))
+    );
+});
+
+const selectedRoomLabel = computed(() => {
+    if (!form.room_id) return '';
+    const selected = props.rooms.find(r => r.id === form.room_id);
+    return selected ? `${selected.name} (${selected.location_floor})` : '';
+});
+
+const toggleRoomDropdown = () => {
+    isRoomDropdownOpen.value = !isRoomDropdownOpen.value;
+    if (isRoomDropdownOpen.value) {
+        roomSearchQuery.value = '';
+    }
+};
+
+const selectRoom = (roomId) => {
+    form.room_id = roomId;
+    isRoomDropdownOpen.value = false;
+};
 
 // Multi-file attachment state
 const MAX_FILES = 5;
@@ -126,8 +179,14 @@ const clearAllAttachments = () => {
 const canAddMore = computed(() => attachmentPreviews.value.length < MAX_FILES);
 
 const selectCategory = (id) => {
-    selectedCategoryId.value = id;
-    form.category_id = id;
+    if (selectedCategoryId.value === id) {
+        // Toggle uncheck if clicked again
+        selectedCategoryId.value = null;
+        form.category_id = '';
+    } else {
+        selectedCategoryId.value = id;
+        form.category_id = id;
+    }
 };
 
 const submitReport = () => {
@@ -136,6 +195,9 @@ const submitReport = () => {
             form.reset();
             selectedCategoryId.value = null;
             clearAllAttachments();
+            if (userAssignedRoom.value) {
+                form.room_id = userAssignedRoom.value.id;
+            }
         }
     });
 };
@@ -155,7 +217,7 @@ const submitReport = () => {
                 <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('pages.services.kategori_di_bawah_desc') }}</p>
             </div>
 
-            <div v-if="activeFeature.feature_categories && activeFeature.feature_categories.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div v-if="activeFeature?.feature_categories && activeFeature.feature_categories.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div 
                     v-for="cat in activeFeature.feature_categories" 
                     :key="cat.id"
@@ -163,14 +225,12 @@ const submitReport = () => {
                     :class="[
                         'p-4 rounded-xl border text-left transition-all duration-200 select-none cursor-pointer relative group flex items-start justify-between gap-3 h-auto min-h-[84px]',
                         selectedCategoryId === cat.id
-                            ? (isMedik 
-                                ? 'border-indigo-500 bg-indigo-50/10 dark:bg-indigo-950/10 text-indigo-950 dark:text-white shadow-sm'
-                                : 'border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/10 text-emerald-950 dark:text-white shadow-sm')
-                            : 'border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 hover:border-slate-200 dark:hover:border-slate-700'
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-white'
+                            : 'border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800/60'
                     ]"
                 >
                     <div class="flex-1 min-w-0">
-                        <h4 class="text-xs font-bold uppercase tracking-wide leading-tight group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors duration-150">
+                        <h4 class="text-xs font-bold uppercase tracking-wide leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-150">
                             {{ cat.name }}
                         </h4>
                         <p class="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1.5 whitespace-normal break-words">
@@ -180,14 +240,22 @@ const submitReport = () => {
                     <!-- Checkbox style indicator -->
                     <div 
                         :class="[
-                            'h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5',
+                            'h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-150',
                             selectedCategoryId === cat.id
-                                ? (isMedik ? 'border-indigo-500 bg-indigo-600 text-white' : 'border-emerald-500 bg-emerald-600 text-white')
-                                : 'border-slate-300 dark:border-slate-700'
+                                ? 'border-emerald-500 bg-emerald-600 text-white'
+                                : 'border-slate-300 dark:border-slate-700 group-hover:border-emerald-400'
                         ]"
                     >
                         <CheckCircle2 v-if="selectedCategoryId === cat.id" class="h-3 w-3 text-white" />
                     </div>
+                </div>
+            </div>
+
+            <!-- Skeleton Categories fallback if loading -->
+            <div v-else-if="!activeFeature?.feature_categories" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-pulse">
+                <div v-for="i in 3" :key="i" class="p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 min-h-[84px] space-y-2">
+                    <div class="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                    <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
                 </div>
             </div>
 
@@ -216,39 +284,111 @@ const submitReport = () => {
             <!-- Active Form -->
             <form v-else @submit.prevent="submitReport" class="space-y-4">
                 <!-- Readonly Category Display -->
-                <div class="bg-slate-50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-850 rounded-xl p-3.5 flex items-center justify-between gap-4">
-                    <div class="flex flex-col justify-center">
-                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider leading-none">{{ __('pages.services.kategori_terpilih') }}</span>
-                        <div class="text-xs font-bold text-slate-800 dark:text-slate-150 uppercase mt-2 leading-none">{{ activeCategory?.name }}</div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        {{ __('pages.services.kategori_terpilih') }}
+                    </label>
+                    <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-4">
+                        <div class="text-xs font-bold text-slate-800 dark:text-white uppercase leading-none">
+                            {{ activeCategory?.name }}
+                        </div>
+                        <span 
+                            :class="[
+                                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase shrink-0 border',
+                                isMedik 
+                                    ? 'bg-indigo-50/90 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/80' 
+                                    : 'bg-emerald-50/90 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80'
+                            ]"
+                        >
+                            {{ activeFeature?.name }}
+                        </span>
                     </div>
-                    <span 
-                        :class="[
-                            'inline-flex items-center justify-center px-2.5 py-1 rounded text-[10px] font-bold uppercase leading-none shrink-0',
-                            isMedik 
-                                ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400' 
-                                : 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
-                        ]"
-                    >
-                        {{ activeFeature?.name }}
-                    </span>
                 </div>
 
                 <!-- Room Picker -->
-                <div class="space-y-1.5">
+                <div class="space-y-1.5 relative">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         {{ __('pages.services.pilih_ruangan') }} <span class="text-red-400">*</span>
                     </label>
-                    <div class="relative">
-                        <select 
-                            v-model="form.room_id" 
-                            required
-                            class="w-full h-11 pl-4 pr-10 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150"
+
+                    <!-- Case 1: User HAS an assigned room (Auto-selected & Locked) -->
+                    <div v-if="userAssignedRoom" class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-4">
+                        <div>
+                            <div class="text-xs font-bold text-slate-800 dark:text-white uppercase leading-none">{{ userAssignedRoom.name }}</div>
+                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1.5 leading-none">{{ userAssignedRoom.location_floor || 'Lokasi Ruangan Penempatan Anda' }}</div>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-200/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-slate-700/50 shrink-0">
+                            <Lock class="h-3 w-3 text-slate-500" />
+                            {{ __('Terkunci') }}
+                        </span>
+                    </div>
+
+                    <!-- Case 2: User has NO assigned room (Custom Searchable & Scrollable Dropdown) -->
+                    <div v-else class="relative">
+                        <!-- Dropdown Toggle Button -->
+                        <button 
+                            type="button"
+                            @click="toggleRoomDropdown"
+                            class="w-full h-11 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
                         >
-                            <option value="" disabled>{{ __('pages.services.pilih_ruangan_default') }}</option>
-                            <option v-for="room in rooms" :key="room.id" :value="room.id">
-                                {{ room.name }} ({{ room.location_floor }})
-                            </option>
-                        </select>
+                            <span v-if="selectedRoomLabel" class="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                                {{ selectedRoomLabel }}
+                            </span>
+                            <span v-else class="text-slate-400 dark:text-slate-500">
+                                {{ __('pages.services.pilih_ruangan_default') }}
+                            </span>
+                            <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoomDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                        </button>
+
+                        <!-- Invisible Backdrop for closing on outside click -->
+                        <div v-if="isRoomDropdownOpen" class="fixed inset-0 z-20 cursor-default" @click="isRoomDropdownOpen = false"></div>
+
+                        <!-- Dropdown Menu -->
+                        <div 
+                            v-if="isRoomDropdownOpen" 
+                            class="absolute z-30 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-2 animate-spa-fade-in"
+                        >
+                            <!-- Search Input -->
+                            <div class="relative">
+                                <Search class="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input 
+                                    v-model="roomSearchQuery"
+                                    type="text"
+                                    :placeholder="__('Cari nama ruangan atau lantai...')"
+                                    class="w-full h-9 pl-9 pr-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                    @click.stop
+                                />
+                            </div>
+
+                            <!-- Scrollable Room List -->
+                            <div class="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                <div 
+                                    v-if="filteredRooms.length === 0" 
+                                    class="p-3 text-center text-xs text-slate-400 dark:text-slate-500 font-medium"
+                                >
+                                    {{ __('Ruangan tidak ditemukan') }}
+                                </div>
+                                <button
+                                    v-else
+                                    v-for="room in filteredRooms"
+                                    :key="room.id"
+                                    type="button"
+                                    @click="selectRoom(room.id)"
+                                    :class="[
+                                        'w-full text-left px-3 py-2.5 rounded-lg text-xs flex items-center justify-between transition-colors duration-150',
+                                        form.room_id === room.id
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold'
+                                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-medium'
+                                    ]"
+                                >
+                                    <div>
+                                        <div class="text-xs font-semibold">{{ room.name }}</div>
+                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-0.5">{{ room.location_floor }}</div>
+                                    </div>
+                                    <Check v-if="form.room_id === room.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div v-if="form.errors.room_id" class="text-[10px] text-red-500 font-semibold">{{ form.errors.room_id }}</div>
                 </div>
@@ -263,7 +403,7 @@ const submitReport = () => {
                         required
                         rows="4"
                         :placeholder="__('pages.services.deskripsi_placeholder')"
-                        class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150 leading-relaxed"
+                        class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 leading-relaxed"
                     ></textarea>
                     <div v-if="form.errors.problem_description" class="text-[10px] text-red-500 font-semibold">{{ form.errors.problem_description }}</div>
                 </div>
@@ -318,16 +458,11 @@ const submitReport = () => {
                                 'border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center',
                                 attachmentPreviews.length > 0 ? 'min-h-[80px]' : 'min-h-[120px]',
                                 dragOver 
-                                    ? (isMedik ? 'border-indigo-400 bg-indigo-50/20 dark:bg-indigo-950/10' : 'border-emerald-400 bg-emerald-50/20 dark:bg-emerald-950/10')
+                                    ? 'border-emerald-400 bg-emerald-50/20 dark:bg-emerald-950/10'
                                     : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/30 dark:bg-slate-950/20'
                             ]"
                         >
-                            <div :class="[
-                                'h-9 w-9 rounded-full flex items-center justify-center mb-1.5',
-                                isMedik 
-                                    ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-500 dark:text-indigo-400'
-                                    : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 dark:text-emerald-400'
-                            ]">
+                            <div class="h-9 w-9 rounded-full flex items-center justify-center mb-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 dark:text-emerald-400">
                                 <UploadCloud class="h-4.5 w-4.5" />
                             </div>
                             <p class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">{{ __('pages.services.lampiran_upload_label') }}</p>
@@ -338,12 +473,7 @@ const submitReport = () => {
                         <button
                             type="button"
                             @click="cameraInputRef?.click()"
-                            :class="[
-                                'w-full h-10 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition duration-150',
-                                isMedik 
-                                    ? 'border-indigo-200 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20'
-                                    : 'border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
-                            ]"
+                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-xs font-semibold flex items-center justify-center gap-2 transition duration-150"
                         >
                             <Camera class="h-4 w-4" />
                             {{ __('pages.services.lampiran_kamera') }}
@@ -369,3 +499,22 @@ const submitReport = () => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+</style>

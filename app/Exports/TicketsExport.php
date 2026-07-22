@@ -11,16 +11,36 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class TicketsExport implements FromCollection, WithHeadings, WithMapping, WithStyles
 {
+    public function __construct(public mixed $user = null)
+    {
+    }
+
     public function collection()
     {
-        return ServiceTicket::with([
+        $query = ServiceTicket::with([
             'reporter:id,name',
             'room:id,name',
             'category:id,name',
         ])
-        ->whereNull('deleted_at')
-        ->orderByDesc('created_at')
-        ->get();
+        ->whereNull('deleted_at');
+
+        if ($this->user) {
+            $roleId = (int) ($this->user->role_id ?? 8);
+            $userId = (int) $this->user->id;
+
+            if ($roleId === 8 || ($this->user->role && $this->user->role->name === 'REPORTER')) {
+                $query->where('reporter_id', $userId);
+            } elseif (in_array($roleId, [5, 6]) && $this->user->supporting_unit_id) {
+                $unitId = $this->user->supporting_unit_id;
+                $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+                    $q->where('supporting_unit_id', $unitId);
+                });
+            } elseif ($roleId === 7 && $this->user->room_id) {
+                $query->where('room_id', $this->user->room_id);
+            }
+        }
+
+        return $query->orderByDesc('created_at')->get();
     }
 
     public function headings(): array

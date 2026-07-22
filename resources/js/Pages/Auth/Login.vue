@@ -5,9 +5,9 @@ import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ScanFace, RefreshCw, CheckCircle, X, Eye, EyeOff } from '@lucide/vue';
-import * as faceapi from '@vladmandic/face-api';
 import axios from 'axios';
 
+let faceapi = null;
 const showPassword = ref(false);
 
 const props = defineProps({
@@ -60,6 +60,9 @@ const startCamera = async () => {
     matchedUserName.value = '';
     
     try {
+        if (!faceapi) {
+            faceapi = await import('@vladmandic/face-api');
+        }
         // Load face-api models from public/models folder
         if (!modelsLoaded.value) {
             try {
@@ -234,9 +237,7 @@ const triggerScanLoop = async () => {
 };
 
 const submit = () => {
-    form.post(route('login'), {
-        onFinish: () => form.reset('password'),
-    });
+    form.post(route('login'));
 };
 
 onBeforeUnmount(() => {
@@ -255,7 +256,7 @@ onBeforeUnmount(() => {
             </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                 {{ __("auth.login.subtitle") }}
-                <Link :href="route('register')" class="font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-500 underline ms-1">
+                <Link :href="route('register')" prefetch class="font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-500 underline ms-1">
                     {{ __('auth.login.create_account_link') }}
                 </Link>
             </p>
@@ -353,6 +354,7 @@ onBeforeUnmount(() => {
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
+                    prefetch
                     class="text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-500 underline ms-1"
                 >
                     {{ __('auth.login.click_here') }}

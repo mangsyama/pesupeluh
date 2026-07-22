@@ -8,7 +8,7 @@ import SupportingUnitList from './Partials/SupportingUnitList.vue';
 const props = defineProps({
     divisions: {
         type: Array,
-        required: true
+        default: () => []
     }
 });
 
@@ -33,7 +33,7 @@ const triggerAddUnit = () => {
                 <!-- Premium Header Panel (Title, Description, Search & Add Buttons) -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="space-y-1">
-                        <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
+                        <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
                             {{ __('pages.service_management.supporting_units.title') }}
                         </h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
@@ -49,7 +49,7 @@ const triggerAddUnit = () => {
                                 v-model="searchQuery"
                                 type="text" 
                                 :placeholder="__('pages.service_management.supporting_units.search_placeholder')" 
-                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150 shadow-none"
+                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 shadow-none"
                             />
                         </div>
                         
@@ -57,14 +57,14 @@ const triggerAddUnit = () => {
                         <div class="flex items-center gap-2 w-full sm:w-auto">
                             <button 
                                 @click="triggerAddDivision"
-                                class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
+                                class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
                             >
                                 <Plus class="h-4 w-4" />
                                 {{ __('pages.service_management.supporting_units.add_division') }}
                             </button>
                             <button 
                                 @click="triggerAddUnit"
-                                class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
+                                class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
                             >
                                 <Plus class="h-4 w-4" />
                                 {{ __('pages.service_management.supporting_units.add_unit') }}

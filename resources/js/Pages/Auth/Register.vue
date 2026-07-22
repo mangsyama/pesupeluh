@@ -5,8 +5,9 @@ import InputError from '@/Components/InputError.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ScanFace, RefreshCw, CheckCircle, X, Camera, UploadCloud, User, Image, Eye, EyeOff } from '@lucide/vue';
-import * as faceapi from '@vladmandic/face-api';
 import { compressImage } from '@/Utils/imageCompressor';
+
+let faceapi = null;
 
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
@@ -162,6 +163,9 @@ const loadModelsAndStart = async () => {
     isFaceModalOpen.value = true;
     
     try {
+        if (!faceapi) {
+            faceapi = await import('@vladmandic/face-api');
+        }
         // Load face-api models from public/models folder
         if (!modelsLoaded.value) {
             try {
@@ -293,9 +297,7 @@ const closeFaceModal = () => {
 };
 
 const submit = () => {
-    form.post(route('register'), {
-        onFinish: () => form.reset('password', 'password_confirmation'),
-    });
+    form.post(route('register'));
 };
 
 onBeforeUnmount(() => {
@@ -597,17 +599,22 @@ onBeforeUnmount(() => {
             <div class="pt-4 space-y-4">
                 <button
                     type="submit"
-                    class="w-full text-center py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900"
-                    :class="{ 'opacity-25': form.processing }"
+                    class="w-full text-center py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900 flex items-center justify-center gap-3"
+                    :class="{ 'opacity-25 cursor-not-allowed': form.processing }"
                     :disabled="form.processing"
+                    :aria-busy="form.processing"
                 >
-                    {{ __('global.register') }}
+                    <RefreshCw v-if="form.processing" class="h-4 w-4 animate-spin text-white" />
+                    <span>
+                        {{ form.processing ? __('auth.register.loading') : __('global.register') }}
+                    </span>
                 </button>
 
                 <div class="text-center mt-2 text-sm text-slate-500 dark:text-slate-400">
                     {{ __('auth.register.already_registered') }}
                     <Link
                         :href="route('login')"
+                        prefetch
                         class="font-bold text-emerald-600 dark:text-emerald-400 hover:underline outline-none ms-1"
                     >
                         {{ __('auth.register.log_in_link') }}

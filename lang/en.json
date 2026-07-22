@@ -34,6 +34,7 @@
     }
   },
   "auth": {
+    "failed": "These credentials do not match our records.",
     "login": {
       "title": "Login to Your Account",
       "subtitle": "Don't have an account?",
@@ -82,7 +83,8 @@
       "face_scan_btn": "Register Face",
       "retry_scan_btn": "Retry Face Scan",
       "already_registered": "Already registered?",
-      "log_in_link": "Login"
+      "log_in_link": "Login",
+      "loading": "Processing Registration..."
     },
     "confirm_password": {
       "title": "Confirm Password",
@@ -106,8 +108,14 @@
       "link_sent_msg": "A new verification link has been sent to the email address you provided during registration.",
       "resend_btn": "Resend Verification Email",
       "logout_btn": "Logout"
-    }
+    },
+    "logout_processing": "Logging out...",
+    "logout_title": "Terminating Session...",
+    "logout_desc": "Please wait, you are being logged out of the system."
   },
+  "auth.logout_processing": "Logging out...",
+  "auth.logout_title": "Terminating Session...",
+  "auth.logout_desc": "Please wait, you are being logged out of the system.",
   "pages": {
     "dashboard": {
       "welcome": "Welcome,",

@@ -1,12 +1,12 @@
 <script setup>
 import { ref, computed, getCurrentInstance } from 'vue';
-import { useForm, router } from '@inertiajs/vue3';
+import { useForm, router, Deferred } from '@inertiajs/vue3';
 import { Edit2, Trash2, X } from '@lucide/vue';
 
 const props = defineProps({
     rooms: {
         type: Array,
-        required: true
+        default: () => []
     },
     searchQuery: {
         type: String,
@@ -26,9 +26,10 @@ const roomForm = useForm({
 });
 
 const filteredRooms = computed(() => {
-    if (!props.searchQuery.trim()) return props.rooms;
+    const list = props.rooms || [];
+    if (!props.searchQuery.trim()) return list;
     const query = props.searchQuery.toLowerCase();
-    return props.rooms.filter(room => 
+    return list.filter(room => 
         room.name.toLowerCase().includes(query) || 
         (room.location_floor && room.location_floor.toLowerCase().includes(query))
     );
@@ -73,7 +74,8 @@ const deleteRoom = (room) => {
     proxy.$swal({
         title: proxy.__('pages.service_management.rooms.confirm_delete_title'),
         text: proxy.__('pages.service_management.rooms.confirm_delete_text').replace('{name}', room.name),
-        icon: 'warning',
+        icon: 'error',
+        iconColor: '#ef4444',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#64748b',
@@ -106,26 +108,52 @@ defineExpose({
                         <th class="px-6 py-4 text-right">{{ __('pages.service_management.rooms.table_actions') }}</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
-                    <tr v-if="filteredRooms.length === 0">
-                        <td colspan="3" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.rooms.empty_data') }}</td>
-                    </tr>
-                    <tr 
-                        v-else
-                        v-for="room in filteredRooms" 
-                        :key="room.id"
-                        class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
-                    >
-                        <td class="px-6 py-4 font-semibold text-slate-900 dark:text-white">{{ room.name }}</td>
-                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ room.location_floor || '-' }}</td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button @click="openEditRoomModal(room)" class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"><Edit2 class="h-4 w-4" /></button>
-                                <button @click="deleteRoom(room)" class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"><Trash2 class="h-4 w-4" /></button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
+                <Deferred data="rooms">
+                    <template #fallback>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
+                            <tr v-for="i in 5" :key="'room-skel-' + i" class="py-4">
+                                <td class="px-6 py-4"><div class="h-4 w-44 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
+                                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
+                                <td class="px-6 py-4 text-right"><div class="h-6 w-16 bg-slate-100 dark:bg-slate-800/60 rounded ml-auto"></div></td>
+                            </tr>
+                        </tbody>
+                    </template>
+
+                    <template #default>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                            <tr v-if="filteredRooms.length === 0">
+                                <td colspan="3" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.rooms.empty_data') }}</td>
+                            </tr>
+                            <tr 
+                                v-else
+                                v-for="room in filteredRooms" 
+                                :key="room.id"
+                                class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
+                            >
+                                <td class="px-6 py-4 font-semibold text-slate-955 dark:text-white">{{ room.name }}</td>
+                                <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ room.location_floor || '-' }}</td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <button 
+                                            @click="openEditRoomModal(room)" 
+                                            class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
+                                            :title="__('Edit')"
+                                        >
+                                            <Edit2 class="h-3.5 w-3.5" />
+                                        </button>
+                                        <button 
+                                            @click="deleteRoom(room)" 
+                                            class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
+                                            :title="__('global.delete')"
+                                        >
+                                            <Trash2 class="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </template>
+                </Deferred>
             </table>
         </div>
 
@@ -134,7 +162,7 @@ defineExpose({
             <div v-if="showRoomModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
                 <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl">
-                        <h3 class="text-base font-bold text-slate-950 dark:text-white">
+                        <h3 class="text-base font-bold text-slate-955 dark:text-white">
                             {{ isEditingRoom ? __('pages.service_management.rooms.title_edit') : __('pages.service_management.rooms.title_add') }}
                         </h3>
                         <button type="button" @click="showRoomModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
@@ -148,7 +176,7 @@ defineExpose({
                                 v-model="roomForm.name"
                                 type="text" 
                                 required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-150"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
                                 :placeholder="__('pages.service_management.rooms.placeholder_name')"
                             />
                             <div v-if="roomForm.errors.name" class="text-xs text-red-500 mt-1">{{ roomForm.errors.name }}</div>
@@ -158,14 +186,14 @@ defineExpose({
                             <input 
                                 v-model="roomForm.location_floor"
                                 type="text" 
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-150"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
                                 :placeholder="__('pages.service_management.rooms.placeholder_floor')"
                             />
                             <div v-if="roomForm.errors.location_floor" class="text-xs text-red-500 mt-1">{{ roomForm.errors.location_floor }}</div>
                         </div>
                         <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
                             <button type="button" @click="showRoomModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150">{{ __('global.cancel') }}</button>
-                            <button type="submit" :disabled="roomForm.processing" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-650 dark:hover:bg-indigo-550 text-white font-semibold text-sm rounded-xl transition duration-150 disabled:opacity-50">{{ __('pages.service_management.rooms.btn_save') }}</button>
+                            <button type="submit" :disabled="roomForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 disabled:opacity-50">{{ __('pages.service_management.rooms.btn_save') }}</button>
                         </div>
                     </form>
                 </div>

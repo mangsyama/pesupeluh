@@ -17,23 +17,39 @@ class ReportController extends Controller
     /**
      * Report Center – statistik ringkasan + halaman utama.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $user = $request->user();
+        $roleId = (int) ($user->role_id ?? 8);
+        $userId = (int) $user->id;
+
         $now = now();
         $startOfMonth = $now->copy()->startOfMonth();
         $endOfMonth = $now->copy()->endOfMonth();
 
         return Inertia::render('ReportExport/Index', [
-            'stats' => [
-                'total_month'    => ServiceTicket::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                    ->count(),
-                'completed'      => ServiceTicket::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                    ->where('status', 'COMPLETED')
-                    ->count(),
-                'pending'        => ServiceTicket::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                    ->whereIn('status', ['PENDING_VALIDATION', 'ASSIGNED', 'IN_PROGRESS', 'PENDING'])
-                    ->count(),
-            ],
+            'stats' => Inertia::defer(function () use ($user, $roleId, $userId, $startOfMonth, $endOfMonth) {
+                $query = ServiceTicket::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                    ->whereNull('deleted_at');
+
+                // Scoping data berdasarkan peran
+                if ($roleId === 8 || ($user->role && $user->role->name === 'REPORTER')) {
+                    $query->where('reporter_id', $userId);
+                } elseif (in_array($roleId, [5, 6]) && $user->supporting_unit_id) {
+                    $unitId = $user->supporting_unit_id;
+                    $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+                        $q->where('supporting_unit_id', $unitId);
+                    });
+                } elseif ($roleId === 7 && $user->room_id) {
+                    $query->where('room_id', $user->room_id);
+                }
+
+                return [
+                    'total_month' => (clone $query)->count(),
+                    'completed'   => (clone $query)->where('status', 'COMPLETED')->count(),
+                    'pending'     => (clone $query)->whereIn('status', ['PENDING_VALIDATION', 'ASSIGNED', 'IN_PROGRESS', 'PENDING'])->count(),
+                ];
+            }),
         ]);
     }
 
@@ -101,7 +117,7 @@ class ReportController extends Controller
         }
 
         return Inertia::render('Report/Index', [
-            'tickets'  => $query->paginate(15),
+            'tickets'  => Inertia::defer(fn() => $query->paginate(15)),
             'filters'  => $filters,
             'personal' => true,
         ]);
@@ -124,15 +140,6 @@ class ReportController extends Controller
      */
     public function show(Request $request, ServiceTicket $ticket)
     {
-        $ticket->load([
-            'reporter:id,name,nip',
-            'validator:id,name,nip',
-            'room:id,name,location_floor',
-            'category.unitFeature.supportingUnit.division',
-            'assignments.technician:id,name,nip',
-            'attachments.user:id,name',
-        ]);
-
         $user = $request->user();
         
         // Authorization check: only let the reporter, room head of the ticket's room, or admins/unit heads view it
@@ -147,24 +154,47 @@ class ReportController extends Controller
         }
 
         return Inertia::render('Report/Show', [
-            'ticket' => $ticket,
+            'ticket' => Inertia::defer(fn() => $ticket->load([
+                'reporter:id,name,nip',
+                'validator:id,name,nip',
+                'room:id,name,location_floor',
+                'category.unitFeature.supportingUnit.division',
+                'assignments.technician:id,name,nip',
+                'attachments.user:id,name',
+            ])),
             'personal' => true,
         ]);
     }
 
     /**
-     * Export PDF – data riil dari database.
+     * Export PDF – data terfilter sesuai otorisasi peran user.
      */
     public function exportPdf(Request $request)
     {
-        $tickets = ServiceTicket::with([
+        $user = $request->user();
+        $roleId = (int) ($user->role_id ?? 8);
+        $userId = (int) $user->id;
+
+        $query = ServiceTicket::with([
             'reporter:id,name',
             'room:id,name',
             'category:id,name',
         ])
-        ->whereNull('deleted_at')
-        ->orderByDesc('created_at')
-        ->get();
+        ->whereNull('deleted_at');
+
+        // Scoping data berdasarkan peran
+        if ($roleId === 8 || ($user->role && $user->role->name === 'REPORTER')) {
+            $query->where('reporter_id', $userId);
+        } elseif (in_array($roleId, [5, 6]) && $user->supporting_unit_id) {
+            $unitId = $user->supporting_unit_id;
+            $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+                $q->where('supporting_unit_id', $unitId);
+            });
+        } elseif ($roleId === 7 && $user->room_id) {
+            $query->where('room_id', $user->room_id);
+        }
+
+        $tickets = $query->orderByDesc('created_at')->get();
 
         $pdf = Pdf::loadView('exports.tickets_pdf', [
             'tickets'    => $tickets,
@@ -175,12 +205,12 @@ class ReportController extends Controller
     }
 
     /**
-     * Export CSV – data riil dari database.
+     * Export CSV – data terfilter sesuai otorisasi peran user.
      */
-    public function exportCsv()
+    public function exportCsv(Request $request)
     {
         return Excel::download(
-            new TicketsExport(),
+            new TicketsExport($request->user()),
             'laporan_tiket_' . now()->format('Ymd_His') . '.csv',
             \Maatwebsite\Excel\Excel::CSV
         );

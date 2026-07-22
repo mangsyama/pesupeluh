@@ -6,7 +6,7 @@ import ReporterShow from './Partials/ReporterShow.vue';
 const props = defineProps({
     ticket: {
         type: Object,
-        required: true
+        default: () => null
     },
     personal: {
         type: Boolean,
@@ -16,7 +16,7 @@ const props = defineProps({
 </script>
 
 <template>
-    <Head :title="`Detail Laporan - #${ticket.ticket_number}`" />
+    <Head :title="`Detail Laporan ${ticket?.ticket_number ? ('- #' + ticket.ticket_number) : ''}`" />
     
     <AuthenticatedLayout>
         <!-- Personal reports are strictly read-only tracker (ReporterShow) -->

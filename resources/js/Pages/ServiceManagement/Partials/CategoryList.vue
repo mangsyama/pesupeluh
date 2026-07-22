@@ -1,16 +1,16 @@
 <script setup>
 import { ref, computed, getCurrentInstance } from 'vue';
-import { useForm, router } from '@inertiajs/vue3';
-import { Edit2, Trash2, X } from '@lucide/vue';
+import { useForm, router, Deferred } from '@inertiajs/vue3';
+import { Edit2, Trash2, X, ChevronDown, Search, Check } from '@lucide/vue';
 
 const props = defineProps({
     categories: {
         type: Array,
-        required: true
+        default: () => []
     },
     unitFeatures: {
         type: Array,
-        required: true
+        default: () => []
     },
     searchQuery: {
         type: String,
@@ -31,9 +31,10 @@ const categoryForm = useForm({
 });
 
 const filteredCategories = computed(() => {
-    if (!props.searchQuery.trim()) return props.categories;
+    const list = props.categories || [];
+    if (!props.searchQuery.trim()) return list;
     const query = props.searchQuery.toLowerCase();
-    return props.categories.filter(cat => 
+    return list.filter(cat => 
         cat.name.toLowerCase().includes(query) || 
         (cat.description && cat.description.toLowerCase().includes(query)) || 
         (cat.unit_feature && cat.unit_feature.name.toLowerCase().includes(query)) ||
@@ -41,11 +42,45 @@ const filteredCategories = computed(() => {
     );
 });
 
+const isFeatureDropdownOpen = ref(false);
+const featureSearchQuery = ref('');
+
+const filteredUnitFeatures = computed(() => {
+    const q = featureSearchQuery.value.trim().toLowerCase();
+    const list = props.unitFeatures || [];
+    if (!q) return list;
+    return list.filter(f => {
+        const name = (f.name || '').toLowerCase();
+        const unitName = (f.supporting_unit ? f.supporting_unit.name : '').toLowerCase();
+        return name.includes(q) || unitName.includes(q);
+    });
+});
+
+const selectedFeatureLabel = computed(() => {
+    if (!categoryForm.feature_id) return '';
+    const selected = (props.unitFeatures || []).find(f => f.id === categoryForm.feature_id);
+    if (!selected) return '';
+    return (selected.supporting_unit ? selected.supporting_unit.name + ' - ' : '') + selected.name;
+});
+
+const toggleFeatureDropdown = () => {
+    isFeatureDropdownOpen.value = !isFeatureDropdownOpen.value;
+    if (isFeatureDropdownOpen.value) {
+        featureSearchQuery.value = '';
+    }
+};
+
+const selectFeature = (featureId) => {
+    categoryForm.feature_id = featureId;
+    isFeatureDropdownOpen.value = false;
+};
+
 const openAddCategoryModal = () => {
     isEditingCategory.value = false;
     categoryForm.reset();
     categoryForm.clearErrors();
-    categoryForm.feature_id = props.unitFeatures.length > 0 ? props.unitFeatures[0].id : '';
+    categoryForm.feature_id = props.unitFeatures && props.unitFeatures.length > 0 ? props.unitFeatures[0].id : '';
+    isFeatureDropdownOpen.value = false;
     showCategoryModal.value = true;
 };
 
@@ -56,6 +91,7 @@ const openEditCategoryModal = (cat) => {
     categoryForm.name = cat.name;
     categoryForm.description = cat.description || '';
     categoryForm.feature_id = cat.feature_id || '';
+    isFeatureDropdownOpen.value = false;
     showCategoryModal.value = true;
 };
 
@@ -82,7 +118,8 @@ const deleteCategory = (cat) => {
     proxy.$swal({
         title: proxy.__('pages.service_management.categories.confirm_delete_title'),
         text: proxy.__('pages.service_management.categories.confirm_delete_text').replace('{name}', cat.name),
-        icon: 'warning',
+        icon: 'error',
+        iconColor: '#ef4444',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#64748b',
@@ -116,34 +153,61 @@ defineExpose({
                         <th class="px-6 py-4 text-right">{{ __('pages.service_management.categories.table_actions') }}</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
-                    <tr v-if="filteredCategories.length === 0">
-                        <td colspan="4" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.categories.empty_data') }}</td>
-                    </tr>
-                    <tr 
-                        v-else
-                        v-for="cat in filteredCategories" 
-                        :key="cat.id"
-                        class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
-                    >
-                        <td class="px-6 py-4">
-                            <div class="font-semibold text-slate-900 dark:text-white">{{ cat.name }}</div>
-                        </td>
-                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400 max-w-xs truncate">{{ cat.description || '-' }}</td>
-                        <td class="px-6 py-4">
-                            <span v-if="cat.unit_feature" class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
-                                {{ cat.unit_feature.supporting_unit ? cat.unit_feature.supporting_unit.name : '' }} • {{ cat.unit_feature.name }}
-                            </span>
-                            <span v-else class="text-slate-400">-</span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button @click="openEditCategoryModal(cat)" class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"><Edit2 class="h-4 w-4" /></button>
-                                <button @click="deleteCategory(cat)" class="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition duration-150"><Trash2 class="h-4 w-4" /></button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
+                <Deferred data="categories">
+                    <template #fallback>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
+                            <tr v-for="i in 5" :key="'cat-skel-' + i" class="py-4">
+                                <td class="px-6 py-4"><div class="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
+                                <td class="px-6 py-4"><div class="h-4 w-48 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
+                                <td class="px-6 py-4"><div class="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
+                                <td class="px-6 py-4 text-right"><div class="h-6 w-16 bg-slate-100 dark:bg-slate-800/60 rounded ml-auto"></div></td>
+                            </tr>
+                        </tbody>
+                    </template>
+
+                    <template #default>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                            <tr v-if="filteredCategories.length === 0">
+                                <td colspan="4" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.categories.empty_data') }}</td>
+                            </tr>
+                            <tr 
+                                v-else
+                                v-for="cat in filteredCategories" 
+                                :key="cat.id"
+                                class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
+                            >
+                                <td class="px-6 py-4">
+                                    <div class="font-semibold text-slate-955 dark:text-white">{{ cat.name }}</div>
+                                </td>
+                                <td class="px-6 py-4 text-slate-500 dark:text-slate-400 max-w-xs truncate">{{ cat.description || '-' }}</td>
+                                <td class="px-6 py-4">
+                                    <span v-if="cat.unit_feature" class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
+                                        {{ cat.unit_feature.supporting_unit ? cat.unit_feature.supporting_unit.name : '' }} • {{ cat.unit_feature.name }}
+                                    </span>
+                                    <span v-else class="text-slate-400">-</span>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex items-center justify-end gap-1.5">
+                                        <button 
+                                            @click="openEditCategoryModal(cat)" 
+                                            class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
+                                            :title="__('Edit')"
+                                        >
+                                            <Edit2 class="h-3.5 w-3.5" />
+                                        </button>
+                                        <button 
+                                            @click="deleteCategory(cat)" 
+                                            class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
+                                            :title="__('global.delete')"
+                                        >
+                                            <Trash2 class="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </template>
+                </Deferred>
             </table>
         </div>
 
@@ -152,7 +216,7 @@ defineExpose({
             <div v-if="showCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
                 <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl">
-                        <h3 class="text-base font-bold text-slate-950 dark:text-white">
+                        <h3 class="text-base font-bold text-slate-955 dark:text-white">
                             {{ isEditingCategory ? __('pages.service_management.categories.edit_title') : __('pages.service_management.categories.add_title') }}
                         </h3>
                         <button type="button" @click="showCategoryModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
@@ -166,22 +230,59 @@ defineExpose({
                                 v-model="categoryForm.name"
                                 type="text" 
                                 required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-150"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
                                 :placeholder="__('pages.service_management.categories.placeholder_name')"
                             />
                             <div v-if="categoryForm.errors.name" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.name }}</div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.categories.label_feature') }}</label>
-                            <select 
-                                v-model="categoryForm.feature_id"
-                                required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-150"
-                            >
-                                <option v-for="feat in unitFeatures" :key="feat.id" :value="feat.id">
-                                    {{ feat.supporting_unit ? feat.supporting_unit.name : '' }} - {{ feat.name }}
-                                </option>
-                            </select>
+                            <div class="relative">
+                                <button 
+                                    type="button"
+                                    @click="toggleFeatureDropdown"
+                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
+                                >
+                                    <span v-if="selectedFeatureLabel" class="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                                        {{ selectedFeatureLabel }}
+                                    </span>
+                                    <span v-else class="text-slate-400 dark:text-slate-500">
+                                        Pilih Fitur / Unit Penunjang...
+                                    </span>
+                                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isFeatureDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                                </button>
+
+                                <div 
+                                    v-if="isFeatureDropdownOpen"
+                                    class="absolute z-50 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-2 shadow-lg"
+                                >
+                                    <div class="relative">
+                                        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                        <input
+                                            v-model="featureSearchQuery"
+                                            type="text"
+                                            placeholder="Cari fitur/unit..."
+                                            class="w-full h-8 pl-8 pr-3 text-xs border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                        />
+                                    </div>
+                                    <div class="max-h-48 overflow-y-auto space-y-1 pr-1">
+                                        <button
+                                            v-for="feat in filteredUnitFeatures"
+                                            :key="feat.id"
+                                            type="button"
+                                            @click="selectFeature(feat.id)"
+                                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
+                                            :class="categoryForm.feature_id === feat.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                        >
+                                            <span class="truncate">{{ feat.supporting_unit ? feat.supporting_unit.name : '' }} - {{ feat.name }}</span>
+                                            <Check v-if="categoryForm.feature_id === feat.id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        </button>
+                                        <div v-if="filteredUnitFeatures.length === 0" class="px-3 py-2 text-xs text-slate-400 italic text-center">
+                                            Tidak ditemukan
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div v-if="categoryForm.errors.feature_id" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.feature_id }}</div>
                         </div>
                         <div>
@@ -189,14 +290,14 @@ defineExpose({
                             <textarea 
                                 v-model="categoryForm.description"
                                 rows="3"
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all duration-150"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
                                 :placeholder="__('pages.service_management.categories.placeholder_description')"
                             ></textarea>
                             <div v-if="categoryForm.errors.description" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.description }}</div>
                         </div>
                         <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
                             <button type="button" @click="showCategoryModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150">{{ __('global.cancel') }}</button>
-                            <button type="submit" :disabled="categoryForm.processing" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 dark:bg-indigo-650 dark:hover:bg-indigo-550 text-white font-semibold text-sm rounded-xl transition duration-150 disabled:opacity-50">{{ __('pages.service_management.categories.btn_save') }}</button>
+                            <button type="submit" :disabled="categoryForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 disabled:opacity-50">{{ __('pages.service_management.categories.btn_save') }}</button>
                         </div>
                     </form>
                 </div>

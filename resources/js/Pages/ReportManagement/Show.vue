@@ -10,7 +10,7 @@ import TechnicianShow from './Partials/TechnicianShow.vue';
 const props = defineProps({
     ticket: {
         type: Object,
-        required: true
+        default: () => null
     },
     technicians: {
         type: Array,
@@ -34,7 +34,7 @@ const activeComponent = computed(() => {
 </script>
 
 <template>
-    <Head :title="`Manajemen Laporan - #${ticket.ticket_number}`" />
+    <Head :title="`Manajemen Laporan ${ticket?.ticket_number ? ('- #' + ticket.ticket_number) : ''}`" />
     
     <AuthenticatedLayout>
         <component 

@@ -1,25 +1,25 @@
 <script setup>
 import { ref, getCurrentInstance, computed } from 'vue';
-import { useForm, router, Head } from '@inertiajs/vue3';
+import { useForm, router, Head, Deferred } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ShieldAlert, UserCheck, Trash2, Search, X, Calendar, Phone, Mail, User, Eye } from '@lucide/vue';
 
 const props = defineProps({
     users: {
         type: Array,
-        required: true
+        default: () => []
     },
     roles: {
         type: Array,
-        required: true
+        default: () => []
     },
     rooms: {
         type: Array,
-        required: true
+        default: () => []
     },
     supportingUnits: {
         type: Array,
-        required: true
+        default: () => []
     }
 });
 
@@ -46,9 +46,10 @@ const form = useForm({
 });
 
 const filteredUsers = computed(() => {
-    if (!searchQuery.value.trim()) return props.users;
+    const list = props.users || [];
+    if (!searchQuery.value.trim()) return list;
     const query = searchQuery.value.toLowerCase();
-    return props.users.filter(u => 
+    return list.filter(u => 
         u.name.toLowerCase().includes(query) || 
         u.email.toLowerCase().includes(query) ||
         (u.nip && u.nip.toLowerCase().includes(query))
@@ -132,10 +133,10 @@ const formatDate = (dateStr) => {
     <AuthenticatedLayout>
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full">
-                <!-- Premium Header Panel -->
+                <!-- Premium Header Panel (ALWAYS VISIBLE) -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="space-y-1">
-                        <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight flex items-center gap-2">
+                        <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight flex items-center gap-2">
                             {{ __('pages.user_management.approval_title') }}
                         </h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
@@ -169,92 +170,116 @@ const formatDate = (dateStr) => {
                                 <th class="px-6 py-4 text-right">{{ __('pages.user_management.table.actions') }}</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
-                            <tr v-if="filteredUsers.length === 0">
-                                <td colspan="5" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
-                                    {{ __('pages.user_management.table.empty_approvals') }}
-                                </td>
-                            </tr>
-                            <tr 
-                                v-else
-                                v-for="user in filteredUsers" 
-                                :key="user.id"
-                                class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
-                            >
-                                <!-- Nama / Email -->
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="h-9 w-9 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
-                                            <img 
-                                                v-if="user.profile_photo_path" 
-                                                :src="user.profile_photo_path" 
-                                                class="h-full w-full object-cover cursor-zoom-in" 
-                                                @click="viewPhoto(user)" 
-                                                :title="__('pages.user_management.table.zoom_photo')" 
-                                            />
-                                            <User v-else class="h-4.5 w-4.5 text-slate-500" />
-                                        </div>
-                                        <div>
-                                            <div class="font-semibold text-slate-950 dark:text-white">
-                                                {{ user.name }}
+                        <Deferred data="users">
+                            <template #fallback>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
+                                    <tr v-for="i in 5" :key="'approval-skel-' + i" class="py-4">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-800 flex-shrink-0"></div>
+                                                <div class="space-y-1.5 flex-1">
+                                                    <div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                                    <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
+                                                </div>
                                             </div>
-                                            <div class="text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                
-                                <!-- NIP -->
-                                <td class="px-6 py-4 text-slate-650 dark:text-slate-400 text-xs">
-                                    {{ user.nip || '-' }}
-                                </td>
-                                
-                                <!-- Nomor HP -->
-                                <td class="px-6 py-4 text-slate-650 dark:text-slate-400 text-xs">
-                                    {{ user.phone_number || '-' }}
-                                </td>
+                                        </td>
+                                        <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
+                                        <td class="px-6 py-4 text-right"><div class="h-8 w-48 bg-slate-100 dark:bg-slate-800/60 rounded-xl ml-auto"></div></td>
+                                    </tr>
+                                </tbody>
+                            </template>
 
-                                <!-- Registered Time -->
-                                <td class="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
-                                    <div class="flex items-center gap-1">
-                                        <Calendar class="h-3.5 w-3.5 text-slate-400" />
-                                        {{ formatDate(user.created_at) }}
-                                    </div>
-                                </td>
-                                
-                                <!-- Actions -->
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <!-- Tombol Lihat Detail -->
-                                        <button
-                                            @click="openDetailModal(user)"
-                                            class="h-9 px-3 inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl transition duration-150 whitespace-nowrap"
-                                            title="Lihat Detail"
-                                        >
-                                            <Eye class="h-3.5 w-3.5" />
-                                            Detail
-                                        </button>
-                                        <!-- Tombol Setujui -->
-                                        <button 
-                                            @click="openApprovalModal(user)"
-                                            class="h-9 px-3 inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition duration-150 whitespace-nowrap"
-                                            :title="__('pages.user_management.alerts.approve_action')"
-                                        >
-                                            <UserCheck class="h-3.5 w-3.5" />
-                                            {{ __('pages.user_management.alerts.approve_action') }}
-                                        </button>
-                                        <!-- Tombol Tolak -->
-                                        <button 
-                                            @click="rejectUser(user)"
-                                            class="h-9 px-3 inline-flex items-center gap-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 dark:bg-slate-800 dark:hover:bg-red-950/40 dark:hover:text-red-400 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl transition duration-150"
-                                            :title="__('pages.user_management.alerts.reject_action')"
-                                        >
-                                            <Trash2 class="h-3.5 w-3.5" />
-                                            {{ __('pages.user_management.alerts.reject_action') }}
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
+                            <template #default>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                                    <tr v-if="filteredUsers.length === 0">
+                                        <td colspan="5" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+                                            {{ __('pages.user_management.table.empty_approvals') }}
+                                        </td>
+                                    </tr>
+                                    <tr 
+                                        v-else
+                                        v-for="user in filteredUsers" 
+                                        :key="user.id"
+                                        class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
+                                    >
+                                        <!-- Nama / Email -->
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="h-9 w-9 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                                                    <img 
+                                                        v-if="user.profile_photo_path" 
+                                                        :src="user.profile_photo_path" 
+                                                        class="h-full w-full object-cover cursor-zoom-in" 
+                                                        @click="viewPhoto(user)" 
+                                                        :title="__('pages.user_management.table.zoom_photo')" 
+                                                    />
+                                                    <User v-else class="h-4.5 w-4.5 text-slate-500" />
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold text-slate-955 dark:text-white">
+                                                        {{ user.name }}
+                                                    </div>
+                                                    <div class="text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- NIP -->
+                                        <td class="px-6 py-4 text-slate-650 dark:text-slate-400 text-xs">
+                                            {{ user.nip || '-' }}
+                                        </td>
+                                        
+                                        <!-- Nomor HP -->
+                                        <td class="px-6 py-4 text-slate-650 dark:text-slate-400 text-xs">
+                                            {{ user.phone_number || '-' }}
+                                        </td>
+
+                                        <!-- Registered Time -->
+                                        <td class="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
+                                            <div class="flex items-center gap-1">
+                                                <Calendar class="h-3.5 w-3.5 text-slate-400" />
+                                                {{ formatDate(user.created_at) }}
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Actions -->
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex items-center justify-end gap-2">
+                                                <!-- Tombol Lihat Detail -->
+                                                <button
+                                                    @click="openDetailModal(user)"
+                                                    class="h-9 px-3 inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl transition duration-150 whitespace-nowrap"
+                                                    title="Lihat Detail"
+                                                >
+                                                    <Eye class="h-3.5 w-3.5" />
+                                                    Detail
+                                                </button>
+                                                <!-- Tombol Setujui -->
+                                                <button 
+                                                    @click="openApprovalModal(user)"
+                                                    class="h-9 px-3 inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition duration-150 whitespace-nowrap"
+                                                    :title="__('pages.user_management.alerts.approve_action')"
+                                                >
+                                                    <UserCheck class="h-3.5 w-3.5" />
+                                                    {{ __('pages.user_management.alerts.approve_action') }}
+                                                </button>
+                                                <!-- Tombol Tolak -->
+                                                <button 
+                                                    @click="rejectUser(user)"
+                                                    class="h-9 px-3 inline-flex items-center gap-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-600 dark:bg-slate-800 dark:hover:bg-red-950/40 dark:hover:text-red-400 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl transition duration-150"
+                                                    :title="__('pages.user_management.alerts.reject_action')"
+                                                >
+                                                    <Trash2 class="h-3.5 w-3.5" />
+                                                    {{ __('pages.user_management.alerts.reject_action') }}
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </template>
+                        </Deferred>
                     </table>
                 </div>
 
@@ -265,7 +290,7 @@ const formatDate = (dateStr) => {
 
                         <!-- Modal Header -->
                         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-900/50">
-                            <h3 class="text-base font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                            <h3 class="text-base font-bold text-slate-955 dark:text-white flex items-center gap-2">
                                 <UserCheck class="h-5 w-5 text-indigo-500" />
                                 {{ __('pages.user_management.alerts.approve_confirm_title') }}
                             </h3>
@@ -404,7 +429,7 @@ const formatDate = (dateStr) => {
                     <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden">
                         <!-- Header -->
                         <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-900/50">
-                            <h3 class="text-base font-bold text-slate-950 dark:text-white flex items-center gap-2">
+                            <h3 class="text-base font-bold text-slate-955 dark:text-white flex items-center gap-2">
                                 <Eye class="h-5 w-5 text-slate-400" />
                                 Detail Data Pendaftar
                             </h3>

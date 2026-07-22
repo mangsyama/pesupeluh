@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, getCurrentInstance } from 'vue';
-import { router, Link } from '@inertiajs/vue3';
+import { router, Link, Deferred } from '@inertiajs/vue3';
 import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, ShieldAlert, ArrowRight, Wrench } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
@@ -19,6 +19,7 @@ const props = defineProps({
 const searchQuery = ref(props.filters.search || '');
 // Set default tab to '' (Semua Tugas) if status not set
 const currentTab = ref(props.filters.status || ''); 
+const isFiltering = ref(false);
 
 // Debounce search
 let searchTimeout = null;
@@ -33,6 +34,7 @@ const setTab = (tabValue) => {
 };
 
 const applyFilters = () => {
+    isFiltering.value = true;
     router.post(route('reports-management.filters'), {
         search: searchQuery.value || undefined,
         status: currentTab.value || undefined,
@@ -40,6 +42,9 @@ const applyFilters = () => {
         preserveState: true,
         replace: true,
         preserveScroll: true,
+        onFinish: () => {
+            isFiltering.value = false;
+        }
     });
 };
 
@@ -79,34 +84,34 @@ const formatDate = (dateStr) => {
     <div class="w-full">
         <!-- Unified Table Card Wrapper -->
         <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800/60 rounded-2xl shadow-sm overflow-hidden mb-4">
-            <!-- Search & Custom Tab Controls (Combined Header) -->
+            <!-- Search & Custom Tab Controls (Combined Header - ALWAYS VISIBLE) -->
             <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5 border-b border-slate-100 dark:border-slate-800/60">
                 <!-- Left: Tab Buttons -->
                 <div class="flex flex-wrap items-center bg-slate-100/80 dark:bg-slate-950/45 p-1 rounded-xl w-full xl:w-fit gap-1">
                     <button
                         @click="setTab('')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === '' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === '' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <Inbox class="h-3.5 w-3.5" />
                         Semua Tugas
                     </button>
                     <button
                         @click="setTab('PENDING_VALIDATION')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'PENDING_VALIDATION' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'PENDING_VALIDATION' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <ShieldAlert class="h-3.5 w-3.5" />
                         Menunggu Validasi
                     </button>
                     <button
                         @click="setTab('ASSIGNED,IN_PROGRESS,PENDING')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'ASSIGNED,IN_PROGRESS,PENDING' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'ASSIGNED,IN_PROGRESS,PENDING' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <Clock class="h-3.5 w-3.5" />
                         Sedang Berjalan
                     </button>
                     <button
                         @click="setTab('COMPLETED,CANCEL')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'COMPLETED,CANCEL' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'COMPLETED,CANCEL' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <CheckCircle class="h-3.5 w-3.5" />
                         Riwayat Selesai
@@ -120,168 +125,199 @@ const formatDate = (dateStr) => {
                         v-model="searchQuery"
                         type="text"
                         :placeholder="__('pages.reports.history.search_placeholder')"
-                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-855 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150 shadow-none"
+                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-855 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 shadow-none"
                     />
                 </div>
             </div>
 
-            <!-- Desktop View Table -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                            <th class="px-6 py-4">{{ __('pages.reports.history.table_id_date') }}</th>
-                            <th class="px-6 py-4 text-center">Prioritas</th>
-                            <th class="px-6 py-4">Pelapor</th>
-                            <th class="px-6 py-4">Kategori / Ruangan</th>
-                            <th class="px-6 py-4">Penjelasan Masalah</th>
-                            <th class="px-6 py-4 text-center">Status</th>
-                            <th class="px-6 py-4 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-855 dark:text-slate-300">
-                        <tr v-if="!tickets.data || tickets.data.length === 0">
-                            <td colspan="7" class="px-6 py-16 text-center">
-                                <div class="flex flex-col items-center gap-3 text-slate-400">
-                                    <svg class="h-12 w-12 text-slate-200 dark:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <span class="text-sm font-medium">Tidak ada data tiket di antrean ini</span>
+            <!-- Table Rows & Cards Scoped Skeleton Loading -->
+            <Deferred data="tickets">
+                <template #fallback>
+                    <div class="p-6 space-y-4 animate-pulse">
+                        <div v-for="i in 5" :key="'init-skel-' + i" class="py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                            <div class="space-y-2 flex-1 pr-4">
+                                <div class="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div class="h-3.5 w-64 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
+                                <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/40 rounded"></div>
+                            </div>
+                            <div class="h-7 w-24 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+                        </div>
+                    </div>
+                </template>
+
+                <template #default>
+                    <div v-if="isFiltering" class="p-6 space-y-4 animate-pulse">
+                        <div v-for="i in 5" :key="'filter-skel-' + i" class="py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                            <div class="space-y-2 flex-1 pr-4">
+                                <div class="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                                <div class="h-3.5 w-64 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
+                                <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/40 rounded"></div>
+                            </div>
+                            <div class="h-7 w-24 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+                        </div>
+                    </div>
+
+                    <template v-else>
+                        <!-- Desktop View Table -->
+                        <div class="hidden md:block overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                                        <th class="px-6 py-4">{{ __('pages.reports.history.table_id_date') }}</th>
+                                        <th class="px-6 py-4 text-center">Prioritas</th>
+                                        <th class="px-6 py-4">Pelapor</th>
+                                        <th class="px-6 py-4">Kategori / Ruangan</th>
+                                        <th class="px-6 py-4">Penjelasan Masalah</th>
+                                        <th class="px-6 py-4 text-center">Status</th>
+                                        <th class="px-6 py-4 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-855 dark:text-slate-300">
+                                    <tr v-if="!tickets.data || tickets.data.length === 0">
+                                        <td colspan="7" class="px-6 py-16 text-center">
+                                            <div class="flex flex-col items-center gap-3 text-slate-400">
+                                                <svg class="h-12 w-12 text-slate-200 dark:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span class="text-sm font-medium">Tidak ada data tiket di antrean ini</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr v-for="ticket in tickets.data" :key="'ticket-' + ticket.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
+                                        <!-- ID / Date -->
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="font-bold text-slate-950 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>
+                                            <div class="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
+                                                <Calendar class="h-3 w-3" />
+                                                {{ formatDate(ticket.created_at) }}
+                                            </div>
+                                        </td>
+                                        <!-- Priority -->
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <span v-if="ticket.priority" :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getPriority(ticket.priority).badge]">
+                                                {{ getPriority(ticket.priority).label }}
+                                            </span>
+                                            <span v-else class="text-slate-400">-</span>
+                                        </td>
+                                        <!-- Reporter -->
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="font-bold text-slate-900 dark:text-white text-xs">{{ ticket.reporter?.name ?? '-' }}</div>
+                                            <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                                                <Phone class="h-3.5 w-3.5 text-slate-400" />
+                                                <span>{{ ticket.reporter?.phone_number ?? '-' }}</span>
+                                            </div>
+                                        </td>
+                                        <!-- Category & Room -->
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="font-semibold text-emerald-700 dark:text-emerald-400 text-xs">{{ ticket.category?.name ?? '-' }}</div>
+                                            <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                                                <MapPin class="h-3.5 w-3.5 text-slate-400" />
+                                                <span>{{ ticket.room?.name ?? '-' }}</span>
+                                                <span v-if="ticket.room?.location_floor" class="opacity-75">({{ ticket.room.location_floor }})</span>
+                                            </div>
+                                        </td>
+                                        <!-- Desc -->
+                                        <td class="px-6 py-4 text-xs text-slate-650 dark:text-slate-400 break-words max-w-md">
+                                            {{ ticket.problem_description }}
+                                        </td>
+                                        <!-- Status -->
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <span :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
+                                                {{ getStatus(ticket.status).label }}
+                                            </span>
+                                        </td>
+                                        <!-- Actions -->
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex justify-center">
+                                                <Link
+                                                    :href="route('reports-management.show', ticket.uuid)"
+                                                    :class="[
+                                                        'w-28 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 border',
+                                                        ticket.status === 'PENDING_VALIDATION' 
+                                                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-transparent' 
+                                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                                                    ]"
+                                                >
+                                                    <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Disposisi' : 'Pantau' }}</span>
+                                                    <ArrowRight class="h-3.5 w-3.5" />
+                                                </Link>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Mobile View (Optimized with Action Card Layout) -->
+                        <div class="md:hidden p-4 space-y-3 bg-slate-50/30 dark:bg-slate-950/10 border-t border-slate-100 dark:border-slate-800/60">
+                            <div v-if="!tickets.data || tickets.data.length === 0" class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 p-12 text-center rounded-2xl">
+                                <svg class="h-10 w-10 mx-auto text-slate-300 dark:text-slate-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span class="text-xs text-slate-400 font-medium">Tidak ada data tiket di antrean ini</span>
+                            </div>
+
+                            <div
+                                v-for="ticket in tickets.data"
+                                :key="'mobile-ticket-' + ticket.id"
+                                class="bg-white dark:bg-slate-900 border border-slate-155 dark:border-slate-850/60 rounded-2xl p-4 shadow-sm"
+                            >
+                                <div class="flex justify-between items-start mb-2.5">
+                                    <div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-[10px] font-extrabold text-slate-450 dark:text-slate-400">#{{ ticket.ticket_number }}</span>
+                                            <span v-if="ticket.priority" :class="['px-1.5 py-0.5 rounded text-[8px] font-bold', getPriority(ticket.priority).badge]">
+                                                {{ getPriority(ticket.priority).label }}
+                                            </span>
+                                        </div>
+                                        <h4 class="font-bold text-slate-900 dark:text-white text-xs mt-1">
+                                            {{ ticket.category?.name ?? '-' }}
+                                        </h4>
+                                    </div>
+                                    <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase', getStatus(ticket.status).badge]">
+                                        {{ getStatus(ticket.status).label }}
+                                    </span>
                                 </div>
-                            </td>
-                        </tr>
-                        <tr v-for="ticket in tickets.data" :key="'ticket-' + ticket.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
-                            <!-- ID / Date -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="font-bold text-slate-950 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>
-                                <div class="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
-                                    <Calendar class="h-3 w-3" />
-                                    {{ formatDate(ticket.created_at) }}
+
+                                <p class="text-xs text-slate-650 dark:text-slate-400 line-clamp-2 my-2 leading-relaxed">
+                                    {{ ticket.problem_description }}
+                                </p>
+
+                                <div class="text-[10px] text-slate-400 space-y-1 my-3 bg-slate-50 dark:bg-slate-950/30 p-2 rounded-lg border border-slate-100 dark:border-slate-850/20">
+                                    <div class="flex justify-between">
+                                        <span class="font-semibold">Pelapor:</span>
+                                        <span>{{ ticket.reporter?.name ?? '-' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-semibold">Ruangan:</span>
+                                        <span>{{ ticket.room?.name ?? '-' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-semibold">Tanggal:</span>
+                                        <span>{{ formatDate(ticket.created_at) }}</span>
+                                    </div>
                                 </div>
-                            </td>
-                            <!-- Priority -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span v-if="ticket.priority" :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getPriority(ticket.priority).badge]">
-                                    {{ getPriority(ticket.priority).label }}
-                                </span>
-                                <span v-else class="text-slate-400">-</span>
-                            </td>
-                            <!-- Reporter -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="font-bold text-slate-900 dark:text-white text-xs">{{ ticket.reporter?.name ?? '-' }}</div>
-                                <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
-                                    <Phone class="h-3.5 w-3.5 text-slate-400" />
-                                    <span>{{ ticket.reporter?.phone_number ?? '-' }}</span>
-                                </div>
-                            </td>
-                            <!-- Category & Room -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="font-semibold text-indigo-655 dark:text-indigo-405 text-xs">{{ ticket.category?.name ?? '-' }}</div>
-                                <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
-                                    <MapPin class="h-3.5 w-3.5 text-slate-400" />
-                                    <span>{{ ticket.room?.name ?? '-' }}</span>
-                                    <span v-if="ticket.room?.location_floor" class="opacity-75">({{ ticket.room.location_floor }})</span>
-                                </div>
-                            </td>
-                            <!-- Desc -->
-                            <td class="px-6 py-4 text-xs text-slate-650 dark:text-slate-400 break-words max-w-md">
-                                {{ ticket.problem_description }}
-                            </td>
-                            <!-- Status -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
-                                    {{ getStatus(ticket.status).label }}
-                                </span>
-                            </td>
-                            <!-- Actions -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex justify-center">
+
+                                <div class="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/50">
                                     <Link
                                         :href="route('reports-management.show', ticket.uuid)"
                                         :class="[
-                                            'w-28 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 border',
-                                            ticket.status === 'PENDING_VALIDATION' 
-                                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-700' 
-                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                                            'w-full py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1 transition-all duration-150 border',
+                                            ticket.status === 'PENDING_VALIDATION'
+                                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold border-transparent'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
                                         ]"
                                     >
-                                        <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Disposisi' : 'Pantau' }}</span>
+                                        <Wrench v-if="ticket.status === 'PENDING_VALIDATION'" class="h-3.5 w-3.5" />
+                                        <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Lakukan Disposisi' : 'Detail Pemantauan' }}</span>
                                         <ArrowRight class="h-3.5 w-3.5" />
                                     </Link>
                                 </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile View (Optimized with Action Card Layout) -->
-            <div class="md:hidden p-4 space-y-3 bg-slate-50/30 dark:bg-slate-950/10 border-t border-slate-100 dark:border-slate-800/60">
-                <div v-if="!tickets.data || tickets.data.length === 0" class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 p-12 text-center rounded-2xl">
-                    <svg class="h-10 w-10 mx-auto text-slate-300 dark:text-slate-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span class="text-xs text-slate-400 font-medium">Tidak ada data tiket di antrean ini</span>
-                </div>
-
-                <div
-                    v-for="ticket in tickets.data"
-                    :key="'mobile-ticket-' + ticket.id"
-                    class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850/60 rounded-2xl p-4 shadow-sm"
-                >
-                    <div class="flex justify-between items-start mb-2.5">
-                        <div>
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[10px] font-extrabold text-slate-450 dark:text-slate-400">#{{ ticket.ticket_number }}</span>
-                                <span v-if="ticket.priority" :class="['px-1.5 py-0.5 rounded text-[8px] font-bold', getPriority(ticket.priority).badge]">
-                                    {{ getPriority(ticket.priority).label }}
-                                </span>
                             </div>
-                            <h4 class="font-bold text-slate-900 dark:text-white text-xs mt-1">
-                                {{ ticket.category?.name ?? '-' }}
-                            </h4>
                         </div>
-                        <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase', getStatus(ticket.status).badge]">
-                            {{ getStatus(ticket.status).label }}
-                        </span>
-                    </div>
-
-                    <p class="text-xs text-slate-650 dark:text-slate-400 line-clamp-2 my-2 leading-relaxed">
-                        {{ ticket.problem_description }}
-                    </p>
-
-                    <div class="text-[10px] text-slate-400 space-y-1 my-3 bg-slate-50 dark:bg-slate-950/30 p-2 rounded-lg border border-slate-100 dark:border-slate-850/20">
-                        <div class="flex justify-between">
-                            <span class="font-semibold">Pelapor:</span>
-                            <span>{{ ticket.reporter?.name ?? '-' }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-semibold">Ruangan:</span>
-                            <span>{{ ticket.room?.name ?? '-' }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="font-semibold">Tanggal:</span>
-                            <span>{{ formatDate(ticket.created_at) }}</span>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800/50">
-                        <Link
-                            :href="route('reports-management.show', ticket.uuid)"
-                            :class="[
-                                'w-full py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1 transition-all duration-150 border',
-                                ticket.status === 'PENDING_VALIDATION'
-                                    ? 'bg-indigo-650 hover:bg-indigo-500 text-white font-extrabold border-indigo-700'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
-                            ]"
-                        >
-                            <Wrench v-if="ticket.status === 'PENDING_VALIDATION'" class="h-3.5 w-3.5" />
-                            <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Lakukan Disposisi' : 'Detail Pemantauan' }}</span>
-                            <ArrowRight class="h-3.5 w-3.5" />
-                        </Link>
-                    </div>
-                </div>
-            </div>
+                    </template>
+                </template>
+            </Deferred>
         </div>
 
         <!-- Pagination -->

@@ -16,13 +16,9 @@ class ServiceController extends Controller
             return redirect()->route('services.index')->with('error', 'Unit penunjang ini sedang dalam tahap pengembangan.');
         }
 
-        // Load division and features with categories
-        $unit = $supportingUnit->load(['division', 'unitFeatures.featureCategories']);
-        $rooms = Room::orderBy('name', 'asc')->get();
-
         return Inertia::render('Service/Show', [
-            'unit' => $unit,
-            'rooms' => $rooms
+            'unit' => Inertia::defer(fn() => $supportingUnit->load(['division', 'unitFeatures.featureCategories'])),
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get())
         ]);
     }
 
