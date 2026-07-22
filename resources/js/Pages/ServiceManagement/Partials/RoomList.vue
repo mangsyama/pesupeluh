@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, getCurrentInstance } from 'vue';
-import { useForm, router, Deferred } from '@inertiajs/vue3';
+import { useForm, router } from '@inertiajs/vue3';
 import { Edit2, Trash2, X } from '@lucide/vue';
 
 const props = defineProps({
@@ -108,19 +108,7 @@ defineExpose({
                         <th class="px-6 py-4 text-right">{{ __('pages.service_management.rooms.table_actions') }}</th>
                     </tr>
                 </thead>
-                <Deferred data="rooms">
-                    <template #fallback>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
-                            <tr v-for="i in 5" :key="'room-skel-' + i" class="py-4">
-                                <td class="px-6 py-4"><div class="h-4 w-44 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
-                                <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
-                                <td class="px-6 py-4 text-right"><div class="h-6 w-16 bg-slate-100 dark:bg-slate-800/60 rounded ml-auto"></div></td>
-                            </tr>
-                        </tbody>
-                    </template>
-
-                    <template #default>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
                             <tr v-if="filteredRooms.length === 0">
                                 <td colspan="3" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.rooms.empty_data') }}</td>
                             </tr>
@@ -152,8 +140,6 @@ defineExpose({
                                 </td>
                             </tr>
                         </tbody>
-                    </template>
-                </Deferred>
             </table>
         </div>
 

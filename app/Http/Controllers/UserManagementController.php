@@ -19,11 +19,26 @@ class UserManagementController extends Controller
      */
     public function indexApprovals()
     {
-        return Inertia::render('UserManagement/Approvals', [
+        return Inertia::render('UserManagement/Approval/Index', [
             'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
                 ->whereNull('approved_by')
                 ->orderBy('id', 'desc')
                 ->get()),
+        ]);
+    }
+
+    /**
+     * Display single user registration approval detail page.
+     */
+    public function showApprovalDetail(User $user)
+    {
+        // Ensure user is pending approval
+        if ($user->approved_by !== null || $user->is_active) {
+            return redirect()->route('users.approvals')->with('info', 'Pendaftaran user ini sudah diproses.');
+        }
+
+        return Inertia::render('UserManagement/Approval/Detail', [
+            'targetUser' => $user->load(['role', 'room', 'supportingUnit']),
             'roles' => Inertia::defer(fn() => Role::orderBy('id', 'asc')->get()),
             'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
             'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
@@ -50,7 +65,7 @@ class UserManagementController extends Controller
             'approved_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Pendaftaran user berhasil disetujui.');
+        return redirect()->route('users.approvals')->with('success', 'Pendaftaran user berhasil disetujui.');
     }
 
     /**
@@ -207,6 +222,7 @@ class UserManagementController extends Controller
         $rules = [
             'name' => 'required|string|max:150',
             'nip' => ['required', 'string', 'max:50', \Illuminate\Validation\Rule::unique('users')->whereNull('deleted_at')],
+            'username' => ['nullable', 'string', 'max:50', \Illuminate\Validation\Rule::unique('users')->whereNull('deleted_at')],
             'email' => ['required', 'string', 'email', 'max:100', \Illuminate\Validation\Rule::unique('users')->whereNull('deleted_at')],
             'password' => 'required|string|min:6',
             'role_id' => 'required|exists:roles,id',
@@ -236,6 +252,7 @@ class UserManagementController extends Controller
         $rules = [
             'name' => 'required|string|max:150',
             'nip' => ['required', 'string', 'max:50', \Illuminate\Validation\Rule::unique('users')->ignore($user->id)->whereNull('deleted_at')],
+            'username' => ['nullable', 'string', 'max:50', \Illuminate\Validation\Rule::unique('users')->ignore($user->id)->whereNull('deleted_at')],
             'email' => ['required', 'string', 'email', 'max:100', \Illuminate\Validation\Rule::unique('users')->ignore($user->id)->whereNull('deleted_at')],
             'password' => 'nullable|string|min:6',
             'role_id' => 'required|exists:roles,id',

@@ -134,22 +134,13 @@ class DatabaseSeeder extends Seeder
 
         // 5. Seed Unit Features & Feature Categories
         if (DB::table('unit_features')->count() === 0) {
-            // IPSRS (id 8) Features
+            // IPSRS (id 8) Features: Pelaporan, Kalibrasi, Usulan
             $ipsrsPelaporanId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 8, 'name' => 'Pelaporan']);
             $ipsrsKalibrasiId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 8, 'name' => 'Kalibrasi']);
             $ipsrsUsulanId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 8, 'name' => 'Usulan']);
 
-            // RADIOLOGI (id 2) Features
-            $radiologiPelaporanId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 2, 'name' => 'Pelaporan']);
-            $radiologiUsulanId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 2, 'name' => 'Usulan']);
-
-            // FARMASI (id 1) Features
-            $farmasiPelaporanId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 1, 'name' => 'Pelaporan']);
-            $farmasiUsulanId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 1, 'name' => 'Usulan']);
-
-            // Seed Feature Categories under IPSRS - Pelaporan (since it is the active one)
+            // Seed Feature Categories under IPSRS - Pelaporan
             DB::table('feature_categories')->insert([
-                // Pelaporan
                 ['feature_id' => $ipsrsPelaporanId, 'name' => 'AC & Pendingin Ruangan', 'description' => 'Suhu ruangan tidak dingin, AC bocor, remote rusak, atau AC mati total.'],
                 ['feature_id' => $ipsrsPelaporanId, 'name' => 'Listrik & Pencahayaan', 'description' => 'Lampu padam, stop kontak rusak/konslet, MCB turun/trip.'],
                 ['feature_id' => $ipsrsPelaporanId, 'name' => 'Plumbing & Sanitasi', 'description' => 'Kran air patah/bocor, wastafel tersumbat, toilet mampet.'],

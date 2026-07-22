@@ -1,6 +1,6 @@
 <script setup>
 import { ref, getCurrentInstance, computed } from 'vue';
-import { useForm, router, Deferred } from '@inertiajs/vue3';
+import { useForm, router } from '@inertiajs/vue3';
 import { Shield, ShieldAlert, Edit2, Trash2, Search, Plus, X, UserX, UserCheck, ChevronDown, Check } from '@lucide/vue';
 
 const props = defineProps({
@@ -270,31 +270,7 @@ const deleteUser = (user) => {
                         <th class="px-6 py-4 text-right">{{ __('pages.user_management.table.actions') }}</th>
                     </tr>
                 </thead>
-                <Deferred data="users">
-                    <template #fallback>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
-                            <tr v-for="i in 5" :key="'user-skel-' + i" class="py-4">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="h-9 w-9 rounded-full bg-slate-200 dark:bg-slate-800 flex-shrink-0"></div>
-                                        <div class="space-y-1.5 flex-1">
-                                            <div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                            <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
-                                <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
-                                <td v-if="showPlacement" class="px-6 py-4"><div class="h-4 w-28 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
-                                <td class="px-6 py-4"><div class="h-6 w-20 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td>
-                                <td class="px-6 py-4"><div class="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full"></div></td>
-                                <td class="px-6 py-4 text-right"><div class="h-6 w-24 bg-slate-100 dark:bg-slate-800/60 rounded ml-auto"></div></td>
-                            </tr>
-                        </tbody>
-                    </template>
-
-                    <template #default>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
                             <tr v-if="filteredUsers.length === 0">
                                 <td :colspan="showPlacement ? 7 : 6" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">
                                     {{ __('pages.user_management.table.empty_role').replace('{role}', roleName) }}
@@ -365,7 +341,7 @@ const deleteUser = (user) => {
                                     </span>
                                 </td>
                                 
-                                <!-- Actions -->
+                                 <!-- Actions -->
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex items-center justify-end gap-1.5">
                                         <button 
@@ -399,8 +375,6 @@ const deleteUser = (user) => {
                                 </td>
                             </tr>
                         </tbody>
-                    </template>
-                </Deferred>
             </table>
         </div>
 

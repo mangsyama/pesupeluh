@@ -265,10 +265,10 @@ const __ = (key) => {
                 <!-- Brand Logo for Mobile (Hidden on Desktop, shown only on Login page) -->
                 <div v-if="route().current('login')" class="flex md:hidden items-center space-x-3">
                     <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain hue-rotate-[280deg] saturate-[1.2] dark:hue-rotate-0 dark:saturate-100 dark:brightness-0 dark:invert" />
+                        <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert" />
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-sm font-bold tracking-widest text-emerald-700 dark:text-emerald-400 uppercase leading-none">Pesu Peluh</span>
+                        <span class="text-sm font-bold tracking-widest text-[#059669] dark:text-white uppercase leading-none">Pesu Peluh</span>
                         <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-1 leading-tight tracking-normal max-w-[185px]">
                             Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
                         </span>

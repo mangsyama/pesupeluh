@@ -1,7 +1,7 @@
 <script setup>
 import { computed, getCurrentInstance } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, Deferred } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { 
     FileText, 
     Activity, 
@@ -164,59 +164,8 @@ const categoriesBreakdown = computed(() => {
                     </div>
                 </div>
 
-                <Deferred data="dashboardStats">
-                    <template #fallback>
-                        <!-- Skeleton Loading Matching Dashboard Layout -->
-                        <div class="w-full space-y-4">
-                            <!-- Skeleton Stats Grid -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div v-for="i in 4" :key="i" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between animate-pulse">
-                                    <div class="space-y-2 flex-1 pr-4">
-                                        <div class="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                        <div class="h-8 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-                                    </div>
-                                    <div class="h-12 w-12 rounded-xl bg-slate-100 dark:bg-slate-800 shrink-0"></div>
-                                </div>
-                            </div>
-
-                            <!-- Skeleton Content Rows -->
-                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                <!-- Skeleton Table -->
-                                <div :class="[userRole === 'REPORTER' ? 'lg:col-span-3' : 'lg:col-span-2', 'bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 animate-pulse']">
-                                    <div class="flex items-center justify-between mb-4">
-                                        <div class="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                        <div class="h-4 w-20 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                    </div>
-                                    <div class="space-y-3">
-                                        <div v-for="j in 4" :key="j" class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800">
-                                            <div class="space-y-1.5 flex-1">
-                                                <div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                                <div class="h-3 w-48 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                            </div>
-                                            <div class="h-5 w-16 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Skeleton Unit Breakdown (Hidden for REPORTER) -->
-                                <div v-if="userRole !== 'REPORTER'" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 animate-pulse">
-                                    <div class="h-5 w-36 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
-                                    <div class="space-y-4">
-                                        <div v-for="k in 5" :key="k" class="space-y-2">
-                                            <div class="flex justify-between">
-                                                <div class="h-3 w-28 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                                <div class="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                            </div>
-                                            <div class="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- Real Data Content -->
-                    <div class="w-full space-y-4">
+                <!-- Dashboard Content -->
+                <div class="w-full space-y-4">
                         <!-- Stats Grid -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div 
@@ -329,8 +278,7 @@ const categoriesBreakdown = computed(() => {
                             </div>
 
                         </div>
-                    </div>
-                </Deferred>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>

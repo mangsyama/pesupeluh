@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, getCurrentInstance } from 'vue';
-import { useForm, router, Deferred } from '@inertiajs/vue3';
+import { ref, computed, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { useForm, router } from '@inertiajs/vue3';
 import { Edit2, Trash2, X, ChevronDown, Search, Check } from '@lucide/vue';
 
 const props = defineProps({
@@ -44,6 +44,21 @@ const filteredCategories = computed(() => {
 
 const isFeatureDropdownOpen = ref(false);
 const featureSearchQuery = ref('');
+const featureDropdownRef = ref(null);
+
+const handleClickOutsideCategory = (event) => {
+    if (isFeatureDropdownOpen.value && featureDropdownRef.value && !featureDropdownRef.value.contains(event.target)) {
+        isFeatureDropdownOpen.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutsideCategory);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutsideCategory);
+});
 
 const filteredUnitFeatures = computed(() => {
     const q = featureSearchQuery.value.trim().toLowerCase();
@@ -63,7 +78,8 @@ const selectedFeatureLabel = computed(() => {
     return (selected.supporting_unit ? selected.supporting_unit.name + ' - ' : '') + selected.name;
 });
 
-const toggleFeatureDropdown = () => {
+const toggleFeatureDropdown = (event) => {
+    event?.stopPropagation();
     isFeatureDropdownOpen.value = !isFeatureDropdownOpen.value;
     if (isFeatureDropdownOpen.value) {
         featureSearchQuery.value = '';
@@ -153,20 +169,7 @@ defineExpose({
                         <th class="px-6 py-4 text-right">{{ __('pages.service_management.categories.table_actions') }}</th>
                     </tr>
                 </thead>
-                <Deferred data="categories">
-                    <template #fallback>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
-                            <tr v-for="i in 5" :key="'cat-skel-' + i" class="py-4">
-                                <td class="px-6 py-4"><div class="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
-                                <td class="px-6 py-4"><div class="h-4 w-48 bg-slate-100 dark:bg-slate-800/60 rounded"></div></td>
-                                <td class="px-6 py-4"><div class="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded"></div></td>
-                                <td class="px-6 py-4 text-right"><div class="h-6 w-16 bg-slate-100 dark:bg-slate-800/60 rounded ml-auto"></div></td>
-                            </tr>
-                        </tbody>
-                    </template>
-
-                    <template #default>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
                             <tr v-if="filteredCategories.length === 0">
                                 <td colspan="4" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.categories.empty_data') }}</td>
                             </tr>
@@ -206,16 +209,14 @@ defineExpose({
                                 </td>
                             </tr>
                         </tbody>
-                    </template>
-                </Deferred>
             </table>
         </div>
 
         <!-- CATEGORY MODAL -->
         <Teleport to="body">
             <div v-if="showCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl">
+                <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
                         <h3 class="text-base font-bold text-slate-955 dark:text-white">
                             {{ isEditingCategory ? __('pages.service_management.categories.edit_title') : __('pages.service_management.categories.add_title') }}
                         </h3>
@@ -223,7 +224,7 @@ defineExpose({
                             <X class="h-5 w-5" />
                         </button>
                     </div>
-                    <form @submit.prevent="submitCategoryForm" class="p-6 space-y-4">
+                    <form @submit.prevent="submitCategoryForm" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.categories.label_name') }}</label>
                             <input 
@@ -237,13 +238,13 @@ defineExpose({
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.categories.label_feature') }}</label>
-                            <div class="relative">
+                            <div class="relative" ref="featureDropdownRef">
                                 <button 
                                     type="button"
                                     @click="toggleFeatureDropdown"
-                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
+                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
                                 >
-                                    <span v-if="selectedFeatureLabel" class="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                                    <span v-if="selectedFeatureLabel" class="text-slate-800 dark:text-slate-100 truncate">
                                         {{ selectedFeatureLabel }}
                                     </span>
                                     <span v-else class="text-slate-400 dark:text-slate-500">
@@ -254,31 +255,22 @@ defineExpose({
 
                                 <div 
                                     v-if="isFeatureDropdownOpen"
-                                    class="absolute z-50 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-2 shadow-lg"
+                                    class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-1 shadow-sm"
                                 >
-                                    <div class="relative">
-                                        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                        <input
-                                            v-model="featureSearchQuery"
-                                            type="text"
-                                            placeholder="Cari fitur/unit..."
-                                            class="w-full h-8 pl-8 pr-3 text-xs border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                        />
-                                    </div>
-                                    <div class="max-h-48 overflow-y-auto space-y-1 pr-1">
+                                    <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                                         <button
-                                            v-for="feat in filteredUnitFeatures"
+                                            v-for="feat in (unitFeatures || [])"
                                             :key="feat.id"
                                             type="button"
-                                            @click="selectFeature(feat.id)"
-                                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
+                                            @click.stop="selectFeature(feat.id)"
+                                            class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
                                             :class="categoryForm.feature_id === feat.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
                                         >
                                             <span class="truncate">{{ feat.supporting_unit ? feat.supporting_unit.name : '' }} - {{ feat.name }}</span>
-                                            <Check v-if="categoryForm.feature_id === feat.id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            <Check v-if="categoryForm.feature_id === feat.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                         </button>
-                                        <div v-if="filteredUnitFeatures.length === 0" class="px-3 py-2 text-xs text-slate-400 italic text-center">
-                                            Tidak ditemukan
+                                        <div v-if="(unitFeatures || []).length === 0" class="px-3 py-2 text-sm text-slate-400 italic text-center">
+                                            Tidak ada pilihan
                                         </div>
                                     </div>
                                 </div>

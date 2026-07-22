@@ -29,7 +29,7 @@ class ServiceManagementController extends Controller
     {
         return Inertia::render('ServiceManagement/Categories', [
             'categories' => Inertia::defer(fn() => FeatureCategory::with(['unitFeature.supportingUnit'])->orderBy('id', 'desc')->get()),
-            'unitFeatures' => Inertia::defer(fn() => UnitFeature::with(['supportingUnit'])->orderBy('name', 'asc')->get()),
+            'unitFeatures' => Inertia::defer(fn() => UnitFeature::with(['supportingUnit'])->where('name', 'Pelaporan')->orderBy('name', 'asc')->get()),
         ]);
     }
 

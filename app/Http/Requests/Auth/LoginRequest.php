@@ -42,17 +42,37 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (Auth::validate($this->only('username', 'password'))) {
-            $user = \App\Models\User::where('username', $this->username)->first();
-            if ($user && !$user->is_active) {
-                RateLimiter::hit($this->throttleKey());
+        $loginInput = trim($this->input('username'));
+
+        // Find user by username, email, NIP, or name
+        $user = \App\Models\User::where('username', $loginInput)
+            ->orWhere('email', $loginInput)
+            ->orWhere('nip', $loginInput)
+            ->orWhere('name', $loginInput)
+            ->first();
+
+        // Block login immediately if user exists and is not active
+        if ($user && !$user->is_active) {
+            RateLimiter::hit($this->throttleKey());
+            if (is_null($user->approved_by)) {
                 throw ValidationException::withMessages([
-                    'username' => 'Akun Anda belum aktif. Hubungi Administrator untuk verifikasi.',
+                    'username' => '[PENDING_APPROVAL] Akun Anda masih dalam proses pendaftaran dan menunggu verifikasi oleh Administrator.',
+                ]);
+            } else {
+                throw ValidationException::withMessages([
+                    'username' => '[SUSPENDED] Akun Anda telah ditangguhkan (suspended) oleh Administrator. Silakan hubungi Administrator.',
                 ]);
             }
         }
 
-        if (! Auth::attempt($this->only('username', 'password'), $this->boolean('remember'))) {
+        $credentials = ['password' => $this->input('password')];
+        if ($user) {
+            $credentials['id'] = $user->id;
+        } else {
+            $credentials['username'] = $loginInput;
+        }
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([

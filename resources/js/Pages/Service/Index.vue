@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, Deferred, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { 
     Stethoscope, 
     ShieldCheck, 
@@ -135,27 +135,11 @@ const getUnitIcon = (name, divisionName) => {
                     </div>
                 </div>
 
-                <Deferred data="divisions">
-                    <template #fallback>
-                        <!-- Skeleton Division Cards Loading -->
-                        <div class="flex flex-col md:flex-row gap-4 animate-pulse">
-                            <div v-for="i in 2" :key="i" class="w-full md:w-1/2 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div class="flex justify-between items-center mb-4">
-                                    <div class="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-                                    <div class="h-6 w-24 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                                </div>
-                                <div class="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                <div class="h-4 w-3/4 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                <div class="h-4 w-1/2 bg-slate-100 dark:bg-slate-800/40 rounded"></div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- Main Options Container / Instant Width Layout -->
-                    <div 
-                        class="flex flex-col md:flex-row" 
-                        :class="[activeSection === null ? 'gap-4' : 'gap-0']"
-                    >
+                <!-- Main Options Container / Instant Width Layout -->
+                <div 
+                    class="flex flex-col md:flex-row" 
+                    :class="[activeSection === null ? 'gap-4' : 'gap-0']"
+                >
                         <!-- Card 1: Penunjang Medik -->
                         <component
                             v-if="activeSection === null || activeSection === 'medik'"
@@ -377,7 +361,6 @@ const getUnitIcon = (name, divisionName) => {
                             </div>
                         </component>
                     </div>
-                </Deferred>
 
             </div>
         </div>

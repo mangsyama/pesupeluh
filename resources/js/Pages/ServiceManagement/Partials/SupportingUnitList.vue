@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, getCurrentInstance } from 'vue';
-import { useForm, router, Deferred } from '@inertiajs/vue3';
+import { ref, computed, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { useForm, router } from '@inertiajs/vue3';
 import { Edit2, Trash2, X, ChevronDown, Search, Check, Building2 } from '@lucide/vue';
 
 const props = defineProps({
@@ -33,7 +33,7 @@ const unitForm = useForm({
     name: '',
     division_id: '',
     description: '',
-    status: 'IN_DEVELOPMENT'
+    status: ''
 });
 
 const filteredDivisions = computed(() => {
@@ -121,6 +121,25 @@ const deleteDivision = (div) => {
 
 const isDivisionDropdownOpen = ref(false);
 const divisionSearchQuery = ref('');
+const divisionDropdownRef = ref(null);
+const statusDropdownRef = ref(null);
+
+const handleClickOutsideSupportingUnit = (event) => {
+    if (isDivisionDropdownOpen.value && divisionDropdownRef.value && !divisionDropdownRef.value.contains(event.target)) {
+        isDivisionDropdownOpen.value = false;
+    }
+    if (isStatusDropdownOpen.value && statusDropdownRef.value && !statusDropdownRef.value.contains(event.target)) {
+        isStatusDropdownOpen.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutsideSupportingUnit);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutsideSupportingUnit);
+});
 
 const dropdownDivisions = computed(() => {
     const q = divisionSearchQuery.value.trim().toLowerCase();
@@ -135,7 +154,8 @@ const selectedDivisionLabel = computed(() => {
     return selected ? selected.name : '';
 });
 
-const toggleDivisionDropdown = () => {
+const toggleDivisionDropdown = (event) => {
+    event?.stopPropagation();
     isDivisionDropdownOpen.value = !isDivisionDropdownOpen.value;
     if (isDivisionDropdownOpen.value) {
         divisionSearchQuery.value = '';
@@ -148,6 +168,12 @@ const selectDivision = (divId) => {
 };
 
 const isStatusDropdownOpen = ref(false);
+
+const toggleStatusDropdown = (event) => {
+    event?.stopPropagation();
+    isStatusDropdownOpen.value = !isStatusDropdownOpen.value;
+};
+
 const statusOptions = computed(() => [
     { value: 'ACTIVE', label: proxy.__('pages.service_management.supporting_units.unit.status_active') },
     { value: 'IN_DEVELOPMENT', label: proxy.__('pages.service_management.supporting_units.unit.status_dev') },
@@ -169,8 +195,8 @@ const openAddUnitModal = () => {
     unitForm.reset();
     unitForm.clearErrors();
     unitForm.description = '';
-    unitForm.status = 'IN_DEVELOPMENT';
-    unitForm.division_id = props.divisions && props.divisions.length > 0 ? props.divisions[0].id : '';
+    unitForm.status = '';
+    unitForm.division_id = '';
     isDivisionDropdownOpen.value = false;
     isStatusDropdownOpen.value = false;
     showUnitModal.value = true;
@@ -247,33 +273,7 @@ defineExpose({
 <template>
     <div class="space-y-4">
         <!-- Grid Layout for Divisions and nested Units -->
-        <Deferred data="divisions">
-            <template #fallback>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
-                    <div v-for="i in 4" :key="'div-skel-' + i" class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
-                        <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <div class="space-y-2">
-                                <div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                <div class="h-3 w-48 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                            </div>
-                            <div class="h-6 w-12 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                            <div class="p-3 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800 rounded-xl space-y-2">
-                                <div class="flex justify-between">
-                                    <div class="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                    <div class="h-4 w-12 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                </div>
-                                <div class="h-3 w-36 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
-
-            <template #default>
-                <div v-if="filteredDivisions.length === 0" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 text-center text-slate-400 dark:text-slate-500">
+        <div v-if="filteredDivisions.length === 0" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 text-center text-slate-400 dark:text-slate-500">
                     {{ __('pages.service_management.supporting_units.empty_data') }}
                 </div>
                 <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -370,8 +370,6 @@ defineExpose({
                         </div>
                     </div>
                 </div>
-            </template>
-        </Deferred>
 
         <!-- DIVISION MODAL -->
         <Teleport to="body">
@@ -419,8 +417,8 @@ defineExpose({
         <!-- SUPPORTING UNIT MODAL -->
         <Teleport to="body">
             <div v-if="showUnitModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl">
+                <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
                         <h3 class="text-base font-bold text-slate-955 dark:text-white">
                             {{ isEditingUnit ? __('pages.service_management.supporting_units.unit.title_edit') : __('pages.service_management.supporting_units.unit.title_add') }}
                         </h3>
@@ -428,7 +426,7 @@ defineExpose({
                             <X class="h-5 w-5" />
                         </button>
                     </div>
-                    <form @submit.prevent="submitUnitForm" class="p-6 space-y-4">
+                    <form @submit.prevent="submitUnitForm" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.supporting_units.unit.label_name') }}</label>
                             <input 
@@ -442,13 +440,13 @@ defineExpose({
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.supporting_units.unit.label_division') }}</label>
-                            <div class="relative">
+                            <div class="relative" ref="divisionDropdownRef">
                                 <button 
                                     type="button"
                                     @click="toggleDivisionDropdown"
-                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
+                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
                                 >
-                                    <span v-if="selectedDivisionLabel" class="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                                    <span v-if="selectedDivisionLabel" class="text-slate-800 dark:text-slate-100 truncate">
                                         {{ selectedDivisionLabel }}
                                     </span>
                                     <span v-else class="text-slate-400 dark:text-slate-500">
@@ -459,31 +457,22 @@ defineExpose({
 
                                 <div 
                                     v-if="isDivisionDropdownOpen"
-                                    class="absolute z-50 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-2 shadow-lg"
+                                    class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-1 shadow-sm"
                                 >
-                                    <div class="relative">
-                                        <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                        <input
-                                            v-model="divisionSearchQuery"
-                                            type="text"
-                                            placeholder="Cari divisi..."
-                                            class="w-full h-8 pl-8 pr-3 text-xs border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                        />
-                                    </div>
-                                    <div class="max-h-48 overflow-y-auto space-y-1 pr-1">
+                                    <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                                         <button
-                                            v-for="div in dropdownDivisions"
+                                            v-for="div in (divisions || [])"
                                             :key="div.id"
                                             type="button"
-                                            @click="selectDivision(div.id)"
-                                            class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
+                                            @click.stop="selectDivision(div.id)"
+                                            class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
                                             :class="unitForm.division_id === div.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
                                         >
                                             <span class="truncate">{{ div.name }}</span>
-                                            <Check v-if="unitForm.division_id === div.id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            <Check v-if="unitForm.division_id === div.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                         </button>
-                                        <div v-if="dropdownDivisions.length === 0" class="px-3 py-2 text-xs text-slate-400 italic text-center">
-                                            Tidak ditemukan
+                                        <div v-if="(divisions || []).length === 0" class="px-3 py-2 text-sm text-slate-400 italic text-center">
+                                            Tidak ada pilihan
                                         </div>
                                     </div>
                                 </div>
@@ -502,32 +491,35 @@ defineExpose({
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.supporting_units.unit.label_status') }}</label>
-                            <div class="relative">
+                            <div class="relative" ref="statusDropdownRef">
                                 <button 
                                     type="button"
-                                    @click="isStatusDropdownOpen = !isStatusDropdownOpen"
-                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
+                                    @click="toggleStatusDropdown"
+                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
                                 >
-                                    <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                                    <span v-if="selectedStatusLabel" class="text-slate-800 dark:text-slate-100 truncate">
                                         {{ selectedStatusLabel }}
+                                    </span>
+                                    <span v-else class="text-slate-400 dark:text-slate-500">
+                                        Pilih Status Operasional...
                                     </span>
                                     <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isStatusDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
                                 </button>
 
                                 <div 
                                     v-if="isStatusDropdownOpen"
-                                    class="absolute z-50 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-1 shadow-lg"
+                                    class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-1 shadow-sm"
                                 >
                                     <button
                                         v-for="opt in statusOptions"
                                         :key="opt.value"
                                         type="button"
-                                        @click="selectStatus(opt.value)"
-                                        class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
+                                        @click.stop="selectStatus(opt.value)"
+                                        class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
                                         :class="unitForm.status === opt.value ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
                                     >
                                         <span class="truncate">{{ opt.label }}</span>
-                                        <Check v-if="unitForm.status === opt.value" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        <Check v-if="unitForm.status === opt.value" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                     </button>
                                 </div>
                             </div>

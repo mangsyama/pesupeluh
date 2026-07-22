@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue';
-import { Head, Link, useForm, usePage, Deferred } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import {
     Calendar,
     User,
@@ -226,63 +226,18 @@ const contextLabel = computed(() => {
 
 <template>
     <div class="py-4 px-4 sm:px-4 lg:px-4">
-        <Deferred data="ticket">
-            <template #fallback>
-                <!-- Skeleton Loading for Unit Head Detail -->
-                <div class="w-full space-y-4 animate-pulse">
-                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex items-center gap-4 w-full">
-                            <div class="h-12 w-12 rounded-xl bg-slate-200 dark:bg-slate-800 flex-shrink-0"></div>
-                            <div class="space-y-2 flex-1">
-                                <div class="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                <div class="h-4 w-64 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                            </div>
-                        </div>
+        <div class="w-full space-y-4" v-if="ticket">
+            <!-- Ticket Profile Header Card -->
+            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+                        <Wrench class="h-6 w-6" />
                     </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div class="lg:col-span-2 space-y-4">
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                                    <div v-for="i in 4" :key="i" class="space-y-1">
-                                        <div class="h-3 w-20 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                        <div class="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                    </div>
-                                </div>
-                                <div class="h-24 w-full bg-slate-100 dark:bg-slate-800/40 rounded-xl"></div>
-                            </div>
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div class="h-4 w-40 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                <div class="h-10 w-full bg-slate-100 dark:bg-slate-800/60 rounded-xl"></div>
-                                <div class="h-11 w-full bg-indigo-200 dark:bg-indigo-950/60 rounded-xl"></div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div class="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                <div v-for="i in 3" :key="i" class="h-12 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
-
-            <template #default>
-                <div class="w-full space-y-4" v-if="ticket">
-                    
-                    <!-- Ticket Profile Header Card -->
-                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <div class="h-12 w-12 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-                                <Wrench class="h-6 w-6" />
-                            </div>
-                            <div>
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
-                                        #{{ ticket.ticket_number }}
-                                    </h2>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                                #{{ ticket.ticket_number }}
+                            </h2>
                                     <span :class="['px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border', getStatus(ticket.status).badge]">
                                         {{ getStatus(ticket.status).label }}
                                     </span>
@@ -796,8 +751,6 @@ const contextLabel = computed(() => {
                     </div>
 
                 </div>
-            </template>
-        </Deferred>
     </div>
 
     <!-- Lightbox Fullscreen Preview Portal Overlay -->

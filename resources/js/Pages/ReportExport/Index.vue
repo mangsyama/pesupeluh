@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Deferred } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { FileText, Download, BarChart3, CheckCircle2, Clock } from '@lucide/vue';
 import { getCurrentInstance } from 'vue';
 
@@ -31,37 +31,7 @@ const exportCsv = () => {
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full space-y-4">
                 
-                <Deferred data="stats">
-                    <template #fallback>
-                        <!-- Skeleton Loading for Report Export & Stats -->
-                        <div class="w-full space-y-4 animate-pulse">
-                            <!-- Stats Skeleton Cards -->
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div v-for="i in 3" :key="i" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex items-center gap-4">
-                                    <div class="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-800 flex-shrink-0"></div>
-                                    <div class="space-y-2 flex-1">
-                                        <div class="h-3 w-28 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                        <div class="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Export Cards Skeleton -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div v-for="i in 2" :key="i" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between h-56 space-y-4">
-                                    <div>
-                                        <div class="h-12 w-12 rounded-xl bg-slate-200 dark:bg-slate-800 mb-4"></div>
-                                        <div class="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded mb-2"></div>
-                                        <div class="h-4 w-3/4 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                    </div>
-                                    <div class="h-11 w-full bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <template #default>
-                        <div class="w-full space-y-4">
+                <div class="w-full space-y-4">
                             <!-- Stats bulan berjalan -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex items-center gap-4">
@@ -142,8 +112,6 @@ const exportCsv = () => {
 
                             </div>
                         </div>
-                    </template>
-                </Deferred>
 
             </div>
         </div>

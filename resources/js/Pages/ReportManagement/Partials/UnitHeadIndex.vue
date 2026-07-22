@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, getCurrentInstance } from 'vue';
-import { router, Link, Deferred } from '@inertiajs/vue3';
+import { router, Link } from '@inertiajs/vue3';
 import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, ShieldAlert, ArrowRight, Wrench } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
@@ -130,36 +130,9 @@ const formatDate = (dateStr) => {
                 </div>
             </div>
 
-            <!-- Table Rows & Cards Scoped Skeleton Loading -->
-            <Deferred data="tickets">
-                <template #fallback>
-                    <div class="p-6 space-y-4 animate-pulse">
-                        <div v-for="i in 5" :key="'init-skel-' + i" class="py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                            <div class="space-y-2 flex-1 pr-4">
-                                <div class="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                <div class="h-3.5 w-64 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/40 rounded"></div>
-                            </div>
-                            <div class="h-7 w-24 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                        </div>
-                    </div>
-                </template>
-
-                <template #default>
-                    <div v-if="isFiltering" class="p-6 space-y-4 animate-pulse">
-                        <div v-for="i in 5" :key="'filter-skel-' + i" class="py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                            <div class="space-y-2 flex-1 pr-4">
-                                <div class="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                <div class="h-3.5 w-64 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/40 rounded"></div>
-                            </div>
-                            <div class="h-7 w-24 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                        </div>
-                    </div>
-
-                    <template v-else>
-                        <!-- Desktop View Table -->
-                        <div class="hidden md:block overflow-x-auto">
+            <!-- Table Rows & Cards -->
+            <!-- Desktop View Table -->
+            <div class="hidden md:block overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
@@ -315,9 +288,6 @@ const formatDate = (dateStr) => {
                                 </div>
                             </div>
                         </div>
-                    </template>
-                </template>
-            </Deferred>
         </div>
 
         <!-- Pagination -->

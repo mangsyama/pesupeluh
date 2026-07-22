@@ -31,12 +31,13 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        // Release session lock early for GET requests to prevent request queuing/serialization
-        if ($request->isMethod('GET') && $request->hasSession()) {
-            $request->session()->save();
-        }
 
         $user = $request->user();
+
+        if ($user && !$user->is_active) {
+            \Illuminate\Support\Facades\Auth::guard('web')->logout();
+            $user = null;
+        }
 
         return [
             ...parent::share($request),

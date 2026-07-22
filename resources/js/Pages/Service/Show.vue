@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, markRaw, watch } from 'vue';
-import { Head, Deferred } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { 
     HeartPulse, 
@@ -108,191 +108,123 @@ const selectFeature = (id) => {
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full space-y-4">
                 
-                <Deferred :data="['unit', 'rooms']">
-                    <template #fallback>
-                        <!-- Skeleton Loading for Service Detail / Sub-module -->
-                        <div class="w-full space-y-4 animate-pulse">
-                            <!-- Header Skeleton -->
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div class="flex items-center gap-3 w-full">
-                                    <div class="h-12 w-12 rounded-xl bg-slate-200 dark:bg-slate-800 flex-shrink-0"></div>
-                                    <div class="space-y-2 flex-1 min-w-0">
-                                        <div class="flex items-center gap-2">
-                                            <div class="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-                                            <div class="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
-                                        </div>
-                                        <div class="h-4 w-3/4 max-w-xl bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                    </div>
-                                </div>
+                <div class="w-full space-y-4">
+                    <!-- Premium Header -->
+                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div 
+                                :class="[
+                                    'h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0',
+                                    'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                                ]"
+                            >
+                                <component :is="getUnitIcon(unit.name)" class="h-6 w-6" />
                             </div>
-
-                            <!-- Feature Tabs Skeleton -->
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div class="space-y-1.5">
-                                    <div class="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                    <div class="h-3 w-64 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <div v-for="i in 3" :key="i" class="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 flex items-center gap-3">
-                                        <div class="h-10 w-10 rounded-xl bg-slate-200 dark:bg-slate-800 flex-shrink-0"></div>
-                                        <div class="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Form / Active Module Skeleton -->
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
-                                <div class="space-y-1.5">
-                                    <div class="h-4 w-44 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                    <div class="h-3 w-72 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                </div>
-                                <!-- Categories Skeleton Grid -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    <div v-for="i in 3" :key="i" class="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 min-h-[84px] flex items-start justify-between gap-3">
-                                        <div class="space-y-2 flex-1">
-                                            <div class="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                            <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                                        </div>
-                                        <div class="h-4 w-4 rounded-full bg-slate-200 dark:bg-slate-800"></div>
-                                    </div>
-                                </div>
-                                <!-- Form Controls Skeleton -->
-                                <div class="space-y-4 pt-2">
-                                    <div class="space-y-2">
-                                        <div class="h-3.5 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                        <div class="h-11 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <div class="h-3.5 w-36 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                                        <div class="h-28 w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl"></div>
-                                    </div>
-                                    <div class="h-11 w-full bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- Resolved Real Content -->
-                    <template #default>
-                        <div class="w-full space-y-4">
-                            <!-- Premium Header -->
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <div class="flex items-center gap-3">
-                                    <div 
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
+                                        {{ unit.name }}
+                                    </h2>
+                                    <span 
                                         :class="[
-                                            'h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0',
-                                            'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                                            'px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase',
+                                            'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
                                         ]"
                                     >
-                                        <component :is="getUnitIcon(unit.name)" class="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <div class="flex items-center gap-2">
-                                            <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
-                                                {{ unit.name }}
-                                            </h2>
-                                            <span 
-                                                :class="[
-                                                    'px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase',
-                                                    'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                                ]"
-                                            >
-                                                {{ unit.division?.name }}
-                                            </span>
-                                        </div>
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                                            {{ unit.description }}
-                                        </p>
-                                    </div>
+                                        {{ unit.division?.name }}
+                                    </span>
                                 </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                                    {{ unit.description }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Layout -->
+                    <div v-if="unit.unit_features && unit.unit_features.length > 0" class="w-full space-y-4">
+                        
+                        <!-- Feature Tabs -->
+                        <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                            <div>
+                                <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">{{ __('pages.services.pilih_layanan') }}</h3>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('pages.services.pilih_layanan_desc') }}</p>
                             </div>
 
-                            <!-- Main Layout -->
-                            <div v-if="unit.unit_features && unit.unit_features.length > 0" class="w-full space-y-4">
-                                
-                                <!-- Feature Tabs -->
-                                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                    <div>
-                                        <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">{{ __('pages.services.pilih_layanan') }}</h3>
-                                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('pages.services.pilih_layanan_desc') }}</p>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                        <div 
-                                            v-for="feature in unit.unit_features" 
-                                            :key="feature.id"
-                                            @click="selectFeature(feature.id)"
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div 
+                                    v-for="feature in unit.unit_features" 
+                                    :key="feature.id"
+                                    @click="selectFeature(feature.id)"
+                                    :class="[
+                                        'p-4 rounded-xl border text-left transition-all duration-200 select-none cursor-pointer flex items-center gap-3',
+                                        selectedFeatureId === feature.id
+                                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40'
+                                            : 'border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/40 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800/60'
+                                    ]"
+                                >
+                                    <div 
+                                        :class="[
+                                            'h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-150',
+                                            selectedFeatureId === feature.id
+                                                ? 'bg-emerald-100 dark:bg-emerald-900/60'
+                                                : 'bg-slate-100 dark:bg-slate-800'
+                                        ]"
+                                    >
+                                        <component 
+                                            :is="getFeatureIcon(feature.name)"
                                             :class="[
-                                                'p-4 rounded-xl border text-left transition-all duration-200 select-none cursor-pointer flex items-center gap-3',
+                                                'h-5 w-5 transition-colors duration-150',
                                                 selectedFeatureId === feature.id
-                                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40'
-                                                    : 'border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/40 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800/60'
+                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                    : 'text-slate-500 dark:text-slate-400'
+                                            ]"
+                                        />
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div 
+                                            :class="[
+                                                'text-sm font-bold truncate transition-colors duration-150',
+                                                selectedFeatureId === feature.id
+                                                    ? 'text-emerald-700 dark:text-emerald-300'
+                                                    : 'text-slate-800 dark:text-slate-200'
                                             ]"
                                         >
-                                            <div 
-                                                :class="[
-                                                    'h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-150',
-                                                    selectedFeatureId === feature.id
-                                                        ? 'bg-emerald-100 dark:bg-emerald-900/60'
-                                                        : 'bg-slate-100 dark:bg-slate-800'
-                                                ]"
-                                            >
-                                                <component 
-                                                    :is="getFeatureIcon(feature.name)"
-                                                    :class="[
-                                                        'h-5 w-5 transition-colors duration-150',
-                                                        selectedFeatureId === feature.id
-                                                            ? 'text-emerald-600 dark:text-emerald-400'
-                                                            : 'text-slate-500 dark:text-slate-400'
-                                                    ]"
-                                                />
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <div 
-                                                    :class="[
-                                                        'text-sm font-bold truncate transition-colors duration-150',
-                                                        selectedFeatureId === feature.id
-                                                            ? 'text-emerald-700 dark:text-emerald-300'
-                                                            : 'text-slate-800 dark:text-slate-200'
-                                                    ]"
-                                                >
-                                                    {{ feature.name }}
-                                                </div>
-                                            </div>
+                                            {{ feature.name }}
                                         </div>
                                     </div>
-                                </div>
-
-                                <!-- Dynamic Component Rendering -->
-                                <component 
-                                    v-if="activeComponent"
-                                    :is="activeComponent"
-                                    :unit="unit"
-                                    :active-feature="activeFeature"
-                                    :rooms="rooms"
-                                    :is-medik="false"
-                                />
-
-                            </div>
-
-                            <!-- Empty State (No features available) -->
-                            <div 
-                                v-else 
-                                class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4"
-                            >
-                                <div class="h-16 w-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-455 dark:text-slate-500">
-                                    <AlertCircle class="h-8 w-8" />
-                                </div>
-                                <div class="space-y-1 max-w-sm">
-                                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ __('pages.services.empty_features_title') }}</h3>
-                                    <p class="text-xs text-slate-400 dark:text-slate-505 leading-relaxed">
-                                        {{ __('pages.services.empty_features_desc') }}
-                                    </p>
                                 </div>
                             </div>
                         </div>
-                    </template>
-                </Deferred>
+
+                        <!-- Dynamic Component Rendering -->
+                        <component 
+                            v-if="activeComponent"
+                            :is="activeComponent"
+                            :unit="unit"
+                            :active-feature="activeFeature"
+                            :rooms="rooms"
+                            :is-medik="false"
+                        />
+
+                    </div>
+
+                    <!-- Empty State (No features available) -->
+                    <div 
+                        v-else 
+                        class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4"
+                    >
+                        <div class="h-16 w-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-455 dark:text-slate-500">
+                            <AlertCircle class="h-8 w-8" />
+                        </div>
+                        <div class="space-y-1 max-w-sm">
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ __('pages.services.empty_features_title') }}</h3>
+                            <p class="text-xs text-slate-400 dark:text-slate-505 leading-relaxed">
+                                {{ __('pages.services.empty_features_desc') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </div>

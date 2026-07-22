@@ -340,7 +340,7 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
         ]);
     })->name('services.non-medik');
 
-    Route::get('/services/units/{supportingUnit:name}', [\App\Http\Controllers\ServiceController::class, 'showUnit'])->name('services.units.show');
+    Route::get('/services/units/{supportingUnit}', [\App\Http\Controllers\ServiceController::class, 'showUnit'])->name('services.units.show');
     Route::post('/services/tickets', [\App\Http\Controllers\ServiceController::class, 'storeTicket'])->name('services.tickets.store');
 
     // Ticket Workflows & Actions
@@ -355,6 +355,7 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     // User Management
     Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
     Route::get('/users/approvals', [UserManagementController::class, 'indexApprovals'])->name('users.approvals');
+    Route::get('/users/approvals/{user}', [UserManagementController::class, 'showApprovalDetail'])->name('users.approvals.show');
     Route::patch('/users/{user}/approve', [UserManagementController::class, 'approveUser'])->name('users.approve');
     Route::get('/users/admin', [UserManagementController::class, 'indexAdmin'])->name('users.admin');
     Route::get('/users/management', [UserManagementController::class, 'indexManagement'])->name('users.management');
@@ -486,6 +487,17 @@ Route::post('/login-face', function (Request $request) {
     }
 
     if ($matchedUser) {
+        if (!$matchedUser->is_active) {
+            $isPending = is_null($matchedUser->approved_by);
+            return response()->json([
+                'success' => false,
+                'status_type' => $isPending ? 'PENDING_APPROVAL' : 'SUSPENDED',
+                'message' => $isPending
+                    ? '[PENDING_APPROVAL] Akun Anda masih dalam proses pendaftaran dan menunggu verifikasi oleh Administrator.'
+                    : '[SUSPENDED] Akun Anda telah ditangguhkan (suspended) oleh Administrator. Silakan hubungi Administrator.',
+            ], 403);
+        }
+
         Auth::login($matchedUser, true);
         $request->session()->regenerate();
         return response()->json([

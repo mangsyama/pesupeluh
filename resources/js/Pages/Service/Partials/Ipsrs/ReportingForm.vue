@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watchEffect } from 'vue';
+import { ref, computed, watchEffect, onMounted, onUnmounted } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import { compressImage } from '@/Utils/imageCompressor';
 import { 
@@ -71,6 +71,21 @@ watchEffect(() => {
 // Searchable dropdown state for users without an assigned room
 const isRoomDropdownOpen = ref(false);
 const roomSearchQuery = ref('');
+const roomDropdownRef = ref(null);
+
+const handleClickOutsideRoomDropdown = (event) => {
+    if (isRoomDropdownOpen.value && roomDropdownRef.value && !roomDropdownRef.value.contains(event.target)) {
+        isRoomDropdownOpen.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutsideRoomDropdown);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutsideRoomDropdown);
+});
 
 const filteredRooms = computed(() => {
     const q = roomSearchQuery.value.trim().toLowerCase();
@@ -87,7 +102,8 @@ const selectedRoomLabel = computed(() => {
     return selected ? `${selected.name} (${selected.location_floor})` : '';
 });
 
-const toggleRoomDropdown = () => {
+const toggleRoomDropdown = (event) => {
+    event?.stopPropagation();
     isRoomDropdownOpen.value = !isRoomDropdownOpen.value;
     if (isRoomDropdownOpen.value) {
         roomSearchQuery.value = '';
@@ -251,14 +267,6 @@ const submitReport = () => {
                 </div>
             </div>
 
-            <!-- Skeleton Categories fallback if loading -->
-            <div v-else-if="!activeFeature?.feature_categories" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-pulse">
-                <div v-for="i in 3" :key="i" class="p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 min-h-[84px] space-y-2">
-                    <div class="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                    <div class="h-3 w-40 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
-                </div>
-            </div>
-
             <div v-else class="py-6 text-center text-slate-400 dark:text-slate-500 text-xs">
                 {{ __('pages.services.kategori_empty') }}
             </div>
@@ -324,14 +332,14 @@ const submitReport = () => {
                     </div>
 
                     <!-- Case 2: User has NO assigned room (Custom Searchable & Scrollable Dropdown) -->
-                    <div v-else class="relative">
+                    <div v-else class="relative" ref="roomDropdownRef">
                         <!-- Dropdown Toggle Button -->
                         <button 
                             type="button"
                             @click="toggleRoomDropdown"
-                            class="w-full h-11 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
+                            class="w-full h-11 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
                         >
-                            <span v-if="selectedRoomLabel" class="font-semibold text-slate-800 dark:text-slate-100 truncate">
+                            <span v-if="selectedRoomLabel" class="text-slate-800 dark:text-slate-100 truncate">
                                 {{ selectedRoomLabel }}
                             </span>
                             <span v-else class="text-slate-400 dark:text-slate-500">
@@ -340,13 +348,10 @@ const submitReport = () => {
                             <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoomDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
                         </button>
 
-                        <!-- Invisible Backdrop for closing on outside click -->
-                        <div v-if="isRoomDropdownOpen" class="fixed inset-0 z-20 cursor-default" @click="isRoomDropdownOpen = false"></div>
-
-                        <!-- Dropdown Menu -->
+                        <!-- Dropdown Menu (Pushes lower content down inline when open) -->
                         <div 
                             v-if="isRoomDropdownOpen" 
-                            class="absolute z-30 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-2 animate-spa-fade-in"
+                            class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-2 animate-spa-fade-in shadow-sm"
                         >
                             <!-- Search Input -->
                             <div class="relative">
@@ -355,7 +360,7 @@ const submitReport = () => {
                                     v-model="roomSearchQuery"
                                     type="text"
                                     :placeholder="__('Cari nama ruangan atau lantai...')"
-                                    class="w-full h-9 pl-9 pr-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                    class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                     @click.stop
                                 />
                             </div>
@@ -364,7 +369,7 @@ const submitReport = () => {
                             <div class="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                                 <div 
                                     v-if="filteredRooms.length === 0" 
-                                    class="p-3 text-center text-xs text-slate-400 dark:text-slate-500 font-medium"
+                                    class="p-3 text-center text-sm text-slate-400 dark:text-slate-500 font-medium"
                                 >
                                     {{ __('Ruangan tidak ditemukan') }}
                                 </div>
@@ -373,17 +378,17 @@ const submitReport = () => {
                                     v-for="room in filteredRooms"
                                     :key="room.id"
                                     type="button"
-                                    @click="selectRoom(room.id)"
+                                    @click.stop="selectRoom(room.id)"
                                     :class="[
-                                        'w-full text-left px-3 py-2.5 rounded-lg text-xs flex items-center justify-between transition-colors duration-150',
+                                        'w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between transition-colors duration-150',
                                         form.room_id === room.id
                                             ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold'
                                             : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-medium'
                                     ]"
                                 >
                                     <div>
-                                        <div class="text-xs font-semibold">{{ room.name }}</div>
-                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-0.5">{{ room.location_floor }}</div>
+                                        <div class="text-sm font-semibold">{{ room.name }}</div>
+                                        <div class="text-xs text-slate-400 dark:text-slate-500 font-normal mt-0.5">{{ room.location_floor }}</div>
                                     </div>
                                     <Check v-if="form.room_id === room.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />
                                 </button>
@@ -403,7 +408,7 @@ const submitReport = () => {
                         required
                         rows="4"
                         :placeholder="__('pages.services.deskripsi_placeholder')"
-                        class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 leading-relaxed"
+                        class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 leading-relaxed"
                     ></textarea>
                     <div v-if="form.errors.problem_description" class="text-[10px] text-red-500 font-semibold">{{ form.errors.problem_description }}</div>
                 </div>

@@ -1,9 +1,9 @@
 <script setup>
-import { ref, onBeforeUnmount, getCurrentInstance, nextTick, onMounted } from 'vue';
+import { ref, onBeforeUnmount, getCurrentInstance, nextTick, onMounted, watch } from 'vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/vue3';
 import { ScanFace, RefreshCw, CheckCircle, X, Eye, EyeOff } from '@lucide/vue';
 import axios from 'axios';
 
@@ -38,6 +38,65 @@ const form = useForm({
 });
 
 const { proxy } = getCurrentInstance();
+const page = usePage();
+
+const showStatusSwal = (message) => {
+    if (!message || typeof message !== 'string') return false;
+    
+    const isPending = message.includes('[PENDING_APPROVAL]') || message.toLowerCase().includes('menunggu verifikasi') || message.toLowerCase().includes('proses pendaftaran');
+    const isSuspended = message.includes('[SUSPENDED]') || message.toLowerCase().includes('ditangguhkan') || message.toLowerCase().includes('suspended');
+
+    if (isPending) {
+        const cleanMsg = message.replace('[PENDING_APPROVAL] ', '');
+        proxy.$swal({
+            title: 'Menunggu Verifikasi Administrator',
+            text: cleanMsg,
+            icon: 'warning',
+            confirmButtonColor: '#f59e0b',
+            confirmButtonText: 'Saya Mengerti',
+        });
+        return true;
+    } else if (isSuspended) {
+        const cleanMsg = message.replace('[SUSPENDED] ', '');
+        proxy.$swal({
+            title: 'Akun Ditangguhkan (Suspended)',
+            text: cleanMsg,
+            icon: 'error',
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Tutup',
+        });
+        return true;
+    }
+    return false;
+};
+
+const formattedInputError = (msg) => {
+    if (!msg || typeof msg !== 'string') return '';
+    if (msg.includes('[PENDING_APPROVAL]') || msg.includes('[SUSPENDED]')) {
+        return '';
+    }
+    return msg;
+};
+
+const checkAndShowStatusSwal = (errorsObj) => {
+    if (!errorsObj) return;
+    const errorMessages = typeof errorsObj === 'string' ? [errorsObj] : Object.values(errorsObj);
+    for (const msg of errorMessages) {
+        if (typeof msg === 'string' && showStatusSwal(msg)) {
+            break;
+        }
+    }
+};
+
+watch(() => form.errors.username, (newErr) => {
+    if (newErr) {
+        showStatusSwal(newErr);
+    }
+});
+
+watch(() => page.props.errors, (newErrors) => {
+    checkAndShowStatusSwal(newErrors);
+}, { deep: true, immediate: true });
 
 const video = ref(null);
 const canvas = ref(null);
@@ -179,6 +238,7 @@ const triggerScanLoop = async () => {
                     const response = await axios.post('/login-face', {
                       face_descriptor: Array.from(detection.descriptor)
                     });
+
                     if (response.data.success) {
                       scanStatus.value = 'success';
                       matchedUserName.value = response.data.name;
@@ -195,7 +255,16 @@ const triggerScanLoop = async () => {
                     console.error('Failed to match face:', err);
                     isFaceDetected.value = false;
                     scanStatus.value = 'failed';
-                    errorMessage.value = err.response?.data?.message || proxy.__('Face does not match any registered accounts.');
+                    const rawMsg = err.response?.data?.message || proxy.__('Face does not match any registered accounts.');
+
+                    if (showStatusSwal(rawMsg)) {
+                      if (detectionLoop) { clearTimeout(detectionLoop); detectionLoop = null; }
+                      stopCamera();
+                      closeFaceModal();
+                      return;
+                    }
+
+                    errorMessage.value = rawMsg;
                     
                     // Automatically retry scan after 2.5 seconds if still streaming and status is failed
                     detectionLoop = setTimeout(() => {
@@ -237,7 +306,11 @@ const triggerScanLoop = async () => {
 };
 
 const submit = () => {
-    form.post(route('login'));
+    form.post(route('login'), {
+        onError: (errors) => {
+            checkAndShowStatusSwal(errors);
+        },
+    });
 };
 
 onBeforeUnmount(() => {
@@ -280,7 +353,7 @@ onBeforeUnmount(() => {
                     :placeholder="__('auth.register.username_placeholder')"
                     class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
-                <InputError class="mt-1" :message="form.errors.username" />
+                <InputError class="mt-1" :message="formattedInputError(form.errors.username)" />
             </div>
 
             <!-- Password Input Field -->

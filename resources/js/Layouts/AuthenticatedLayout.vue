@@ -137,6 +137,7 @@ const toggleSidebarCollapse = () => {
 const getInitialOpenMenus = () => {
     const defaults = {
         'menu.user_management': route().current('users.approvals') ||
+            route().current('users.approvals.show') ||
             route().current('users.index') ||
             route().current('users.admin') ||
             route().current('users.management') ||
@@ -187,11 +188,20 @@ const toggleMenu = (label) => {
 };
 
 const isChildActive = (children) => {
-    return children.some(child => route().current(child.routeName));
+    return children.some(child => isItemActive(child));
+};
+
+const isItemActive = (child) => {
+    if (route().current(child.routeName)) return true;
+    if (child.routeName === 'users.approvals' && route().current('users.approvals.show')) return true;
+    return false;
 };
 
 const isRouteActive = (item) => {
     if (route().current(item.routeName)) {
+        return true;
+    }
+    if (item.routeName === 'users.approvals' && route().current('users.approvals.show')) {
         return true;
     }
     if (item.routeName === 'reports-management.index' && route().current('reports-management.show')) {
@@ -295,6 +305,9 @@ const backRoute = computed(() => {
     if (route().current('reports-management.show')) {
         return route('reports-management.index');
     }
+    if (route().current('users.approvals.show')) {
+        return route('users.approvals');
+    }
     if (route().current('services.units.show') && page.props.unit) {
         const isMedik = page.props.unit.division?.name?.toLowerCase().includes('medik') && 
                        !page.props.unit.division?.name?.toLowerCase().includes('non-medik');
@@ -310,6 +323,7 @@ const showBackButton = computed(() => {
            route().current('services.units.show') || 
            route().current('reports.show') || 
            route().current('reports-management.show') ||
+           route().current('users.approvals.show') ||
            route().current('design-system.*');
 });
 
@@ -1206,7 +1220,7 @@ const getGroupInitials = (title) => {
                             class="relative group h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
                             title="Expand Sidebar"
                         >
-                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain hue-rotate-[280deg] saturate-[1.2] dark:hue-rotate-0 dark:saturate-100 dark:brightness-0 dark:invert transition-all duration-200 group-hover:opacity-0" />
+                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert transition-all duration-200 group-hover:opacity-0" />
                             <ChevronRight class="absolute inset-0 m-auto h-5.5 w-5.5 text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all duration-200" />
                         </button>
                     </div>
@@ -1214,11 +1228,11 @@ const getGroupInitials = (title) => {
                     <Link v-else :href="route('dashboard')" prefetch class="flex items-center gap-3">
                         <!-- Left Logo (Rounded Square) -->
                         <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain hue-rotate-[280deg] saturate-[1.2] dark:hue-rotate-0 dark:saturate-100 dark:brightness-0 dark:invert" />
+                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert" />
                         </div>
                         <!-- Right Text Content -->
                         <div class="flex flex-col">
-                            <span class="text-sm font-bold tracking-widest text-emerald-700 dark:text-emerald-400 uppercase leading-none">Pesu Peluh</span>
+                            <span class="text-sm font-bold tracking-widest text-[#059669] dark:text-white uppercase leading-none">Pesu Peluh</span>
                             <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-1 leading-tight tracking-normal max-w-[185px]">
                                 Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
                             </span>
@@ -1344,7 +1358,7 @@ const getGroupInitials = (title) => {
                                             @click="closeSidebar"
                                             :class="[
                                                 'relative h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-150',
-                                                route().current(child.routeName)
+                                                isItemActive(child)
                                                     ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-950/50 dark:text-emerald-400 dark:shadow-none'
                                                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                             ]"
@@ -1355,7 +1369,7 @@ const getGroupInitials = (title) => {
                                                 :is="child.icon"
                                                 :class="[
                                                     'h-4 w-4 flex-shrink-0 transition duration-150',
-                                                    route().current(child.routeName)
+                                                    isItemActive(child)
                                                         ? 'text-white dark:text-emerald-400'
                                                         : 'text-slate-400 group-hover:text-emerald-500'
                                                 ]"
@@ -1432,7 +1446,7 @@ const getGroupInitials = (title) => {
                                             @click="closeSidebar"
                                             :class="[
                                                 'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition duration-150',
-                                                route().current(child.routeName)
+                                                isItemActive(child)
                                                     ? 'bg-emerald-600 text-white shadow-sm font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:shadow-none'
                                                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
                                             ]"
@@ -1442,7 +1456,7 @@ const getGroupInitials = (title) => {
                                                 :is="child.icon"
                                                 :class="[
                                                     'h-4 w-4 flex-shrink-0 transition duration-150 ml-6',
-                                                    route().current(child.routeName)
+                                                    isItemActive(child)
                                                         ? 'text-white dark:text-emerald-400'
                                                         : 'text-slate-400 group-hover:text-emerald-500'
                                                 ]"
