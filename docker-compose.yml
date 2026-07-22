@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: docker/php8.3-sqlsrv/Dockerfile
     container_name: pesupeluh-php
+    restart: unless-stopped
     env_file:
       - ./.env
     extra_hosts:
@@ -27,6 +28,7 @@ services:
   nginx:
     image: nginx:1.27-alpine
     container_name: pesupeluh-nginx
+    restart: unless-stopped
     ports:
       - "8081:80"
     volumes:
@@ -38,6 +40,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: pesupeluh-redis
+    restart: unless-stopped
 
   reverb:
     build:
