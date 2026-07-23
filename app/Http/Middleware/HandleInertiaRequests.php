@@ -45,6 +45,31 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
                 'page_permissions' => $user ? $user->getEffectivePermissions() : [],
                 'pending_approvals_count' => $user ? \Inertia\Inertia::defer(fn() => \App\Models\User::whereNull('approved_by')->count()) : 0,
+                'pending_reports_count' => $user ? \Inertia\Inertia::defer(function () use ($user) {
+                    $roleId = (int) $user->role_id;
+                    $userId = (int) $user->id;
+
+                    $query = \App\Models\ServiceTicket::whereNull('deleted_at')
+                        ->whereIn('status', ['PENDING_VALIDATION', 'ASSIGNED', 'IN_PROGRESS', 'PENDING']);
+
+                    if (in_array($roleId, [1, 2, 3, 4])) {
+                        // Admin / Management
+                    } elseif ($roleId === 5) {
+                        $query->whereHas('category.unitFeature', function ($q) use ($user) {
+                            $q->where('supporting_unit_id', $user->supporting_unit_id);
+                        });
+                    } elseif ($roleId === 6) {
+                        $query->whereHas('assignments', function ($q) use ($userId) {
+                            $q->where('technician_id', $userId);
+                        });
+                    } elseif ($roleId === 7) {
+                        $query->where('room_id', $user->room_id);
+                    } else {
+                        return 0;
+                    }
+
+                    return $query->count();
+                }) : 0,
             ],
             'notifications' => $user ? \Inertia\Inertia::defer(fn() => $user->unreadNotifications()->take(10)->get()->map(function ($notification) {
                 return [

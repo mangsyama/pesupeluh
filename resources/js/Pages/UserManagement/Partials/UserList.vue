@@ -147,6 +147,7 @@ const openEditModal = (user) => {
     isEditing.value = true;
     form.clearErrors();
     form.id = user.id;
+    form.uuid = user.uuid;
     form.name = user.name;
     form.nip = user.nip || '';
     form.email = user.email;
@@ -162,7 +163,7 @@ const openEditModal = (user) => {
 
 const submitForm = () => {
     if (isEditing.value) {
-        form.put(route('users.update', form.id), {
+        form.put(route('users.update', form.uuid || form.id), {
             onSuccess: () => {
                 showModal.value = false;
                 proxy.$toast(proxy.__('pages.user_management.alerts.update_success').replace('{role}', props.roleName), 'success');
@@ -180,7 +181,7 @@ const submitForm = () => {
 };
 
 const toggleStatus = (user) => {
-    router.patch(route('users.toggle-active', user.id), {}, {
+    router.patch(route('users.toggle-active', user.uuid || user.id), {}, {
         onSuccess: () => {
             proxy.$toast(proxy.__('pages.user_management.alerts.status_update_success').replace('{role}', props.roleName), 'success');
         }
@@ -211,7 +212,7 @@ const deleteUser = (user) => {
         cancelButtonText: proxy.__('pages.user_management.alerts.cancel')
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('users.destroy', user.id), {
+            router.delete(route('users.destroy', user.uuid || user.id), {
                 onSuccess: () => {
                     proxy.$toast(proxy.__('pages.user_management.alerts.revoke_success').replace('{role}', props.roleName), 'success');
                 }

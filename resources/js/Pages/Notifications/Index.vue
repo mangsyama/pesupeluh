@@ -30,13 +30,13 @@ const handleNotificationClick = (notif) => {
             preserveScroll: true,
             onFinish: () => {
                 if (notif.route) {
-                    window.location.href = notif.route;
+                    router.visit(notif.route);
                 }
             }
         });
     } else {
         if (notif.route) {
-            window.location.href = notif.route;
+            router.visit(notif.route);
         }
     }
 };

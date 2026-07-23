@@ -30,8 +30,11 @@ class ServiceController extends Controller
             'room_id' => 'required|exists:rooms,id',
             'category_id' => 'required|exists:feature_categories,id',
             'problem_description' => 'required|string|min:5',
-            'attachments' => 'nullable|array|max:5',
-            'attachments.*' => 'nullable|string',
+            'attachments' => 'required|array|min:1|max:5',
+            'attachments.*' => 'required|string',
+        ], [
+            'attachments.required' => 'Lampiran foto / video wajib diunggah.',
+            'attachments.min' => 'Lampiran foto / video wajib diunggah minimal 1 file.',
         ]);
 
         $ticketNumber = 'TK-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);

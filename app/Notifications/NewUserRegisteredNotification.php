@@ -37,7 +37,7 @@ class NewUserRegisteredNotification extends Notification
             'title' => 'Pendaftaran Baru',
             'message' => "Pengguna {$this->registrant->name} telah mendaftar dan menunggu verifikasi.",
             'user_id' => $this->registrant->id,
-            'route' => route('users.approvals'),
+            'route' => route('users.approvals.show', $this->registrant->uuid),
         ];
     }
 
@@ -48,7 +48,7 @@ class NewUserRegisteredNotification extends Notification
             'title' => 'Pendaftaran Baru',
             'message' => "Pengguna {$this->registrant->name} telah mendaftar dan menunggu verifikasi.",
             'user_id' => $this->registrant->id,
-            'route' => route('users.approvals'),
+            'route' => route('users.approvals.show', $this->registrant->uuid),
         ]);
     }
 
@@ -63,7 +63,7 @@ class NewUserRegisteredNotification extends Notification
         return TelegramMessage::create()
             ->to($chatId)
             ->content("🔔 *Pendaftaran Pengguna Baru*\n\nPengguna *{$this->registrant->name}* telah mendaftar dan menunggu verifikasi.\n\n*NIP:* {$this->registrant->nip}\n*Email:* {$this->registrant->email}\n*Username:* {$this->registrant->username}")
-            ->button('Lihat Persetujuan', route('users.approvals'));
+            ->button('Lihat Persetujuan', route('users.approvals.show', $this->registrant->uuid));
     }
 
     public function toArray($notifiable): array

@@ -355,8 +355,8 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     // User Management
     Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
     Route::get('/users/approvals', [UserManagementController::class, 'indexApprovals'])->name('users.approvals');
-    Route::get('/users/approvals/{user}', [UserManagementController::class, 'showApprovalDetail'])->name('users.approvals.show');
-    Route::patch('/users/{user}/approve', [UserManagementController::class, 'approveUser'])->name('users.approve');
+    Route::get('/users/approvals/{user:uuid}', [UserManagementController::class, 'showApprovalDetail'])->name('users.approvals.show');
+    Route::patch('/users/{user:uuid}/approve', [UserManagementController::class, 'approveUser'])->name('users.approve');
     Route::get('/users/admin', [UserManagementController::class, 'indexAdmin'])->name('users.admin');
     Route::get('/users/management', [UserManagementController::class, 'indexManagement'])->name('users.management');
     Route::get('/users/unit-head', [UserManagementController::class, 'indexUnitHead'])->name('users.unit-head');
@@ -364,10 +364,10 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/users/room-head', [UserManagementController::class, 'indexRoomHead'])->name('users.room-head');
     Route::get('/users/reporter', [UserManagementController::class, 'indexReporter'])->name('users.reporter');
     Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
-    Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
-    Route::patch('/users/{user}/toggle-active', [UserManagementController::class, 'toggleActive'])->name('users.toggle-active');
-    Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
-    Route::put('/users/{user}/permissions', [UserManagementController::class, 'updatePermissions'])->name('users.update-permissions');
+    Route::put('/users/{user:uuid}', [UserManagementController::class, 'update'])->name('users.update');
+    Route::patch('/users/{user:uuid}/toggle-active', [UserManagementController::class, 'toggleActive'])->name('users.toggle-active');
+    Route::delete('/users/{user:uuid}', [UserManagementController::class, 'destroy'])->name('users.destroy');
+    Route::put('/users/{user:uuid}/permissions', [UserManagementController::class, 'updatePermissions'])->name('users.update-permissions');
 
     // Layanan Manajemen
     Route::get('/service-management', function () {

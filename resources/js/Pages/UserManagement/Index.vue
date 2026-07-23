@@ -196,6 +196,7 @@ const openEditModal = (user) => {
     isEditing.value = true;
     form.clearErrors();
     form.id = user.id;
+    form.uuid = user.uuid;
     form.name = user.name;
     form.nip = user.nip || '';
     form.username = user.username || '';
@@ -212,7 +213,7 @@ const openEditModal = (user) => {
 
 const submitForm = () => {
     if (isEditing.value) {
-        form.put(route('users.update', form.id), {
+        form.put(route('users.update', form.uuid || form.id), {
             onSuccess: () => {
                 showModal.value = false;
                 const rawRoleName = form.role_id ? props.roles.find(r => r.id === form.role_id)?.name || '' : '';
@@ -254,7 +255,7 @@ const toggleStatus = (user) => {
         cancelButtonText: proxy.__('pages.user_management.alerts.cancel') || 'Batal',
     }).then((result) => {
         if (result.isConfirmed) {
-            router.patch(route('users.toggle-active', user.id), {}, {
+            router.patch(route('users.toggle-active', user.uuid || user.id), {}, {
                 onSuccess: () => {
                     const displayRole = user.role?.name ? proxy.__('roles.' + user.role.name) : '';
                     proxy.$toast(proxy.__('pages.user_management.alerts.status_update_success').replace('{role}', displayRole), 'success');
@@ -287,7 +288,7 @@ const deleteUser = (user) => {
         cancelButtonText: proxy.__('pages.user_management.alerts.cancel'),
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('users.destroy', user.id), {
+            router.delete(route('users.destroy', user.uuid || user.id), {
                 onSuccess: () => {
                     proxy.$toast(proxy.__('pages.user_management.alerts.revoke_success').replace('{role}', displayRole), 'success');
                 },
@@ -360,7 +361,7 @@ const savePermissions = () => {
     if (!permissionUser.value) return;
     permissionProcessing.value = true;
 
-    router.put(route('users.update-permissions', permissionUser.value.id), {
+    router.put(route('users.update-permissions', permissionUser.value.uuid || permissionUser.value.id), {
         page_permissions: permissionChecked.value,
         use_role_default: permissionUseDefault.value,
     }, {

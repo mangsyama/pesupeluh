@@ -58,6 +58,7 @@ class CheckPageAccess
 
         // User Management
         'users.approvals' => 'users.approvals',
+        'users.approvals.show' => 'users.approvals',
         'users.approve' => 'users.approvals',
         'users.index' => 'users.index',
         'users.admin' => 'users.index',

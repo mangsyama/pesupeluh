@@ -148,7 +148,7 @@ const categoriesBreakdown = computed(() => {
             <div class="w-full space-y-4">
 
                 <!-- Welcome Card -->
-                <div class="overflow-hidden bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-emerald-950 dark:to-slate-900 border border-transparent dark:border-slate-800 shadow-sm rounded-2xl text-white p-8 relative">
+                <div class="overflow-hidden bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-emerald-950 dark:to-slate-900 shadow-sm rounded-2xl text-white p-8 relative">
                     <!-- Text Info -->
                     <div class="relative z-10 max-w-xl">
                         <h3 class="text-2xl font-extrabold mb-1">PESU PELUH</h3>

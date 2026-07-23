@@ -37,6 +37,17 @@ class UserManagementController extends Controller
             return redirect()->route('users.approvals')->with('info', 'Pendaftaran user ini sudah diproses.');
         }
 
+        // Automatically mark unread registration notifications for this user as read for current admin
+        if (Auth::check()) {
+            Auth::user()->unreadNotifications()
+                ->where(function ($query) use ($user) {
+                    $query->where('data->user_id', $user->id)
+                          ->orWhere('data->route', route('users.approvals.show', $user->uuid));
+                })
+                ->get()
+                ->each(fn ($notification) => $notification->markAsRead());
+        }
+
         return Inertia::render('UserManagement/Approval/Detail', [
             'targetUser' => $user->load(['role', 'room', 'supportingUnit']),
             'roles' => Inertia::defer(fn() => Role::orderBy('id', 'asc')->get()),
@@ -293,6 +304,11 @@ class UserManagementController extends Controller
     public function destroy(User $user)
     {
         $user->delete();
+
+        $previousUrl = url()->previous();
+        if (Str::contains($previousUrl, '/users/approvals')) {
+            return redirect()->route('users.approvals')->with('success', 'Pendaftaran user berhasil ditolak.');
+        }
 
         return redirect()->back()->with('success', 'User berhasil dihapus.');
     }

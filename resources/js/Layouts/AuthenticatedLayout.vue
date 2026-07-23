@@ -336,6 +336,7 @@ const showDesktopNotifications = ref(false);
 const showMobileProfileDropdown = ref(false);
 const mobileNotificationsPanel = ref(null);
 const pendingApprovalsCount = ref(page.props.auth?.pending_approvals_count ?? 0);
+const pendingReportsCount = ref(page.props.auth?.pending_reports_count ?? 0);
 const getCachedNotifications = () => {
     if (typeof window !== 'undefined') {
         const cached = sessionStorage.getItem('cached-notifications');
@@ -382,15 +383,17 @@ watch(
     }
 );
 
-const unreadCount = computed(() => notifications.value.filter(notification => !notification.read_at).length);
+watch(
+    () => page.props.auth?.pending_reports_count,
+    (value) => {
+        if (value !== undefined && value !== null) {
+            pendingReportsCount.value = value;
+        }
+    }
+);
 
-const pendingReportsCount = computed(() => {
-    return notifications.value.filter(n => 
-        !n.read_at && 
-        n.type !== 'user' && 
-        !(n.route && n.route.includes('users.approvals'))
-    ).length;
-});
+const unreadNotifications = computed(() => notifications.value.filter(notification => !notification.read_at));
+const unreadCount = computed(() => unreadNotifications.value.length);
 
 const normalizeNotificationPayload = (notification) => {
     const title = notification.title ?? notification.data?.title ?? null;
@@ -450,8 +453,10 @@ const registerNotificationListeners = () => {
                 // Show real-time visual toast
                 showNotificationToast(normalized);
 
-                if (normalized.type === 'user' || normalized.route === route('users.approvals')) {
+                if (normalized.type === 'user' || (normalized.route && normalized.route.includes('users.approvals'))) {
                     pendingApprovalsCount.value += 1;
+                } else if (normalized.type === 'ticket' || (normalized.route && normalized.route.includes('reports-management'))) {
+                    pendingReportsCount.value += 1;
                 }
             });
     }
@@ -466,17 +471,22 @@ const markAsRead = (notif) => {
         notifications.value[idx].read_at = new Date().toISOString();
     }
 
-    // Send to server
-    router.post(route('notifications.markAsRead', { id: notif.id }), {}, {
-        preserveScroll: true,
-        preserveState: true,
-    });
+    showDesktopNotifications.value = false;
+    showMobileNotifications.value = false;
 
-    // Navigate if route exists
     if (notif.route) {
-        showDesktopNotifications.value = false;
-        showMobileNotifications.value = false;
-        router.visit(notif.route);
+        router.post(route('notifications.markAsRead', { id: notif.id }), {}, {
+            preserveScroll: true,
+            preserveState: true,
+            onFinish: () => {
+                router.visit(notif.route);
+            }
+        });
+    } else {
+        router.post(route('notifications.markAsRead', { id: notif.id }), {}, {
+            preserveScroll: true,
+            preserveState: true,
+        });
     }
 };
 
@@ -762,12 +772,12 @@ const getGroupInitials = (title) => {
 
                                      <!-- Notification List -->
                                      <div class="max-h-80 overflow-y-auto">
-                                         <div v-if="notifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
-                                             {{ __('No notifications') }}
+                                         <div v-if="unreadNotifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                             Tidak ada notifikasi baru
                                          </div>
                                          <div 
                                              v-else
-                                             v-for="notif in notifications" 
+                                             v-for="notif in unreadNotifications" 
                                              :key="notif.id"
                                              @click="markAsRead(notif)"
                                              :class="[
@@ -1003,12 +1013,12 @@ const getGroupInitials = (title) => {
                                          </button>
                                      </div>
                                      <div class="max-h-80 overflow-y-auto">
-                                         <div v-if="notifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
-                                             {{ __('No notifications') }}
+                                         <div v-if="unreadNotifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+                                             Tidak ada notifikasi baru
                                          </div>
                                          <div 
                                              v-else
-                                             v-for="notif in notifications" 
+                                             v-for="notif in unreadNotifications" 
                                              :key="notif.id"
                                              @click="markAsRead(notif)"
                                              :class="[

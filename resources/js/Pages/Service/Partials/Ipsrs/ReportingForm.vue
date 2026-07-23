@@ -206,6 +206,12 @@ const selectCategory = (id) => {
 };
 
 const submitReport = () => {
+    form.clearErrors('attachments');
+    if (attachmentPreviews.value.length === 0) {
+        form.setError('attachments', 'Lampiran foto / video wajib diunggah.');
+        return;
+    }
+
     form.post(route('services.tickets.store'), {
         onSuccess: () => {
             form.reset();
@@ -413,12 +419,11 @@ const submitReport = () => {
                     <div v-if="form.errors.problem_description" class="text-[10px] text-red-500 font-semibold">{{ form.errors.problem_description }}</div>
                 </div>
 
-                <!-- Media Attachments (Optional) -->
+                <!-- Media Attachments (Required) -->
                 <div class="space-y-2.5">
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            {{ __('pages.services.lampiran_foto') }}
-                            <span class="text-[10px] font-medium normal-case tracking-normal text-slate-400 dark:text-slate-500 ml-1">({{ __('pages.services.lampiran_opsional') }})</span>
+                            {{ __('pages.services.lampiran_foto') }} <span class="text-red-400">*</span>
                         </label>
                         <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{{ attachmentPreviews.length }}/{{ MAX_FILES }}</span>
                     </div>
@@ -484,6 +489,8 @@ const submitReport = () => {
                             {{ __('pages.services.lampiran_kamera') }}
                         </button>
                     </div>
+
+                    <div v-if="form.errors.attachments" class="text-[10px] text-red-500 font-semibold">{{ form.errors.attachments }}</div>
                 </div>
 
                 <!-- Submit Button -->
