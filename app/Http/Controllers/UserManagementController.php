@@ -114,6 +114,7 @@ class UserManagementController extends Controller
             [
                 'group' => 'Sistem',
                 'permissions' => [
+                    ['key' => 'admin.wa-gateway.index', 'label' => 'WhatsApp Gateway'],
                     ['key' => 'settings.index', 'label' => 'Pengaturan'],
                     ['key' => 'design-system.index', 'label' => 'Design System'],
                 ],

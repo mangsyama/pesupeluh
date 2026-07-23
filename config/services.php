@@ -43,4 +43,9 @@ return [
         'token' => env('TELEGRAM_URGENT_BOT_TOKEN'),
     ],
 
+    'wa_gateway' => [
+        'driver'    => env('WA_GATEWAY_DRIVER', 'local'),
+        'local_url' => env('WA_LOCAL_URL', 'http://127.0.0.1:3000/send'),
+    ],
+
 ];

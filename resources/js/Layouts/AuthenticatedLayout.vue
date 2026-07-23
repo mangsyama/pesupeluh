@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye } from '@lucide/vue';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquare } from '@lucide/vue';
 
 const sidebarOpen = ref(false);
 const isDark = ref(false);
@@ -263,7 +263,8 @@ const menuGroups = computed(() => {
                         { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers, permKey: 'service-management.categories' },
                         { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Building2, permKey: 'service-management.supporting-units' }
                     ]
-                }
+                },
+                { label: 'WhatsApp Gateway', routeName: 'admin.wa-gateway.index', icon: MessageSquare, permKey: 'admin.wa-gateway.index' }
             ]
         }
     ];

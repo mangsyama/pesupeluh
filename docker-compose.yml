@@ -81,3 +81,14 @@ services:
     depends_on:
       - php
       - redis
+
+  wa-gateway:
+    build:
+      context: ./wa-gateway
+      dockerfile: Dockerfile
+    container_name: pesupeluh-wa-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./wa-gateway/auth_sessions:/app/auth_sessions

@@ -2,15 +2,17 @@
 
 namespace App\Notifications;
 
+use App\Channels\WaGatewayChannel;
 use App\Models\ServiceTicket;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Telegram\TelegramChannel;
 use NotificationChannels\Telegram\TelegramMessage;
 
-class TicketAssignedNotification extends Notification
+class TicketAssignedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -25,6 +27,11 @@ class TicketAssignedNotification extends Notification
         // Send to Telegram if bot token is configured and the user has a telegram_chat_id
         if (config('services.telegram.token') && $notifiable instanceof User && $notifiable->telegram_chat_id) {
             $channels[] = TelegramChannel::class;
+        }
+
+        // Send to WhatsApp via WA Gateway (Local microservice or Fonnte API)
+        if ($notifiable instanceof User && $notifiable->phone_number) {
+            $channels[] = WaGatewayChannel::class;
         }
 
         return $channels;
@@ -68,10 +75,10 @@ class TicketAssignedNotification extends Notification
         $isUrgent = strtoupper($priority) === 'URGENT';
 
         $header = $isUrgent 
-            ? "🚨🔴 *[DARURAT - SEGERA RESPON]* 🔴🚨" 
+            ? "🚨 *[DARURAT - SEGERA RESPON]*" 
             : "🛠️ *Penugasan Laporan Baru (Rutin)*";
 
-        $priorityText = $isUrgent ? "🚨 URGENT (DARURAT)" : "🟢 ROUTINE (RUTIN)";
+        $priorityText = $isUrgent ? "URGENT (DARURAT)" : "ROUTINE (RUTIN)";
 
         $message = TelegramMessage::create()
             ->to($chatId)
@@ -83,6 +90,29 @@ class TicketAssignedNotification extends Notification
         }
 
         return $message;
+    }
+
+    public function toWaGateway($notifiable): ?string
+    {
+        $roomName = $this->ticket->room?->name ?? 'Ruangan';
+        $categoryName = $this->ticket->category?->name ?? 'Kategori';
+        $priority = $this->ticket->priority ?? 'ROUTINE';
+        $isUrgent = strtoupper($priority) === 'URGENT';
+        $link = route('reports-management.show', ['ticket' => $this->ticket->uuid]);
+
+        $header = $isUrgent 
+            ? "🚨 *[DARURAT - SEGERA RESPON]*" 
+            : "🛠️ *Penugasan Laporan Baru*";
+
+        $priorityText = $isUrgent ? "URGENT (DARURAT)" : "ROUTINE (RUTIN)";
+
+        return "{$header}\n\n"
+             . "Anda telah ditugaskan untuk menangani tiket *#{$this->ticket->ticket_number}*.\n\n"
+             . "• *Prioritas:* {$priorityText}\n"
+             . "• *Ruangan:* {$roomName}\n"
+             . "• *Kategori:* {$categoryName}\n"
+             . "• *Deskripsi Masalah:* {$this->ticket->problem_description}\n\n"
+             . "Lihat Detail Pekerjaan:\n{$link}";
     }
 
     public function toArray($notifiable): array

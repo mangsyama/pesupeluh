@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\ServiceManagementController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\WaGatewayController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -368,6 +369,12 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::patch('/users/{user:uuid}/toggle-active', [UserManagementController::class, 'toggleActive'])->name('users.toggle-active');
     Route::delete('/users/{user:uuid}', [UserManagementController::class, 'destroy'])->name('users.destroy');
     Route::put('/users/{user:uuid}/permissions', [UserManagementController::class, 'updatePermissions'])->name('users.update-permissions');
+
+    // WhatsApp Gateway Management
+    Route::get('/wa-gateway', [WaGatewayController::class, 'index'])->name('admin.wa-gateway.index');
+    Route::get('/wa-gateway/status', [WaGatewayController::class, 'status'])->name('admin.wa-gateway.status');
+    Route::post('/wa-gateway/logout', [WaGatewayController::class, 'logout'])->name('admin.wa-gateway.logout');
+    Route::post('/wa-gateway/test', [WaGatewayController::class, 'sendTest'])->name('admin.wa-gateway.test');
 
     // Layanan Manajemen
     Route::get('/service-management', function () {

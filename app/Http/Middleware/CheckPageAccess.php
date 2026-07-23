@@ -73,8 +73,12 @@ class CheckPageAccess
         'users.destroy' => 'users.index',
         'users.update-permissions' => 'users.index',
 
-        // Settings
+        // Settings & System
         'settings.index' => 'settings.index',
+        'admin.wa-gateway.index' => 'admin.wa-gateway.index',
+        'admin.wa-gateway.status' => 'admin.wa-gateway.index',
+        'admin.wa-gateway.logout' => 'admin.wa-gateway.index',
+        'admin.wa-gateway.test' => 'admin.wa-gateway.index',
 
         // Design System
         'design-system.index' => 'design-system.index',
