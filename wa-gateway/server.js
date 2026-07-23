@@ -16,6 +16,16 @@ const app = express();
 const PORT = process.env.WA_GATEWAY_PORT || 3000;
 const SESSION_DIR = path.join(__dirname, 'auth_sessions');
 
+// Prevent crashes from uncaught exceptions and unhandled promise rejections
+process.on('uncaughtException', (err) => {
+    console.error('💥 [WA-Gateway] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 [WA-Gateway] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -45,13 +55,20 @@ async function initWhatsApp() {
             version,
             auth: state,
             logger,
-            printQRInTerminal: true,
             browser: ['Pesu Peluh System', 'Chrome', '120.0.0.0'],
             markOnlineOnConnect: false,
             syncFullHistory: false
         });
 
-        sock.ev.on('creds.update', saveCreds);
+        sock.ev.on('creds.update', async () => {
+            try {
+                if (connectionStatus !== 'disconnected') {
+                    await saveCreds();
+                }
+            } catch (err) {
+                console.error('Error saving credentials:', err);
+            }
+        });
 
         sock.ev.on('connection.update', async (update) => {
             const { connection, lastDisconnect, qr } = update;
@@ -78,6 +95,8 @@ async function initWhatsApp() {
 
                 if (statusCode === DisconnectReason.loggedOut) {
                     clearSession();
+                    console.log('📌 [WA-Gateway] Logged out. Reinitializing in 3 seconds to get a new QR code...');
+                    setTimeout(() => initWhatsApp(), 3000);
                 } else if (shouldReconnect) {
                     setTimeout(() => initWhatsApp(), 3000);
                 }
