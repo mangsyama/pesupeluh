@@ -3,7 +3,9 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquare } from '@lucide/vue';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode } from '@lucide/vue';
+
+
 
 const sidebarOpen = ref(false);
 const isDark = ref(false);
@@ -251,7 +253,7 @@ const menuGroups = computed(() => {
                     label: 'menu.user_management', 
                     icon: Users,
                     children: [
-                        { label: 'menu.approval', routeName: 'users.approvals', icon: ShieldAlert, permKey: 'users.approvals' },
+                        { label: 'menu.approval', routeName: 'users.approvals', icon: UserCheck, permKey: 'users.approvals' },
                         { label: 'menu.user_list', routeName: 'users.index', icon: Users, permKey: 'users.index' }
                     ]
                 },
@@ -261,10 +263,10 @@ const menuGroups = computed(() => {
                     children: [
                         { label: 'menu.room_management', routeName: 'service-management.rooms', icon: MapPin, permKey: 'service-management.rooms' },
                         { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers, permKey: 'service-management.categories' },
-                        { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Building2, permKey: 'service-management.supporting-units' }
+                        { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Activity, permKey: 'service-management.supporting-units' }
                     ]
                 },
-                { label: 'WhatsApp Gateway', routeName: 'admin.wa-gateway.index', icon: MessageSquare, permKey: 'admin.wa-gateway.index' }
+                { label: 'WhatsApp Gateway', routeName: 'admin.wa-gateway.index', icon: MessageSquareCode, permKey: 'admin.wa-gateway.index' }
             ]
         }
     ];
@@ -680,7 +682,7 @@ const getGroupInitials = (title) => {
                                     @focus="showSearchResults = true"
                                     @blur="setTimeout(() => { showSearchResults = false }, 200)"
                                     :placeholder="__('menu.search_placeholder')"
-                                    class="w-full h-11 pl-10 pr-10 border border-white dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm"
+                                    class="w-full h-11 pl-10 pr-10 border border-white dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-0 focus:border-white dark:focus:border-slate-800 transition-all duration-150 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm"
                                 />
                                 <!-- Clear Button -->
                                 <button
@@ -1592,4 +1594,22 @@ const getGroupInitials = (title) => {
 
 <style scoped>
 /* Navbar blur effect is now handled with backdrop-blur-md class */
+:deep(input[type="text"]:focus),
+:deep(input:focus),
+:deep(input:active),
+:deep(input:focus-within),
+:deep(input:focus-visible),
+:deep(button:focus),
+:deep(button:active),
+:deep(button:focus-within),
+:deep(button:focus-visible) {
+    outline: none !important;
+    outline-width: 0 !important;
+    box-shadow: none !important;
+    --tw-shadow: none !important;
+    --tw-shadow-colored: none !important;
+    --tw-ring-shadow: none !important;
+    --tw-ring-color: transparent !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
 </style>

@@ -372,8 +372,9 @@
     "reports": {
       "center": {
         "title": "Pusat Laporan & Export",
+        "description": "Ekspor seluruh rekapan laporan bulanan atau data mentah operasional penunjang.",
         "export_toast": "Mengekspor data ke format {format}...",
-        "stat_total_month": "Total Laporan Bulan Ini",
+        "stat_total_month": "Total Laporan",
         "stat_verified": "Laporan Terverifikasi",
         "stat_pending": "Menunggu Review",
         "pdf_title": "Dokumen Resmi PDF",

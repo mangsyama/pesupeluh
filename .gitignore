@@ -53,3 +53,8 @@ Homestead.yaml
 # Local development scripts
 /run-dev.ps1
 
+# WhatsApp Gateway
+/wa-gateway/auth_sessions/
+/wa-gateway/node_modules/
+
+

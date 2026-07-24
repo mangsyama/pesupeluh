@@ -385,13 +385,18 @@ const savePermissions = () => {
             <div class="w-full">
                 <!-- Header Panel (ALWAYS VISIBLE) -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
-                    <div class="space-y-1">
-                        <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
-                            {{ __('pages.user_management.user_list_title') }}
-                        </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                            {{ __('pages.user_management.user_list_desc') }}
-                        </p>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                            <Users class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-0.5">
+                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                                {{ __('pages.user_management.user_list_title') }}
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-2xl leading-relaxed">
+                                {{ __('pages.user_management.user_list_desc') }}
+                            </p>
+                        </div>
                     </div>
                     <button
                         @click="openAddModal"

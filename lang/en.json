@@ -373,8 +373,9 @@
     "reports": {
       "center": {
         "title": "Report & Export Center",
+        "description": "Export all monthly report summaries or raw supporting operational data.",
         "export_toast": "Exporting data to {format} format...",
-        "stat_total_month": "Total Reports This Month",
+        "stat_total_month": "Total Reports",
         "stat_verified": "Verified Reports",
         "stat_pending": "Awaiting Review",
         "pdf_title": "Official PDF Document",

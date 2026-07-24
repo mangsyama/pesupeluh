@@ -1,7 +1,8 @@
 <script setup>
 import { ref, getCurrentInstance, computed } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
-import { Shield, ShieldAlert, Edit2, Trash2, Search, Plus, X, UserX, UserCheck, ChevronDown, Check } from '@lucide/vue';
+import { Shield, ShieldAlert, Edit2, Trash2, Search, Plus, X, UserX, UserCheck, ChevronDown, Check, Users, Wrench, MapPin, Layers, User } from '@lucide/vue';
+
 
 const props = defineProps({
     users: {
@@ -39,6 +40,31 @@ const props = defineProps({
 });
 
 const { proxy } = getCurrentInstance();
+
+const getHeaderIcon = computed(() => {
+    switch (props.roleId) {
+        case 1:
+            return Shield;
+        case 2: // Management
+        case 3:
+        case 4:
+            return ShieldAlert;
+        case 5: // Unit Head
+            return MapPin;
+        case 6: // Technician
+            return Wrench;
+        case 7: // Room Head
+            return Layers;
+        case 8: // Reporter
+            return User;
+        default:
+            return Users;
+    }
+});
+
+const getIconColorClass = computed(() => {
+    return 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400';
+});
 
 const searchQuery = ref('');
 const showModal = ref(false);
@@ -226,13 +252,18 @@ const deleteUser = (user) => {
     <div>
         <!-- Premium Header Panel (ALWAYS VISIBLE) -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
-            <div class="space-y-1">
-                <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
-                    {{ __('pages.user_management.role') }} {{ roleName }}
-                </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-                    {{ description }}
-                </p>
+            <div class="flex items-center gap-3">
+                <div :class="['hidden sm:flex h-12 w-12 rounded-xl items-center justify-center flex-shrink-0', getIconColorClass]">
+                    <component :is="getHeaderIcon" class="h-6 w-6" />
+                </div>
+                <div class="space-y-0.5">
+                    <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                        {{ __('pages.user_management.role') }} {{ roleName }}
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
+                        {{ description }}
+                    </p>
+                </div>
             </div>
             
             <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-shrink-0">

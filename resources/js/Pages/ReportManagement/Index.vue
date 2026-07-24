@@ -2,6 +2,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { Wrench } from '@lucide/vue';
+
 
 import ReporterIndex from '@/Pages/Report/Partials/ReporterIndex.vue';
 import UnitHeadIndex from './Partials/UnitHeadIndex.vue';
@@ -63,13 +65,18 @@ const subtitle = computed(() => {
             <div class="w-full">
                 <!-- Premium Header Panel -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
-                    <div class="space-y-1">
-                        <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
-                            {{ title }}
-                        </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-                            {{ subtitle }}
-                        </p>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                            <Wrench class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-0.5">
+                            <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
+                                {{ title }}
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
+                                {{ subtitle }}
+                            </p>
+                        </div>
                     </div>
                 </div>
                 

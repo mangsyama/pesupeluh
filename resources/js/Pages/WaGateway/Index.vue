@@ -4,8 +4,9 @@ import { Head, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '@/Components/Modal.vue';
 import { 
-    MessageSquare, 
+    MessageSquareCode, 
     QrCode, 
+
     CheckCircle2, 
     AlertCircle, 
     AlertTriangle,
@@ -127,13 +128,18 @@ onUnmounted(() => {
             <div class="w-full">
                 <!-- Header Panel (ALWAYS VISIBLE) -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
-                    <div class="space-y-1">
-                        <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
-                            WhatsApp Gateway
-                        </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                            Status koneksi & manajemen perangkat perpesanan WhatsApp otomatis
-                        </p>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                            <MessageSquareCode class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-0.5">
+                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                                WhatsApp Gateway
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-2xl leading-relaxed">
+                                Status koneksi & manajemen perangkat perpesanan WhatsApp otomatis
+                            </p>
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-3">
@@ -169,13 +175,21 @@ onUnmounted(() => {
                                         'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase border',
                                         gatewayStatus === 'connected' 
                                             ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
-                                            : gatewayStatus === 'connecting'
+                                            : (gatewayStatus === 'connecting' || gatewayStatus === 'disconnected')
                                                 ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200 dark:border-amber-800'
                                                 : 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200 dark:border-rose-800'
                                     ]"
                                 >
-                                    <span class="h-2 w-2 rounded-full" :class="gatewayStatus === 'connected' ? 'bg-emerald-500' : gatewayStatus === 'connecting' ? 'bg-amber-500 animate-ping' : 'bg-rose-500'"></span>
-                                    {{ gatewayStatus === 'connected' ? 'Terhubung' : gatewayStatus === 'connecting' ? 'Menunggu Scan' : 'Terputus' }}
+                                    <span class="h-2 w-2 rounded-full" :class="gatewayStatus === 'connected' ? 'bg-emerald-500' : (gatewayStatus === 'connecting' || gatewayStatus === 'disconnected') ? 'bg-amber-500 animate-ping' : 'bg-rose-500'"></span>
+                                    {{ 
+                                        gatewayStatus === 'connected' 
+                                            ? 'Terhubung' 
+                                            : gatewayStatus === 'connecting'
+                                                ? (qrCode ? 'Menunggu Scan' : 'Menghubungkan')
+                                                : gatewayStatus === 'disconnected'
+                                                    ? 'Menyiapkan'
+                                                    : 'Offline' 
+                                    }}
                                 </span>
                             </div>
 
@@ -208,7 +222,20 @@ onUnmounted(() => {
                                 </div>
                             </div>
 
-                            <!-- CASE 2: CONNECTING / SCAN QR STATE -->
+                            <!-- CASE 2: CONNECTING STATE (WITHOUT ACTIVE QR) -->
+                            <div v-else-if="gatewayStatus === 'connecting' && !qrCode" class="flex flex-col items-center justify-center p-8 rounded-2xl bg-amber-50/20 dark:bg-amber-950/10 border border-amber-200/30 dark:border-amber-900/20 text-center space-y-4">
+                                <div class="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+                                    <RefreshCw class="h-6 w-6 animate-spin" />
+                                </div>
+                                <div class="space-y-1">
+                                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Menghubungkan ke WhatsApp...</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                                        Sedang memproses sambungan dan menyiapkan socket WhatsApp. Proses ini memerlukan waktu beberapa saat.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- CASE 3: SCAN QR STATE -->
                             <div v-else-if="qrCode" class="flex flex-col items-center justify-center p-6 rounded-2xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/30 text-center space-y-4">
                                 <div class="space-y-1">
                                     <h3 class="text-sm font-bold text-amber-900 dark:text-amber-300 flex items-center justify-center gap-1.5">
@@ -227,22 +254,40 @@ onUnmounted(() => {
                                 </div>
                             </div>
 
-                            <!-- CASE 3: SERVER OFFLINE / DISCONNECTED STATE -->
-                            <div v-else class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center space-y-3">
-                                <div class="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mx-auto">
+                            <!-- CASE 4: SERVER OFFLINE STATE -->
+                            <div v-else-if="gatewayStatus === 'offline'" class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+                                <div class="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
                                     <AlertCircle class="h-5 w-5" />
                                 </div>
                                 <div>
                                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Server WA Gateway Offline</h3>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
-                                        {{ statusMessage || 'Server WA Gateway lokal di port 3000 belum berjalan. Jalankan command `npm start` di folder `wa-gateway`.' }}
+                                        <template v-if="driver === 'local'">
+                                            Server WA Gateway lokal di port 3000 belum berjalan. Jalankan command <code>npm start</code> di folder <code>wa-gateway</code>.
+                                        </template>
+                                        <template v-else>
+                                            Layanan WhatsApp Gateway saat ini tidak dapat dihubungi. Silakan hubungi tim administrator sistem untuk bantuan lebih lanjut.
+                                        </template>
                                     </p>
                                 </div>
 
-                                <div class="pt-2">
+                                <div v-if="driver === 'local'" class="pt-2">
                                     <code class="text-xs bg-slate-900 text-emerald-400 px-3 py-1.5 rounded-lg font-mono inline-block">
                                         cd wa-gateway && npm start
                                     </code>
+                                </div>
+                            </div>
+
+                            <!-- CASE 5: DISCONNECTED (INITIALIZING / WAITING FOR QR) -->
+                            <div v-else class="flex flex-col items-center justify-center p-8 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center space-y-4">
+                                <div class="h-12 w-12 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center mx-auto">
+                                    <RefreshCw class="h-6 w-6 animate-spin text-slate-400 dark:text-slate-500" />
+                                </div>
+                                <div class="space-y-1">
+                                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Memulai WhatsApp Gateway...</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                                        Menyiapkan instansi WhatsApp Gateway dan menunggu kode QR dari server...
+                                    </p>
                                 </div>
                             </div>
                         </div>

@@ -13,7 +13,8 @@ import {
     Pill,
     Scan,
     Microscope,
-    Sparkles
+    Sparkles,
+    Activity
 } from '@lucide/vue';
 import { ref, watch, getCurrentInstance, onMounted, onUnmounted, computed } from 'vue';
 
@@ -125,13 +126,18 @@ const getUnitIcon = (name, divisionName) => {
                 
                 <!-- Premium Header Panel -->
                 <div v-if="activeSection === null" class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
-                    <div class="space-y-1">
-                        <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
-                            {{ __('pages.services.title') }}
-                        </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-                            {{ __('Pilih divisi layanan penunjang untuk melaporkan kendala teknis atau kebutuhan operasional.') }}
-                        </p>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                            <Activity class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-0.5">
+                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                                {{ __('pages.services.title') }}
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
+                                {{ __('Pilih divisi layanan penunjang untuk melaporkan kendala teknis atau kebutuhan operasional.') }}
+                            </p>
+                        </div>
                     </div>
                 </div>
 

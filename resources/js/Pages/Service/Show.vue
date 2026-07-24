@@ -114,7 +114,7 @@ const selectFeature = (id) => {
                         <div class="flex items-center gap-3">
                             <div 
                                 :class="[
-                                    'h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0',
+                                    'hidden sm:flex h-12 w-12 rounded-xl items-center justify-center flex-shrink-0',
                                     'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
                                 ]"
                             >

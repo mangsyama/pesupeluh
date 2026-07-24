@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Plus, Search } from '@lucide/vue';
+import { Plus, Search, MapPin } from '@lucide/vue';
 import RoomList from './Partials/RoomList.vue';
 
 const props = defineProps({
@@ -28,13 +28,18 @@ const triggerAddRoom = () => {
             <div class="w-full">
                 <!-- Premium Header Panel (Title, Description, Search & Add Buttons) -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
-                    <div class="space-y-1">
-                        <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
-                            {{ __('pages.service_management.rooms.title') }}
-                        </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-                            {{ __('pages.service_management.rooms.description') }}
-                        </p>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                            <MapPin class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-0.5">
+                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                                {{ __('pages.service_management.rooms.title') }}
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
+                                {{ __('pages.service_management.rooms.description') }}
+                            </p>
+                        </div>
                     </div>
                     
                     <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-shrink-0">

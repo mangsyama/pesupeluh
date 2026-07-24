@@ -11,7 +11,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class TicketsExport implements FromCollection, WithHeadings, WithMapping, WithStyles
 {
-    public function __construct(public mixed $user = null)
+    public function __construct(public mixed $user = null, public array $filters = [])
     {
     }
 
@@ -38,6 +38,49 @@ class TicketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
             } elseif ($roleId === 7 && $this->user->room_id) {
                 $query->where('room_id', $this->user->room_id);
             }
+        }
+
+        // Filter unit penunjang (supporting_unit_id)
+        if (!empty($this->filters['unit_id'])) {
+            $unitId = $this->filters['unit_id'];
+            $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+                $q->where('supporting_unit_id', $unitId);
+            });
+        }
+
+        // Filter kategori kerusakan (category_id)
+        if (!empty($this->filters['category_id'])) {
+            $query->where('category_id', $this->filters['category_id']);
+        }
+
+        // Filter ruangan (room_id)
+        if (!empty($this->filters['room_id'])) {
+            $query->where('room_id', $this->filters['room_id']);
+        }
+
+        // Filter staf/pelapor (reporter_id)
+        if (!empty($this->filters['reporter_id'])) {
+            $query->where('reporter_id', $this->filters['reporter_id']);
+        }
+
+        // Filter range tanggal
+        $startDate = $this->filters['start_date'] ?? null;
+        $endDate = $this->filters['end_date'] ?? null;
+
+        if (!$startDate && !$endDate) {
+            $startDate = now()->startOfMonth()->format('Y-m-d');
+            $endDate = now()->format('Y-m-d');
+        }
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [
+                \Carbon\Carbon::parse($startDate)->startOfDay(),
+                \Carbon\Carbon::parse($endDate)->endOfDay()
+            ]);
+        } elseif ($startDate) {
+            $query->where('created_at', '>=', \Carbon\Carbon::parse($startDate)->startOfDay());
+        } elseif ($endDate) {
+            $query->where('created_at', '<=', \Carbon\Carbon::parse($endDate)->endOfDay());
         }
 
         return $query->orderByDesc('created_at')->get();

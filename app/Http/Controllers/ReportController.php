@@ -20,29 +20,43 @@ class ReportController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $roleId = (int) ($user->role_id ?? 8);
-        $userId = (int) $user->id;
 
-        $now = now();
-        $startOfMonth = $now->copy()->startOfMonth();
-        $endOfMonth = $now->copy()->endOfMonth();
+        // Default filters untuk form di frontend
+        $filters = [
+            'start_date'  => $request->input('start_date', now()->startOfMonth()->format('Y-m-d')),
+            'end_date'    => $request->input('end_date', now()->format('Y-m-d')),
+            'unit_id'     => $request->input('unit_id', ''),
+            'category_id' => $request->input('category_id', ''),
+            'room_id'     => $request->input('room_id', ''),
+            'reporter_id' => $request->input('reporter_id', ''),
+        ];
+
+        // Ambil data master untuk dropdown
+        $supportingUnits = \App\Models\SupportingUnit::with('unitFeatures.featureCategories')->get();
+        $rooms = \App\Models\Room::select(['id', 'name', 'location_floor'])->orderBy('name')->get();
+        $reporters = \App\Models\User::select(['id', 'name', 'room_id'])->orderBy('name')->get();
 
         return Inertia::render('ReportExport/Index', [
-            'stats' => Inertia::defer(function () use ($user, $roleId, $userId, $startOfMonth, $endOfMonth) {
-                $query = ServiceTicket::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                    ->whereNull('deleted_at');
+            'filters'         => $filters,
+            'supportingUnits' => $supportingUnits,
+            'rooms'           => $rooms,
+            'reporters'       => $reporters,
+            'tickets'         => Inertia::defer(function () use ($user, $request) {
+                $query = ServiceTicket::with([
+                    'reporter:id,name',
+                    'room:id,name',
+                    'category:id,name,feature_id',
+                    'category.unitFeature.supportingUnit:id,name',
+                ])
+                ->whereNull('deleted_at');
 
-                // Scoping data berdasarkan peran
-                if ($roleId === 8 || ($user->role && $user->role->name === 'REPORTER')) {
-                    $query->where('reporter_id', $userId);
-                } elseif (in_array($roleId, [5, 6]) && $user->supporting_unit_id) {
-                    $unitId = $user->supporting_unit_id;
-                    $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
-                        $q->where('supporting_unit_id', $unitId);
-                    });
-                } elseif ($roleId === 7 && $user->room_id) {
-                    $query->where('room_id', $user->room_id);
-                }
+                $this->applyFilters($query, $request, $user);
+
+                return $query->orderByDesc('created_at')->paginate(10)->withQueryString();
+            }),
+            'stats'           => Inertia::defer(function () use ($user, $request) {
+                $query = ServiceTicket::whereNull('deleted_at');
+                $this->applyFilters($query, $request, $user, true);
 
                 return [
                     'total_month' => (clone $query)->count(),
@@ -172,15 +186,80 @@ class ReportController extends Controller
     public function exportPdf(Request $request)
     {
         $user = $request->user();
-        $roleId = (int) ($user->role_id ?? 8);
-        $userId = (int) $user->id;
-
+        
         $query = ServiceTicket::with([
             'reporter:id,name',
             'room:id,name',
-            'category:id,name',
+            'category:id,name,feature_id',
+            'category.unitFeature:id,supporting_unit_id,name',
+            'category.unitFeature.supportingUnit:id,name',
+            'assignments.technician:id,name',
+            'attachments',
         ])
         ->whereNull('deleted_at');
+
+        $this->applyFilters($query, $request, $user);
+
+        $tickets = $query->orderByDesc('created_at')->get();
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        if (!$startDate && !$endDate) {
+            $startDate = now()->startOfMonth()->format('Y-m-d');
+            $endDate = now()->format('Y-m-d');
+        }
+
+        $unitName = null;
+        if ($request->filled('unit_id')) {
+            $unitName = \App\Models\SupportingUnit::find($request->input('unit_id'))?->name;
+        }
+        $categoryName = null;
+        if ($request->filled('category_id')) {
+            $categoryName = \App\Models\FeatureCategory::find($request->input('category_id'))?->name;
+        }
+        $roomName = null;
+        if ($request->filled('room_id')) {
+            $roomName = \App\Models\Room::find($request->input('room_id'))?->name;
+        }
+        $reporterName = null;
+        if ($request->filled('reporter_id')) {
+            $reporterName = \App\Models\User::find($request->input('reporter_id'))?->name;
+        }
+
+        $pdf = Pdf::loadView('exports.tickets_pdf', [
+            'tickets'      => $tickets,
+            'exportedAt'   => now()->format('d F Y H:i'),
+            'startDate'    => $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') : null,
+            'endDate'      => $endDate ? \Carbon\Carbon::parse($endDate)->format('d/m/Y') : null,
+            'unitName'     => $unitName,
+            'categoryName' => $categoryName,
+            'roomName'     => $roomName,
+            'reporterName' => $reporterName,
+            'logoPath'     => public_path('images/logo-sidebar.png'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('laporan_tiket_' . now()->format('Ymd_His') . '.pdf');
+    }
+
+    /**
+     * Export CSV – data terfilter sesuai otorisasi peran user.
+     */
+    public function exportCsv(Request $request)
+    {
+        return Excel::download(
+            new TicketsExport($request->user(), $request->all()),
+            'laporan_tiket_' . now()->format('Ymd_His') . '.csv',
+            \Maatwebsite\Excel\Excel::CSV
+        );
+    }
+
+    /**
+     * Helper privat untuk menerapkan filter pencarian dan otorisasi.
+     */
+    private function applyFilters($query, Request $request, $user, $ignoreStatus = false)
+    {
+        $roleId = (int) ($user->role_id ?? 8);
+        $userId = (int) $user->id;
 
         // Scoping data berdasarkan peran
         if ($roleId === 8 || ($user->role && $user->role->name === 'REPORTER')) {
@@ -194,25 +273,49 @@ class ReportController extends Controller
             $query->where('room_id', $user->room_id);
         }
 
-        $tickets = $query->orderByDesc('created_at')->get();
+        // Filter unit penunjang (supporting_unit_id)
+        if ($request->filled('unit_id')) {
+            $unitId = $request->input('unit_id');
+            $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+                $q->where('supporting_unit_id', $unitId);
+            });
+        }
 
-        $pdf = Pdf::loadView('exports.tickets_pdf', [
-            'tickets'    => $tickets,
-            'exportedAt' => now()->format('d F Y H:i'),
-        ]);
+        // Filter kategori kerusakan (category_id)
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->input('category_id'));
+        }
 
-        return $pdf->download('laporan_tiket_' . now()->format('Ymd_His') . '.pdf');
-    }
+        // Filter ruangan (room_id)
+        if ($request->filled('room_id')) {
+            $query->where('room_id', $request->input('room_id'));
+        }
 
-    /**
-     * Export CSV – data terfilter sesuai otorisasi peran user.
-     */
-    public function exportCsv(Request $request)
-    {
-        return Excel::download(
-            new TicketsExport($request->user()),
-            'laporan_tiket_' . now()->format('Ymd_His') . '.csv',
-            \Maatwebsite\Excel\Excel::CSV
-        );
+        // Filter staf/pelapor (reporter_id)
+        if ($request->filled('reporter_id')) {
+            $query->where('reporter_id', $request->input('reporter_id'));
+        }
+
+        // Filter range tanggal
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if (!$startDate && !$endDate) {
+            $startDate = now()->startOfMonth()->format('Y-m-d');
+            $endDate = now()->format('Y-m-d');
+        }
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [
+                \Carbon\Carbon::parse($startDate)->startOfDay(),
+                \Carbon\Carbon::parse($endDate)->endOfDay()
+            ]);
+        } elseif ($startDate) {
+            $query->where('created_at', '>=', \Carbon\Carbon::parse($startDate)->startOfDay());
+        } elseif ($endDate) {
+            $query->where('created_at', '<=', \Carbon\Carbon::parse($endDate)->endOfDay());
+        }
+
+        return $query;
     }
 }
