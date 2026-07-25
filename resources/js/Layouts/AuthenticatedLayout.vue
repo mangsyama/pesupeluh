@@ -265,7 +265,12 @@ const menuGroups = computed(() => {
                         { label: 'menu.damage_categories', routeName: 'service-management.categories', icon: Layers, permKey: 'service-management.categories' },
                         { label: 'menu.supporting_units', routeName: 'service-management.supporting-units', icon: Activity, permKey: 'service-management.supporting-units' }
                     ]
-                },
+                }
+            ]
+        },
+        {
+            title: 'System / Integrasi',
+            items: [
                 { label: 'WhatsApp Gateway', routeName: 'admin.wa-gateway.index', icon: MessageSquareCode, permKey: 'admin.wa-gateway.index' }
             ]
         }
@@ -612,6 +617,7 @@ const getGroupInitials = (title) => {
     if (title === 'Menu Utama') return 'MU';
     if (title === 'Layanan & Laporan') return 'LL';
     if (title === 'Master Data') return 'MD';
+    if (title === 'System / Integrasi') return 'SI';
     if (title === 'Sistem') return 'S';
     return title.substring(0, 2).toUpperCase();
 };

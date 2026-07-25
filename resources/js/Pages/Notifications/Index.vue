@@ -60,11 +60,13 @@ const goToPage = (url) => {
     <AuthenticatedLayout>
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
             <div class="w-full space-y-4">
-                <!-- Notifications Main Card Section -->
-                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <!-- Title Header mimicking Service Index Header panel -->
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-5 mb-5">
-                        <div class="space-y-1">
+                <!-- Header Panel (User Management Style) -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                            <Bell class="h-6 w-6" />
+                        </div>
+                        <div class="space-y-0.5">
                             <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight flex items-center gap-2">
                                 Semua Notifikasi
                                 <span 
@@ -74,25 +76,28 @@ const goToPage = (url) => {
                                     {{ unreadCount }} Baru
                                 </span>
                             </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-450 mt-1 max-w-xl leading-relaxed">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
                                 Kelola dan lihat semua riwayat aktivitas, pendaftaran, dan laporan Anda.
                             </p>
                         </div>
-                        
-                        <button
-                            v-if="unreadCount > 0"
-                            @click="markAllAsRead"
-                            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-250 dark:border-emerald-800 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 dark:text-emerald-400 text-xs font-bold transition duration-150 w-fit self-start sm:self-center"
-                        >
-                            <Check class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-455" />
-                            Tandai Semua Dibaca
-                        </button>
-                        <div v-else class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 py-2 self-start sm:self-center">
-                            <CheckCheck class="h-4 w-4 text-emerald-500" />
-                            Semua notifikasi telah dibaca
-                        </div>
                     </div>
+                    
+                    <button
+                        v-if="unreadCount > 0"
+                        @click="markAllAsRead"
+                        class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-emerald-250 dark:border-emerald-800 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30 dark:text-emerald-400 text-xs font-bold transition duration-150 w-full sm:w-auto self-start sm:self-center"
+                    >
+                        <Check class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        Tandai Semua Dibaca
+                    </button>
+                    <div v-else class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 py-2 self-start sm:self-center">
+                        <CheckCheck class="h-4 w-4 text-emerald-500" />
+                        Semua notifikasi telah dibaca
+                    </div>
+                </div>
 
+                <!-- Notifications Main Card Section -->
+                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <!-- List body -->
                     <div class="divide-y divide-slate-100 dark:divide-slate-800/60">
                         <div v-if="notificationsList.length === 0" class="py-16 text-center">
@@ -120,10 +125,10 @@ const goToPage = (url) => {
                             <div :class="[
                                 'h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5',
                                 notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
-                                notif.type === 'ticket' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500' :
+                                notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
                                 notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
                                 notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                'bg-slate-50 dark:bg-slate-800 text-slate-500'
+                                'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
                             ]">
                                 <Bell v-if="notif.type === 'ticket'" class="h-5 w-5" />
                                 <Clock v-else-if="notif.type === 'progress'" class="h-5 w-5" />

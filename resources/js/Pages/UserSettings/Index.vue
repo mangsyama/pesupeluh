@@ -4,8 +4,11 @@ import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
 import { User, Bell, Globe, Palette, LayoutDashboard, Play, Type, FileText, Database, Layers } from '@lucide/vue';
 
+const page = usePage();
+const user = computed(() => page.props.auth?.user);
 const permissions = computed(() => page.props.auth?.page_permissions || []);
 const hasAccess = (permKey) => permissions.value.includes(permKey);
+const isAdmin = computed(() => [1, 2].includes(Number(user.value?.role_id)));
 
 const designPages = [
     { label: 'menu.ds_overview', routeName: 'design-system.index', icon: LayoutDashboard, description: 'Ringkasan panduan warna, tema dark mode, & tipografi.' },
@@ -16,7 +19,6 @@ const designPages = [
     { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers, description: 'Koleksi layout kartu data statistik & visualisasi grid.' },
 ];
 
-const page = usePage();
 const notificationEnabled = ref(true);
 const defaultLang = ref(page.props.locale || 'id');
 const isDark = ref(false);
@@ -52,9 +54,11 @@ const switchLang = (event) => {
             <div class="w-full space-y-4">
                 <!-- Section 1: Profil Pengguna -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2 mb-4">
-                        <User class="h-4 w-4 text-indigo-500" />
-                        {{ __('pages.settings.profile_section') }}
+                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2.5 mb-4">
+                        <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0">
+                            <User class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span>{{ __('pages.settings.profile_section') }}</span>
                     </h3>
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1">
                         <div class="min-w-0 flex-1">
@@ -64,7 +68,7 @@ const switchLang = (event) => {
                         <Link 
                             :href="route('profile.edit')"
                             prefetch
-                            class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold text-xs rounded-xl transition duration-150 flex-shrink-0 whitespace-nowrap self-start sm:self-center"
+                            class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-semibold text-xs rounded-xl transition duration-150 flex-shrink-0 whitespace-nowrap self-start sm:self-center"
                         >
                             {{ __('pages.settings.edit_profile') }}
                         </Link>
@@ -73,9 +77,11 @@ const switchLang = (event) => {
 
                 <!-- Section 2: Tampilan & Bahasa -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2 mb-4">
-                        <Globe class="h-4 w-4 text-indigo-500" />
-                        {{ __('pages.settings.appearance_lang') }}
+                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2.5 mb-4">
+                        <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0">
+                            <Globe class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span>{{ __('pages.settings.appearance_lang') }}</span>
                     </h3>
                     <div class="space-y-5">
                         <!-- Toggle Theme -->
@@ -88,7 +94,7 @@ const switchLang = (event) => {
                                 @click="toggleTheme"
                                 type="button"
                                 class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                                :class="isDark ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-800'"
+                                :class="isDark ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-800'"
                             >
                                 <span
                                     class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -106,7 +112,7 @@ const switchLang = (event) => {
                             <select 
                                 v-model="defaultLang"
                                 @change="switchLang"
-                                class="w-full sm:max-w-[180px] px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150"
+                                class="w-full sm:max-w-[180px] px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
                             >
                                 <option value="id">Bahasa Indonesia</option>
                                 <option value="en">English</option>
@@ -117,9 +123,11 @@ const switchLang = (event) => {
 
                 <!-- Section 3: Notifications -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2 mb-4">
-                        <Bell class="h-4 w-4 text-indigo-500" />
-                        {{ __('pages.settings.notifications') }}
+                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2.5 mb-4">
+                        <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0">
+                            <Bell class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span>{{ __('pages.settings.notifications') }}</span>
                     </h3>
                     <div class="space-y-4">
                         <div class="flex items-center justify-between gap-4">
@@ -131,7 +139,7 @@ const switchLang = (event) => {
                                 @click="notificationEnabled = !notificationEnabled"
                                 type="button"
                                 class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                                :class="notificationEnabled ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-800'"
+                                :class="notificationEnabled ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-800'"
                             >
                                 <span
                                     class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
@@ -142,11 +150,13 @@ const switchLang = (event) => {
                     </div>
                 </div>
 
-                <!-- Section 4: Sistem Desain (Hanya jika memiliki akses) -->
-                <div v-if="hasAccess('design-system.index')" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2 mb-4">
-                        <Palette class="h-4.5 w-4.5 text-indigo-500" />
-                        {{ __('Sistem Desain & Komponen') }}
+                <!-- Section 4: Sistem Desain (Hanya jika Administrator) -->
+                <div v-if="isAdmin && hasAccess('design-system.index')" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2.5 mb-4">
+                        <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0">
+                            <Palette class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span>{{ __('Sistem Desain & Komponen') }}</span>
                     </h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 max-w-xl leading-relaxed">
                         Akses ke galeri komponen UI, tata letak desain, panduan warna, dan elemen antarmuka yang digunakan dalam aplikasi.
@@ -156,14 +166,14 @@ const switchLang = (event) => {
                             v-for="item in designPages" 
                             :key="item.routeName"
                             :href="route(item.routeName)"
-                            class="group flex flex-col justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-indigo-150 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition duration-150"
+                            class="group flex flex-col justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-emerald-150 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition duration-150"
                         >
                             <div>
                                 <div class="flex items-center gap-2.5">
-                                    <div class="h-8 w-8 rounded-lg flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400">
+                                    <div class="h-8 w-8 rounded-lg flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
                                         <component :is="item.icon" class="h-4 w-4" />
                                     </div>
-                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition">{{ __(item.label) }}</span>
+                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">{{ __(item.label) }}</span>
                                 </div>
                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">{{ item.description }}</p>
                             </div>

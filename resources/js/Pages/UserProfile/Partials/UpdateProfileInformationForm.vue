@@ -41,7 +41,7 @@ const handlePhotoChange = async (e) => {
                 title: 'File tidak didukung',
                 text: 'Harap hanya mengunggah file gambar (JPEG, PNG, JPG, WEBP).',
                 icon: 'warning',
-                confirmButtonColor: '#4f46e5',
+                confirmButtonColor: '#059669',
             });
             e.target.value = ''; // clear input
             return;
@@ -87,11 +87,14 @@ const submit = () => {
 <template>
     <section>
         <header>
-            <h2 class="text-md font-bold text-slate-950 dark:text-white">
-                {{ __('pages.profile.info_title') }}
+            <h2 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2.5">
+                <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0">
+                    <User class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span>{{ __('pages.profile.info_title') }}</span>
             </h2>
 
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 {{ __('pages.profile.info_desc') }}
             </p>
         </header>

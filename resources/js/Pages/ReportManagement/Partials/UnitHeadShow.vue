@@ -18,7 +18,8 @@ import {
     Send,
     Sparkles,
     ChevronDown,
-    Pause
+    Pause,
+    Check
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
@@ -103,21 +104,19 @@ const resolutionTimeSeconds = computed(() => {
 });
 
 const formatDuration = (seconds) => {
-    if (seconds === null || seconds === undefined || seconds < 0) return '-';
-    if (seconds === 0) return '0s';
+    if (seconds === null || seconds === undefined || seconds < 0) return '00:00:00';
     
     const d = Math.floor(seconds / 86400);
     const h = Math.floor((seconds % 86400) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
 
-    const parts = [];
-    if (d > 0) parts.push(`${d}d`);
-    if (h > 0) parts.push(`${h}h`);
-    if (m > 0) parts.push(`${m}m`);
-    if (s > 0 || parts.length === 0) parts.push(`${s}s`);
+    const pad = (n) => String(n).padStart(2, '0');
 
-    return parts.join(' ');
+    if (d > 0) {
+        return `${d}d ${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
 };
 
 const formatDateTime = (dateStr) => {
@@ -145,6 +144,48 @@ const submitAssign = () => {
             assignForm.reset();
         }
     });
+};
+
+// Searchable technician dropdown
+const isTechDropdownOpen = ref(false);
+const techSearchQuery = ref('');
+const techDropdownRef = ref(null);
+
+const handleClickOutsideTechDropdown = (event) => {
+    if (isTechDropdownOpen.value && techDropdownRef.value && !techDropdownRef.value.contains(event.target)) {
+        isTechDropdownOpen.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutsideTechDropdown);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutsideTechDropdown);
+});
+
+const filteredTechnicians = computed(() => {
+    const q = techSearchQuery.value.trim().toLowerCase();
+    if (!q) return props.technicians;
+    return props.technicians.filter(t =>
+        (t.name && t.name.toLowerCase().includes(q)) ||
+        (t.nip && t.nip.toLowerCase().includes(q))
+    );
+});
+
+const toggleTechDropdown = (e) => {
+    e?.stopPropagation();
+    isTechDropdownOpen.value = !isTechDropdownOpen.value;
+    techSearchQuery.value = '';
+};
+
+const selectTechnician = (id) => {
+    if (!assignForm.technician_ids.includes(id)) {
+        assignForm.technician_ids.push(id);
+    } else {
+        assignForm.technician_ids = assignForm.technician_ids.filter(techId => techId !== id);
+    }
 };
 
 const addTechnician = (event) => {
@@ -230,24 +271,13 @@ const contextLabel = computed(() => {
             <!-- Ticket Profile Header Card -->
             <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
-                    <div class="h-12 w-12 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+                    <div class="h-12 w-12 rounded-xl flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
                         <Wrench class="h-6 w-6" />
                     </div>
                     <div>
-                        <div class="flex flex-wrap items-center gap-2">
                             <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
                                 #{{ ticket.ticket_number }}
                             </h2>
-                                    <span :class="['px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border', getStatus(ticket.status).badge]">
-                                        {{ getStatus(ticket.status).label }}
-                                    </span>
-                                    <span v-if="ticket.priority" :class="['px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase border', getPriority(ticket.priority).badge]">
-                                        {{ getPriority(ticket.priority).label }}
-                                    </span>
-                                    <span v-if="contextLabel" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide uppercase border bg-slate-100/80 text-slate-700 dark:bg-slate-955/40 dark:text-slate-300 dark:border-slate-800">
-                                        {{ contextLabel }}
-                                    </span>
-                                </div>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
                                     {{ ticket.category?.unit_feature?.supporting_unit?.name }} &bull; {{ ticket.category?.unit_feature?.supporting_unit?.division?.name }}
                                 </p>
@@ -270,47 +300,73 @@ const contextLabel = computed(() => {
                                     <div class="h-0.5 bg-slate-50 dark:bg-slate-850 mt-2"></div>
                                 </div>
 
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div class="space-y-1">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
-                                            {{ __('pages.tickets.detail.reporter') }}
-                                        </span>
-                                        <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
-                                            <User class="h-4 w-4 text-slate-400 flex-shrink-0" />
-                                            <span class="text-xs font-semibold">{{ ticket.reporter?.name }}</span>
-                                            <span v-if="ticket.reporter?.nip" class="text-[10px] text-slate-400 dark:text-slate-505">({{ ticket.reporter.nip }})</span>
+                                <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                                        <div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                {{ __('pages.tickets.detail.reporter') }}
+                                            </div>
+                                            <div class="text-sm font-bold text-slate-800 dark:text-white uppercase leading-tight">
+                                                {{ ticket.reporter?.name || '-' }}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="space-y-1">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
-                                            {{ __('pages.tickets.detail.room_location') }}
-                                        </span>
-                                        <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
-                                            <MapPin class="h-4 w-4 text-slate-400 flex-shrink-0" />
-                                            <span class="text-xs font-semibold">{{ ticket.room?.name }}</span>
-                                            <span v-if="ticket.room?.location_floor" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">({{ ticket.room.location_floor }})</span>
+                                        <div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                Nomor HP Pelapor
+                                            </div>
+                                            <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
+                                                {{ ticket.reporter?.phone_number || '-' }}
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="space-y-1">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
-                                            {{ __('pages.tickets.detail.category_unit') }}
-                                        </span>
-                                        <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
-                                            <Activity class="h-4 w-4 text-slate-400 flex-shrink-0" />
-                                            <span class="text-xs font-semibold">{{ ticket.category?.name }}</span>
-                                            <span class="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold uppercase">[{{ ticket.category?.unit_feature?.name }}]</span>
+                                        <div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                {{ __('pages.tickets.detail.room_location') }}
+                                            </div>
+                                            <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
+                                                {{ ticket.room?.name || '-' }} <span v-if="ticket.room?.location_floor" class="text-xs text-slate-400 dark:text-slate-500 font-normal">({{ ticket.room.location_floor }})</span>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="space-y-1">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
-                                            {{ __('pages.tickets.detail.reported_at_label') }}
-                                        </span>
-                                        <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                                            <Calendar class="h-4 w-4 text-slate-400" />
-                                            <span class="text-xs font-semibold">{{ formatDateTime(ticket.created_at) }}</span>
+                                        <div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                Kategori Kerusakan
+                                            </div>
+                                            <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
+                                                {{ ticket.category?.name || '-' }}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                Status Tiket
+                                            </div>
+                                            <div class="mt-0.5">
+                                                <span :class="['px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase border', getStatus(ticket.status).badge]">
+                                                    {{ getStatus(ticket.status).label }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div v-if="ticket.priority">
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                Prioritas Tiket
+                                            </div>
+                                            <div class="mt-0.5">
+                                                <span :class="['px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase border', getPriority(ticket.priority).badge]">
+                                                    {{ getPriority(ticket.priority).label }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                {{ __('pages.tickets.detail.reported_at_label') }}
+                                            </div>
+                                            <div class="text-sm font-medium text-slate-700 dark:text-slate-300 leading-tight">
+                                                {{ formatDateTime(ticket.created_at) }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -319,23 +375,22 @@ const contextLabel = computed(() => {
                                     <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
                                         {{ __('pages.tickets.detail.problem_desc') }}
                                     </span>
-                                    <div class="bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl p-4 text-slate-700 dark:text-slate-300 text-xs leading-relaxed whitespace-pre-line">
+                                    <div class="bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-850 rounded-xl p-4 text-slate-800 dark:text-slate-200 text-sm font-medium leading-relaxed whitespace-pre-line">
                                         {{ ticket.problem_description }}
                                     </div>
                                 </div>
 
                                 <!-- Reporter Attachments Media Grid -->
                                 <div class="space-y-3">
-                                    <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider flex items-center gap-1.5">
-                                        <ImageIcon class="h-3.5 w-3.5" />
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-505 tracking-wider">
                                         {{ __('pages.tickets.detail.attachments') }}
                                     </span>
                                     
-                                    <div v-if="reporterAttachments.length > 0" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <div v-if="reporterAttachments.length > 0" class="flex flex-wrap gap-3">
                                         <div 
                                             v-for="att in reporterAttachments" 
                                             :key="att.id" 
-                                            class="relative rounded-xl overflow-hidden border border-slate-150 dark:border-slate-800 aspect-video bg-slate-50 dark:bg-slate-950/55 group shadow-sm"
+                                            class="relative rounded-xl overflow-hidden border border-slate-150 dark:border-slate-800 h-20 w-20 sm:h-24 sm:w-24 aspect-square bg-slate-50 dark:bg-slate-950/55 group shadow-sm flex-shrink-0"
                                         >
                                             <video 
                                                 v-if="isVideo(att.file_path)" 
@@ -365,7 +420,6 @@ const contextLabel = computed(() => {
                                         <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
                                             <UserCheck class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                             <span class="text-xs font-semibold">{{ ticket.validator?.name }}</span>
-                                            <span class="text-[10px] text-slate-400 dark:text-slate-550">({{ formatDateTime(ticket.validated_at) }})</span>
                                         </div>
                                     </div>
 
@@ -377,7 +431,7 @@ const contextLabel = computed(() => {
                                             <span 
                                                 v-for="assign in ticket.assignments" 
                                                 :key="assign.id" 
-                                                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/30"
+                                                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30"
                                             >
                                                 <Wrench class="h-3 w-3" />
                                                 {{ assign.technician?.name }}
@@ -393,8 +447,7 @@ const contextLabel = computed(() => {
 
                             <!-- Action Panel Card: Unit Head Validation & Assignments -->
                             <div v-if="ticket.status === 'PENDING_VALIDATION'" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 animate-spa-fade-in">
-                                <div class="flex items-center gap-2">
-                                    <Sparkles class="h-5 w-5 text-emerald-500" />
+                                <div>
                                     <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                                         {{ __('pages.tickets.detail.disposition_title') }}
                                     </h3>
@@ -408,29 +461,29 @@ const contextLabel = computed(() => {
                                         </label>
                                         <div class="grid grid-cols-2 gap-3">
                                             <label 
-                                                class="border rounded-xl p-3 flex items-center justify-between cursor-pointer transition select-none"
+                                                class="rounded-xl p-3 flex items-center justify-between cursor-pointer select-none"
                                                 :class="[
                                                     assignForm.priority === 'ROUTINE'
-                                                        ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20 text-emerald-950 dark:text-white font-bold'
-                                                        : 'border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-900'
+                                                        ? 'bg-emerald-600 dark:bg-emerald-600 text-white font-bold shadow-sm'
+                                                        : 'border border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-900'
                                                 ]"
                                             >
                                                 <span class="text-xs">{{ __('pages.tickets.detail.priority_routine') }}</span>
                                                 <input type="radio" value="ROUTINE" v-model="assignForm.priority" class="hidden" />
-                                                <CheckCircle2 v-if="assignForm.priority === 'ROUTINE'" class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                                <CheckCircle2 v-if="assignForm.priority === 'ROUTINE'" class="h-4 w-4 text-white" />
                                             </label>
 
                                             <label 
-                                                class="border rounded-xl p-3 flex items-center justify-between cursor-pointer transition select-none"
+                                                class="rounded-xl p-3 flex items-center justify-between cursor-pointer select-none"
                                                 :class="[
                                                     assignForm.priority === 'URGENT'
-                                                        ? 'border-rose-500 bg-rose-50/20 dark:bg-rose-950/20 text-rose-950 dark:text-white font-bold'
-                                                        : 'border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-900'
+                                                        ? 'bg-rose-600 dark:bg-rose-600 text-white font-bold shadow-sm'
+                                                        : 'border border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-355 hover:bg-slate-50 dark:hover:bg-slate-900'
                                                 ]"
                                             >
                                                 <span class="text-xs">{{ __('pages.tickets.detail.priority_urgent') }}</span>
                                                 <input type="radio" value="URGENT" v-model="assignForm.priority" class="hidden" />
-                                                <CheckCircle2 v-if="assignForm.priority === 'URGENT'" class="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                                                <CheckCircle2 v-if="assignForm.priority === 'URGENT'" class="h-4 w-4 text-white" />
                                             </label>
                                         </div>
                                         <div v-if="assignForm.errors.priority" class="text-[10px] text-red-500 font-semibold">{{ assignForm.errors.priority }}</div>
@@ -441,23 +494,51 @@ const contextLabel = computed(() => {
                                             {{ __('pages.tickets.detail.select_technicians') }}
                                         </label>
                                         <div v-if="technicians.length > 0" class="space-y-3">
-                                            <div class="relative">
-                                                <select
-                                                    @change="addTechnician($event)"
-                                                    class="w-full h-11 pl-4 pr-10 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none appearance-none cursor-pointer"
+                                            <div class="relative" ref="techDropdownRef">
+                                                <button 
+                                                    type="button"
+                                                    @click="toggleTechDropdown"
+                                                    class="w-full h-11 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
                                                 >
-                                                    <option value="" disabled selected>{{ __('pages.tickets.detail.select_technicians') }}...</option>
-                                                    <option 
-                                                        v-for="tech in technicians" 
-                                                        :key="tech.id" 
-                                                        :value="tech.id"
-                                                        :disabled="assignForm.technician_ids.includes(tech.id)"
-                                                    >
-                                                        {{ tech.name }} (NIP: {{ tech.nip }}) {{ tech.supporting_unit ? ' - ' + tech.supporting_unit.name : '' }}
-                                                    </option>
-                                                </select>
-                                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                                    <ChevronDown class="h-4.5 w-4.5 text-slate-400" />
+                                                    <span :class="assignForm.technician_ids.length > 0 ? 'text-slate-800 dark:text-slate-100 font-medium' : 'text-slate-400 dark:text-slate-500'">
+                                                        {{ assignForm.technician_ids.length > 0 ? assignForm.technician_ids.length + ' teknisi dipilih' : __('pages.tickets.detail.select_technicians') + '...' }}
+                                                    </span>
+                                                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0', isTechDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                                                </button>
+
+                                                <div 
+                                                    v-if="isTechDropdownOpen" 
+                                                    class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-2 shadow-sm animate-spa-fade-in"
+                                                >
+                                                    <div class="relative">
+                                                        <Search class="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                        <input 
+                                                            v-model="techSearchQuery"
+                                                            type="text"
+                                                            :placeholder="__('Cari teknisi...')"
+                                                            class="w-full h-8 pl-9 pr-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-0 focus:ring-offset-0"
+                                                            @click.stop
+                                                        />
+                                                    </div>
+                                                    <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                                                        <div v-if="filteredTechnicians.length === 0" class="p-3 text-center text-xs text-slate-400 dark:text-slate-500">
+                                                            {{ __('Teknisi tidak ditemukan') }}
+                                                        </div>
+                                                        <button
+                                                            v-for="tech in filteredTechnicians"
+                                                            :key="tech.id"
+                                                            type="button"
+                                                            @click.stop="selectTechnician(tech.id)"
+                                                            class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
+                                                            :class="assignForm.technician_ids.includes(tech.id) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        >
+                                                            <div>
+                                                                <div class="text-xs font-semibold">{{ tech.name }}</div>
+                                                                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-normal mt-0.5">NIP: {{ tech.nip }}{{ tech.supporting_unit ? ' • ' + tech.supporting_unit.name : '' }}</div>
+                                                            </div>
+                                                            <Check v-if="assignForm.technician_ids.includes(tech.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -509,77 +590,83 @@ const contextLabel = computed(() => {
                                     <div class="h-0.5 bg-slate-50 dark:bg-slate-850 mt-2"></div>
                                 </div>
 
-                                <div class="space-y-3.5 pt-1">
+                                <div class="space-y-3 pt-1">
                                     <!-- Response Time Card -->
-                                    <div class="p-3 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <Clock class="h-4.5 w-4.5 text-indigo-500" />
-                                            <div>
-                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block leading-none">
-                                                    {{ __('pages.tickets.detail.response_time_sla') }}
-                                                </span>
-                                                <span v-if="ticket.responded_at" class="text-[9px] text-slate-450 mt-1 block">
+                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
+                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                            <Clock class="h-5 w-5" />
+                                        </div>
+                                        <div class="flex-1 min-w-0 space-y-0.5">
+                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
+                                                {{ __('pages.tickets.detail.response_time_sla') }}
+                                            </div>
+                                            <div class="text-[10px] font-medium leading-none">
+                                                <span v-if="ticket.responded_at" class="text-slate-500 dark:text-slate-400">
                                                     {{ __('pages.tickets.detail.responded_status_sla') }}
                                                 </span>
-                                                <span v-else-if="ticket.validated_at" class="text-[9px] text-indigo-500 animate-pulse font-bold mt-1 block">
+                                                <span v-else-if="ticket.validated_at" class="text-emerald-600 dark:text-emerald-400 animate-pulse font-bold">
                                                     {{ __('pages.tickets.detail.running_status_sla') }}
                                                 </span>
-                                                <span v-else class="text-[9px] text-slate-455 mt-1 block">
+                                                <span v-else class="text-slate-400 dark:text-slate-500">
                                                     {{ __('pages.tickets.detail.awaiting_validate_sla') }}
                                                 </span>
                                             </div>
+                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
+                                                {{ formatDuration(responseTimeSeconds) }}
+                                            </div>
                                         </div>
-                                        <span class="text-sm font-extrabold text-slate-955 dark:text-white">
-                                            {{ formatDuration(responseTimeSeconds) }}
-                                        </span>
                                     </div>
 
                                     <!-- Paused Duration Card -->
-                                    <div class="p-3 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <Pause class="h-4.5 w-4.5 text-orange-500" />
-                                            <div>
-                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block leading-none">
-                                                    {{ __('pages.tickets.detail.paused_duration') }}
-                                                </span>
-                                                <span v-if="ticket.status === 'PENDING'" class="text-[9px] text-orange-500 animate-pulse font-bold mt-1 block">
+                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
+                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-100 dark:border-orange-900/50 text-orange-600 dark:text-orange-400 shrink-0">
+                                            <Pause class="h-5 w-5" />
+                                        </div>
+                                        <div class="flex-1 min-w-0 space-y-0.5">
+                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
+                                                {{ __('pages.tickets.detail.paused_duration') }}
+                                            </div>
+                                            <div class="text-[10px] font-medium leading-none">
+                                                <span v-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 animate-pulse font-bold">
                                                     {{ __('pages.tickets.detail.active_paused_sla') }}
                                                 </span>
-                                                <span v-else class="text-[9px] text-slate-455 mt-1 block">
+                                                <span v-else class="text-slate-400 dark:text-slate-500">
                                                     {{ __('pages.tickets.detail.total_pauses_sla') }}
                                                 </span>
                                             </div>
+                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
+                                                {{ formatDuration(pausedDurationSeconds) }}
+                                            </div>
                                         </div>
-                                        <span class="text-sm font-extrabold text-slate-955 dark:text-white">
-                                            {{ formatDuration(pausedDurationSeconds) }}
-                                        </span>
                                     </div>
 
                                     <!-- Resolution Time Card -->
-                                    <div class="p-3 border border-slate-100 dark:border-slate-800 rounded-xl flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <CheckCircle2 class="h-4.5 w-4.5 text-emerald-500" />
-                                            <div>
-                                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide block leading-none">
-                                                    {{ __('pages.tickets.detail.resolution_time_sla') }}
-                                                </span>
-                                                <span v-if="ticket.resolved_at" class="text-[9px] text-slate-455 mt-1 block">
+                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
+                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                            <CheckCircle2 class="h-5 w-5" />
+                                        </div>
+                                        <div class="flex-1 min-w-0 space-y-0.5">
+                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
+                                                {{ __('pages.tickets.detail.resolution_time_sla') }}
+                                            </div>
+                                            <div class="text-[10px] font-medium leading-none">
+                                                <span v-if="ticket.resolved_at" class="text-slate-500 dark:text-slate-400">
                                                     {{ __('pages.tickets.detail.resolved_status_sla') }}
                                                 </span>
-                                                <span v-else-if="ticket.status === 'PENDING'" class="text-[9px] text-orange-500 font-bold mt-1 block">
+                                                <span v-else-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 font-bold">
                                                     {{ __('pages.tickets.detail.paused_status_sla') }}
                                                 </span>
-                                                <span v-else-if="ticket.validated_at" class="text-[9px] text-emerald-500 animate-pulse font-bold mt-1 block">
+                                                <span v-else-if="ticket.validated_at" class="text-emerald-600 dark:text-emerald-400 animate-pulse font-bold">
                                                     {{ __('pages.tickets.detail.running_status_sla') }}
                                                 </span>
-                                                <span v-else class="text-[9px] text-slate-455 mt-1 block">
+                                                <span v-else class="text-slate-400 dark:text-slate-500">
                                                     {{ __('pages.tickets.detail.awaiting_dispatch_sla') }}
                                                 </span>
                                             </div>
+                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
+                                                {{ formatDuration(resolutionTimeSeconds) }}
+                                            </div>
                                         </div>
-                                        <span class="text-sm font-extrabold text-slate-955 dark:text-white">
-                                            {{ formatDuration(resolutionTimeSeconds) }}
-                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -593,30 +680,29 @@ const contextLabel = computed(() => {
                                     <div class="h-0.5 bg-slate-50 dark:bg-slate-850 mt-2"></div>
                                 </div>
 
-                                <div class="flow-root pt-2">
-                                    <ul class="-mb-8">
+                                <div class="flow-root pt-1">
+                                    <ul>
                                         
                                         <!-- Node 1: Created -->
                                         <li>
-                                            <div class="relative pb-8">
-                                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-indigo-500 dark:bg-indigo-950" aria-hidden="true"></span>
+                                            <div class="relative pb-6">
+                                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-emerald-500 dark:bg-emerald-950" aria-hidden="true"></span>
                                                 <div class="relative flex space-x-3">
                                                     <div>
-                                                        <span class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center ring-8 ring-white dark:ring-slate-900">
+                                                        <span class="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center ring-8 ring-white dark:ring-slate-900">
                                                             <FileText class="h-4 w-4 text-white" />
                                                         </span>
                                                     </div>
-                                                    <div class="flex-1 min-w-0 pt-1.5 flex justify-between gap-2">
-                                                        <div>
-                                                            <p class="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                                                {{ __('pages.tickets.detail.created_status') }}
-                                                            </p>
-                                                            <p class="text-[10px] text-slate-405 dark:text-slate-505 mt-0.5 leading-relaxed">
-                                                                {{ __('pages.tickets.detail.by_label') }}: <span class="font-semibold text-slate-700 dark:text-slate-350">{{ ticket.reporter?.name }}</span>
-                                                            </p>
-                                                        </div>
-                                                        <div class="text-right text-[9px] whitespace-nowrap text-slate-400 mt-0.5">
-                                                            {{ formatDateTime(ticket.created_at) }}
+                                                    <div class="flex-1 min-w-0 pt-0.5 space-y-1">
+                                                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                                            {{ __('pages.tickets.detail.created_status') }}
+                                                        </p>
+                                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                            {{ __('pages.tickets.detail.by_label') }}: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ ticket.reporter?.name }}</span>
+                                                        </p>
+                                                        <div class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                                            <Clock class="h-3 w-3 shrink-0" />
+                                                            <span>{{ formatDateTime(ticket.created_at) }}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -625,35 +711,34 @@ const contextLabel = computed(() => {
 
                                         <!-- Node 2: Dispatched -->
                                         <li>
-                                            <div class="relative pb-8">
-                                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-indigo-500 dark:bg-indigo-950" aria-hidden="true"></span>
+                                            <div class="relative pb-6">
+                                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-emerald-500 dark:bg-emerald-950" aria-hidden="true"></span>
                                                 <div class="relative flex space-x-3">
                                                     <div>
                                                         <span :class="[
                                                             'h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white dark:ring-slate-900',
-                                                            ticket.validated_at ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'
+                                                            ticket.validated_at ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-800'
                                                         ]">
                                                             <UserCheck class="h-4 w-4" :class="ticket.validated_at ? 'text-white' : 'text-slate-400 dark:text-slate-505'" />
                                                         </span>
                                                     </div>
-                                                    <div class="flex-1 min-w-0 pt-1.5 flex justify-between gap-2">
-                                                        <div>
-                                                            <p class="text-xs font-bold" :class="ticket.validated_at ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
-                                                                {{ __('pages.tickets.detail.assigned_status') }}
-                                                            </p>
-                                                            <p v-if="ticket.validated_at" class="text-[10px] text-slate-400 dark:text-slate-505 mt-0.5 leading-relaxed">
-                                                                {{ __('pages.tickets.detail.validator_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-350">{{ ticket.validator?.name }}</span>
-                                                                <br />
-                                                                {{ __('pages.tickets.detail.technician_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-350">
-                                                                    {{ ticket.assignments?.map(a => a.technician?.name).join(', ') }}
-                                                                </span>
-                                                            </p>
-                                                            <p v-else class="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
-                                                                {{ __('pages.tickets.detail.pending_validation_status') }}
-                                                            </p>
-                                                        </div>
-                                                        <div v-if="ticket.validated_at" class="text-right text-[9px] whitespace-nowrap text-slate-400 mt-0.5">
-                                                            {{ formatDateTime(ticket.validated_at) }}
+                                                    <div class="flex-1 min-w-0 pt-0.5 space-y-1">
+                                                        <p class="text-xs font-bold" :class="ticket.validated_at ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
+                                                            {{ __('pages.tickets.detail.assigned_status') }}
+                                                        </p>
+                                                        <p v-if="ticket.validated_at" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                            {{ __('pages.tickets.detail.validator_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ ticket.validator?.name }}</span>
+                                                            <br />
+                                                            {{ __('pages.tickets.detail.technician_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-300">
+                                                                {{ ticket.assignments?.map(a => a.technician?.name).join(', ') }}
+                                                            </span>
+                                                        </p>
+                                                        <p v-else class="text-[10px] text-slate-400 dark:text-slate-600">
+                                                            {{ __('pages.tickets.detail.pending_validation_status') }}
+                                                        </p>
+                                                        <div v-if="ticket.validated_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                                            <Clock class="h-3 w-3 shrink-0" />
+                                                            <span>{{ formatDateTime(ticket.validated_at) }}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -662,31 +747,30 @@ const contextLabel = computed(() => {
 
                                         <!-- Node 3: Arrived -->
                                         <li>
-                                            <div class="relative pb-8">
-                                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-indigo-500 dark:bg-indigo-950" aria-hidden="true"></span>
+                                            <div class="relative pb-6">
+                                                <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-emerald-500 dark:bg-emerald-950" aria-hidden="true"></span>
                                                 <div class="relative flex space-x-3">
                                                     <div>
                                                         <span :class="[
                                                             'h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white dark:ring-slate-900',
-                                                            ticket.responded_at ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'
+                                                            ticket.responded_at ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-800'
                                                         ]">
                                                             <Activity class="h-4 w-4" :class="ticket.responded_at ? 'text-white' : 'text-slate-400 dark:text-slate-505'" />
                                                         </span>
                                                     </div>
-                                                    <div class="flex-1 min-w-0 pt-1.5 flex justify-between gap-2">
-                                                        <div>
-                                                            <p class="text-xs font-bold" :class="ticket.responded_at ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
-                                                                {{ __('pages.tickets.detail.in_progress_status') }}
-                                                            </p>
-                                                            <p v-if="ticket.responded_at" class="text-[10px] text-slate-405 dark:text-slate-505 mt-0.5 leading-relaxed">
-                                                                {{ __('pages.tickets.detail.arrived_detail_timeline') }}
-                                                            </p>
-                                                            <p v-else class="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
-                                                                {{ __('pages.tickets.detail.waiting_arrival_timeline') }}
-                                                            </p>
-                                                        </div>
-                                                        <div v-if="ticket.responded_at" class="text-right text-[9px] whitespace-nowrap text-slate-400 mt-0.5">
-                                                            {{ formatDateTime(ticket.responded_at) }}
+                                                    <div class="flex-1 min-w-0 pt-0.5 space-y-1">
+                                                        <p class="text-xs font-bold" :class="ticket.responded_at ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
+                                                            {{ __('pages.tickets.detail.in_progress_status') }}
+                                                        </p>
+                                                        <p v-if="ticket.responded_at" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                            {{ __('pages.tickets.detail.arrived_detail_timeline') }}
+                                                        </p>
+                                                        <p v-else class="text-[10px] text-slate-400 dark:text-slate-600">
+                                                            {{ __('pages.tickets.detail.waiting_arrival_timeline') }}
+                                                        </p>
+                                                        <div v-if="ticket.responded_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                                            <Clock class="h-3 w-3 shrink-0" />
+                                                            <span>{{ formatDateTime(ticket.responded_at) }}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -695,7 +779,7 @@ const contextLabel = computed(() => {
 
                                         <!-- Node 4: Resolved -->
                                         <li>
-                                            <div class="relative pb-4">
+                                            <div class="relative pb-0">
                                                 <div class="relative flex space-x-3">
                                                     <div>
                                                         <span :class="[
@@ -707,35 +791,34 @@ const contextLabel = computed(() => {
                                                             <CheckCircle2 v-else class="h-4 w-4 text-slate-400 dark:text-slate-505" />
                                                         </span>
                                                     </div>
-                                                    <div class="flex-1 min-w-0 pt-1.5 flex justify-between gap-2">
-                                                        <div>
-                                                            <p class="text-xs font-bold" :class="ticket.status === 'COMPLETED' || ticket.status === 'CANCEL' ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
-                                                                {{ ticket.status === 'CANCEL' ? __('pages.tickets.detail.cancel_status') : __('pages.tickets.detail.completed_status') }}
-                                                            </p>
-                                                            <p v-if="ticket.status === 'COMPLETED'" class="text-[10px] text-slate-400 dark:text-slate-505 mt-0.5 leading-relaxed">
-                                                                <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ __('pages.tickets.detail.action_taken_label') }}</span> {{ ticket.completion_notes }}
-                                                            </p>
-                                                            <p v-else-if="ticket.status === 'CANCEL'" class="text-[10px] text-slate-400 dark:text-slate-505 mt-0.5 leading-relaxed">
-                                                                <span class="font-bold text-rose-600 dark:text-rose-400">{{ __('pages.tickets.detail.cancel_reason_label_inline') }}</span> {{ ticket.completion_notes }}
-                                                            </p>
-                                                            <p v-else class="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
-                                                                {{ __('pages.tickets.detail.waiting_resolution_timeline') }}
-                                                            </p>
+                                                    <div class="flex-1 min-w-0 pt-0.5 space-y-1">
+                                                        <p class="text-xs font-bold" :class="ticket.status === 'COMPLETED' || ticket.status === 'CANCEL' ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-505'">
+                                                            {{ ticket.status === 'CANCEL' ? __('pages.tickets.detail.cancel_status') : __('pages.tickets.detail.completed_status') }}
+                                                        </p>
+                                                        <p v-if="ticket.status === 'COMPLETED'" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                            <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ __('pages.tickets.detail.action_taken_label') }}</span> {{ ticket.completion_notes }}
+                                                        </p>
+                                                        <p v-else-if="ticket.status === 'CANCEL'" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                            <span class="font-bold text-rose-600 dark:text-rose-400">{{ __('pages.tickets.detail.cancel_reason_label_inline') }}</span> {{ ticket.completion_notes }}
+                                                        </p>
+                                                        <p v-else class="text-[10px] text-slate-400 dark:text-slate-600">
+                                                            {{ __('pages.tickets.detail.waiting_resolution_timeline') }}
+                                                        </p>
 
-                                                            <!-- Completion Attachments Grid in Timeline -->
-                                                            <div v-if="ticket.status === 'COMPLETED' && completionAttachments.length > 0" class="grid grid-cols-3 gap-1.5 mt-2">
-                                                                <div 
-                                                                    v-for="att in completionAttachments" 
-                                                                    :key="att.id" 
-                                                                    class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer"
-                                                                    @click="openLightbox(att.file_path)"
-                                                                >
-                                                                    <img :src="att.file_path" class="w-full h-full object-cover" alt="Completion photo proof" />
-                                                                </div>
+                                                        <!-- Completion Attachments Grid in Timeline -->
+                                                        <div v-if="ticket.status === 'COMPLETED' && completionAttachments.length > 0" class="grid grid-cols-3 gap-1.5 mt-2">
+                                                            <div 
+                                                                v-for="att in completionAttachments" 
+                                                                :key="att.id" 
+                                                                class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer"
+                                                                @click="openLightbox(att.file_path)"
+                                                            >
+                                                                <img :src="att.file_path" class="w-full h-full object-cover" alt="Completion photo proof" />
                                                             </div>
                                                         </div>
-                                                        <div v-if="ticket.resolved_at" class="text-right text-[9px] whitespace-nowrap text-slate-400 mt-0.5">
-                                                            {{ formatDateTime(ticket.resolved_at) }}
+                                                        <div v-if="ticket.resolved_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1 pt-0.5">
+                                                            <Clock class="h-3 w-3 shrink-0" />
+                                                            <span>{{ formatDateTime(ticket.resolved_at) }}</span>
                                                         </div>
                                                     </div>
                                                 </div>

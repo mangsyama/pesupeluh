@@ -148,13 +148,18 @@ const categoriesBreakdown = computed(() => {
             <div class="w-full space-y-4">
 
                 <!-- Welcome Card -->
-                <div class="overflow-hidden bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-emerald-950 dark:to-slate-900 shadow-sm rounded-2xl text-white p-8 relative">
+                <div class="overflow-hidden bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-emerald-950 dark:to-slate-900 shadow-sm rounded-2xl text-white p-6 sm:p-8 relative flex items-center justify-between gap-4 sm:gap-6">
                     <!-- Text Info -->
-                    <div class="relative z-10 max-w-xl">
+                    <div class="relative z-10 flex-1 min-w-0">
                         <h3 class="text-2xl font-extrabold mb-1">PESU PELUH</h3>
-                        <p class="text-emerald-100 dark:text-slate-300 text-sm font-medium leading-relaxed">
+                        <p class="text-emerald-100 dark:text-slate-300 text-sm font-medium leading-relaxed break-words">
                             {{ __('pages.dashboard.desc') }}
                         </p>
+                    </div>
+
+                    <!-- Right White Logo -->
+                    <div class="relative z-10 flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0">
+                        <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity" />
                     </div>
 
                     <!-- Decorative background patterns -->

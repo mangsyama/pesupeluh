@@ -5,6 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { ShieldCheck } from '@lucide/vue';
 
 const passwordInput = ref(null);
 const currentPasswordInput = ref(null);
@@ -36,11 +37,14 @@ const updatePassword = () => {
 <template>
     <section>
         <header>
-            <h2 class="text-md font-bold text-slate-950 dark:text-white">
-                {{ __('pages.profile.password_title') }}
+            <h2 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2.5">
+                <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0">
+                    <ShieldCheck class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span>{{ __('pages.profile.password_title') }}</span>
             </h2>
 
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 {{ __('pages.profile.password_desc') }}
             </p>
         </header>

@@ -169,7 +169,7 @@ class ReportController extends Controller
 
         return Inertia::render('Report/Show', [
             'ticket' => Inertia::defer(fn() => $ticket->load([
-                'reporter:id,name,nip',
+                'reporter:id,name,nip,phone_number',
                 'validator:id,name,nip',
                 'room:id,name,location_floor',
                 'category.unitFeature.supportingUnit.division',
