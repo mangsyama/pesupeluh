@@ -15,6 +15,7 @@ services:
       - ./database:/var/www/pesupeluh/database
       - ./.env:/var/www/pesupeluh/.env
       - ./vendor:/var/www/pesupeluh/vendor
+      - ./public:/var/www/pesupeluh/public
     expose:
       - "9000"
     command: >
