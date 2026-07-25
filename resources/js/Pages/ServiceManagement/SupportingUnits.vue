@@ -6,7 +6,7 @@ import { Plus, Search, Activity } from '@lucide/vue';
 import SupportingUnitList from './Partials/SupportingUnitList.vue';
 
 const props = defineProps({
-    divisions: {
+    supportingUnits: {
         type: Array,
         default: () => []
     }
@@ -14,10 +14,6 @@ const props = defineProps({
 
 const searchQuery = ref('');
 const supportingUnitListRef = ref(null);
-
-const triggerAddDivision = () => {
-    supportingUnitListRef.value?.openAddDivisionModal();
-};
 
 const triggerAddUnit = () => {
     supportingUnitListRef.value?.openAddUnitModal();
@@ -41,7 +37,7 @@ const triggerAddUnit = () => {
                                 {{ __('pages.service_management.supporting_units.title') }}
                             </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
-                                {{ __('pages.service_management.supporting_units.description') }}
+                                {{ __('Kelola unit penunjang operasional medis dan non-medis beserta status ketersediaannya.') }}
                             </p>
                         </div>
                     </div>
@@ -58,21 +54,14 @@ const triggerAddUnit = () => {
                             />
                         </div>
                         
-                        <!-- Add Buttons -->
+                        <!-- Add Button -->
                         <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <button 
-                                @click="triggerAddDivision"
-                                class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
-                            >
-                                <Plus class="h-4 w-4" />
-                                {{ __('pages.service_management.supporting_units.add_division') }}
-                            </button>
                             <button 
                                 @click="triggerAddUnit"
                                 class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
                             >
                                 <Plus class="h-4 w-4" />
-                                {{ __('pages.service_management.supporting_units.add_unit') }}
+                                {{ __('Tambah Unit Penunjang') }}
                             </button>
                         </div>
                     </div>
@@ -82,7 +71,7 @@ const triggerAddUnit = () => {
                 <div>
                     <SupportingUnitList 
                         ref="supportingUnitListRef"
-                        :divisions="divisions"
+                        :supporting-units="supportingUnits"
                         :search-query="searchQuery"
                     />
                 </div>

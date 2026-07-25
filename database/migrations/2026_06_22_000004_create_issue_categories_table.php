@@ -12,9 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('feature_categories', function (Blueprint $table) {
+        Schema::create('issue_categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('feature_id')->constrained('unit_features');
+            $table->foreignId('supporting_unit_id')->constrained('supporting_units')->onDelete('cascade');
             $table->string('name', 150);
             $table->text('description')->nullable();
             $table->dateTimeTz('created_at')->default(DB::raw(DB::getDriverName() === 'sqlsrv' ? 'SYSDATETIMEOFFSET()' : 'CURRENT_TIMESTAMP'));
@@ -28,6 +28,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('feature_categories');
+        Schema::dropIfExists('issue_categories');
     }
 };
+

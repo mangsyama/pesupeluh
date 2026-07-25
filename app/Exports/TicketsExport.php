@@ -32,7 +32,7 @@ class TicketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
                 $query->where('reporter_id', $userId);
             } elseif (in_array($roleId, [5, 6]) && $this->user->supporting_unit_id) {
                 $unitId = $this->user->supporting_unit_id;
-                $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+                $query->whereHas('category', function ($q) use ($unitId) {
                     $q->where('supporting_unit_id', $unitId);
                 });
             } elseif ($roleId === 7 && $this->user->room_id) {
@@ -43,7 +43,7 @@ class TicketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
         // Filter unit penunjang (supporting_unit_id)
         if (!empty($this->filters['unit_id'])) {
             $unitId = $this->filters['unit_id'];
-            $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+            $query->whereHas('category', function ($q) use ($unitId) {
                 $q->where('supporting_unit_id', $unitId);
             });
         }

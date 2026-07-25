@@ -31,7 +31,7 @@ class TicketController extends Controller
             return true;
         }
 
-        $supportingUnitId = (int) $ticket->category->unitFeature->supporting_unit_id;
+        $supportingUnitId = (int) ($ticket->category?->supporting_unit_id ?? 0);
 
         if ($action === 'view') {
             // Director, Division Head, Section Head have read-only access to all tickets
@@ -82,7 +82,7 @@ class TicketController extends Controller
 
         $user = \Illuminate\Support\Facades\Auth::user();
         $roleId = (int) $user->role_id;
-        $supportingUnitId = (int) $ticket->category->unitFeature->supporting_unit_id;
+        $supportingUnitId = (int) ($ticket->category?->supporting_unit_id ?? 0);
 
         if ($request->boolean('personal')) {
             return Inertia::render('Report/Show', [
@@ -90,7 +90,7 @@ class TicketController extends Controller
                     'reporter:id,name,nip',
                     'validator:id,name,nip',
                     'room:id,name,location_floor',
-                    'category.unitFeature.supportingUnit.division',
+                    'category.supportingUnit',
                     'assignments.technician:id,name,nip',
                     'attachments.user:id,name',
                 ])),
@@ -103,7 +103,7 @@ class TicketController extends Controller
                 'reporter:id,name,nip',
                 'validator:id,name,nip',
                 'room:id,name,location_floor',
-                'category.unitFeature.supportingUnit.division',
+                'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
             ])),
@@ -125,7 +125,7 @@ class TicketController extends Controller
      */
     public function assign(Request $request, ServiceTicket $ticket)
     {
-        $ticket->load('category.unitFeature');
+        $ticket->load('category.supportingUnit');
         $this->authorizeTicket($ticket, 'assign');
 
         $validated = $request->validate([
@@ -172,7 +172,7 @@ class TicketController extends Controller
      */
     public function respond(Request $request, ServiceTicket $ticket)
     {
-        $ticket->load('category.unitFeature');
+        $ticket->load('category.supportingUnit');
         $this->authorizeTicket($ticket, 'execute');
 
         if ($ticket->status !== 'ASSIGNED') {
@@ -192,7 +192,7 @@ class TicketController extends Controller
      */
     public function resolve(Request $request, ServiceTicket $ticket)
     {
-        $ticket->load('category.unitFeature');
+        $ticket->load('category.supportingUnit');
         $this->authorizeTicket($ticket, 'execute');
 
         $validated = $request->validate([
@@ -288,7 +288,7 @@ class TicketController extends Controller
      */
     public function resume(Request $request, ServiceTicket $ticket)
     {
-        $ticket->load('category.unitFeature');
+        $ticket->load('category.supportingUnit');
         $this->authorizeTicket($ticket, 'execute');
 
         if ($ticket->status !== 'PENDING') {

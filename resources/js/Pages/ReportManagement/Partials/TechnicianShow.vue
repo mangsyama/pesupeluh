@@ -309,8 +309,8 @@ const contextLabel = computed(() => {
                                 <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
                                     #{{ ticket.ticket_number }}
                                 </h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-                                    {{ ticket.category?.unit_feature?.supporting_unit?.name }} &bull; {{ ticket.category?.unit_feature?.supporting_unit?.division?.name }}
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed uppercase font-semibold">
+                                    {{ ticket.category?.supporting_unit?.name ?? ticket.category?.supportingUnit?.name ?? 'IPSRS' }} &bull; {{ ticket.category?.name ?? 'PELAPORAN' }}
                                 </p>
                             </div>
                         </div>
@@ -477,7 +477,7 @@ const contextLabel = computed(() => {
                             </div>
 
                             <!-- Action Panel Card: Technician Execution Controls -->
-                            <div v-if="ticket.status !== 'PENDING_VALIDATION' && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCEL'" class="bg-white dark:bg-slate-900 border border-violet-100 dark:border-violet-900/50 rounded-2xl p-6 shadow-sm space-y-4 animate-spa-fade-in">
+                            <div v-if="ticket.status !== 'PENDING_VALIDATION' && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCEL'" class="bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl p-6 shadow-sm space-y-4 animate-spa-fade-in">
                                 <div>
                                     <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
                                         {{ __('pages.tickets.detail.work_followup') }}
@@ -492,7 +492,7 @@ const contextLabel = computed(() => {
                                     </p>
                                     <button
                                         @click="respondTicket"
-                                        class="w-full h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 transition duration-200"
+                                        class="w-full h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 transition duration-200"
                                     >
                                         <Clock class="h-4.5 w-4.5" />
                                         <span>{{ __('pages.tickets.detail.btn_arrive') }}</span>
@@ -538,7 +538,7 @@ const contextLabel = computed(() => {
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <button
                                             @click="resumeTicket"
-                                            class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 transition duration-200"
+                                            class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 transition duration-200"
                                         >
                                             <Play class="h-4.5 w-4.5" />
                                             <span>{{ __('pages.tickets.detail.btn_resume') }}</span>

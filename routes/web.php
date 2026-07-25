@@ -35,7 +35,7 @@ Route::get('/dashboard', function (Request $request) {
                 $baseQuery->where('reporter_id', $user->id);
             } elseif (in_array($roleName, ['UNIT_HEAD', 'TECHNICIAN']) && $user->supporting_unit_id) {
                 $unitId = $user->supporting_unit_id;
-                $baseQuery->whereHas('category.unitFeature', function ($q) use ($unitId) {
+                $baseQuery->whereHas('category', function ($q) use ($unitId) {
                     $q->where('supporting_unit_id', $unitId);
                 });
             } elseif ($roleName === 'ROOM_HEAD' && $user->room_id) {
@@ -70,10 +70,8 @@ Route::get('/dashboard', function (Request $request) {
                     ->with([
                         'reporter:id,name',
                         'room:id,name',
-                        'category:id,name,feature_id',
-                        'category.unitFeature:id,name,supporting_unit_id',
-                        'category.unitFeature.supportingUnit:id,name,division_id',
-                        'category.unitFeature.supportingUnit.division:id,name',
+                        'category:id,name,supporting_unit_id',
+                        'category.supportingUnit:id,name,type',
                     ])
                     ->latest()
                     ->take(4)
@@ -107,9 +105,9 @@ Route::get('/dashboard', function (Request $request) {
                 $pendingTicketsCount = (int) ($counts->pending_count ?? 0);
 
                 $categoryCounts = (clone $baseQuery)
-                    ->join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
-                    ->select('feature_categories.name as name', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
-                    ->groupBy('feature_categories.id', 'feature_categories.name')
+                    ->join('issue_categories', 'service_tickets.category_id', '=', 'issue_categories.id')
+                    ->select('issue_categories.name as name', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
+                    ->groupBy('issue_categories.id', 'issue_categories.name')
                     ->orderByDesc('count')
                     ->take(5)
                     ->get();
@@ -138,10 +136,8 @@ Route::get('/dashboard', function (Request $request) {
                     ->with([
                         'reporter:id,name',
                         'room:id,name',
-                        'category:id,name,feature_id',
-                        'category.unitFeature:id,name,supporting_unit_id',
-                        'category.unitFeature.supportingUnit:id,name,division_id',
-                        'category.unitFeature.supportingUnit.division:id,name',
+                        'category:id,name,supporting_unit_id',
+                        'category.supportingUnit:id,name,type',
                     ])
                     ->latest()
                     ->take(4)
@@ -178,9 +174,9 @@ Route::get('/dashboard', function (Request $request) {
                 $pendingTicketsCount = (int) ($counts->pending_count ?? 0);
 
                 $categoryCounts = (clone $baseQuery)
-                    ->join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
-                    ->select('feature_categories.name as name', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
-                    ->groupBy('feature_categories.id', 'feature_categories.name')
+                    ->join('issue_categories', 'service_tickets.category_id', '=', 'issue_categories.id')
+                    ->select('issue_categories.name as name', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
+                    ->groupBy('issue_categories.id', 'issue_categories.name')
                     ->orderByDesc('count')
                     ->take(5)
                     ->get();
@@ -209,10 +205,8 @@ Route::get('/dashboard', function (Request $request) {
                     ->with([
                         'reporter:id,name',
                         'room:id,name',
-                        'category:id,name,feature_id',
-                        'category.unitFeature:id,name,supporting_unit_id',
-                        'category.unitFeature.supportingUnit:id,name,division_id',
-                        'category.unitFeature.supportingUnit.division:id,name',
+                        'category:id,name,supporting_unit_id',
+                        'category.supportingUnit:id,name,type',
                     ])
                     ->latest()
                     ->take(4)
@@ -244,19 +238,17 @@ Route::get('/dashboard', function (Request $request) {
             $pendingTicketsCount = (int) ($ticketCounts->pending_count ?? 0);
 
             $unitCounts = \Illuminate\Support\Facades\DB::table('service_tickets')
-                ->join('feature_categories', 'service_tickets.category_id', '=', 'feature_categories.id')
-                ->join('unit_features', 'feature_categories.feature_id', '=', 'unit_features.id')
-                ->join('supporting_units', 'unit_features.supporting_unit_id', '=', 'supporting_units.id')
-                ->select('supporting_units.id as unit_id', 'supporting_units.division_id', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
-                ->groupBy('supporting_units.id', 'supporting_units.division_id')
+                ->join('issue_categories', 'service_tickets.category_id', '=', 'issue_categories.id')
+                ->join('supporting_units', 'issue_categories.supporting_unit_id', '=', 'supporting_units.id')
+                ->select('supporting_units.id as unit_id', 'supporting_units.type', \Illuminate\Support\Facades\DB::raw('COUNT(*) as count'))
+                ->groupBy('supporting_units.id', 'supporting_units.type')
                 ->get();
 
-            $medikTicketsCount = (int) $unitCounts->where('division_id', 1)->sum('count');
-            $nonMedikTicketsCount = (int) $unitCounts->where('division_id', 2)->sum('count');
+            $medikTicketsCount = (int) $unitCounts->where('type', 'MEDIK')->sum('count');
+            $nonMedikTicketsCount = (int) $unitCounts->where('type', 'NON_MEDIK')->sum('count');
 
             $unitCountMap = $unitCounts->pluck('count', 'unit_id');
-            $breakdownData = \App\Models\SupportingUnit::with('division:id,name')
-                ->get()
+            $breakdownData = \App\Models\SupportingUnit::get()
                 ->map(function ($unit) use ($unitCountMap, $totalTicketsCount) {
                     $count = (int) ($unitCountMap->get($unit->id) ?? 0);
                     $percentage = $totalTicketsCount > 0 ? round(($count / $totalTicketsCount) * 100) : 0;
@@ -276,7 +268,7 @@ Route::get('/dashboard', function (Request $request) {
 
                     return [
                         'name' => $unit->name,
-                        'division_name' => $unit->division->name ?? '',
+                        'division_name' => $unit->type === 'MEDIK' ? 'Penunjang Medik' : 'Penunjang Non-Medik',
                         'count' => $count,
                         'percentage' => $percentage,
                         'color' => $color,
@@ -297,10 +289,8 @@ Route::get('/dashboard', function (Request $request) {
             ->with([
                 'reporter:id,name',
                 'room:id,name',
-                'category:id,name,feature_id',
-                'category.unitFeature:id,name,supporting_unit_id',
-                'category.unitFeature.supportingUnit:id,name,division_id',
-                'category.unitFeature.supportingUnit.division:id,name',
+                'category:id,name,supporting_unit_id',
+                'category.supportingUnit:id,name,type',
             ])
             ->latest()
             ->take(4)
@@ -323,21 +313,21 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/services', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => null,
-            'divisions' => Inertia::defer(fn() => \App\Models\Division::with('supportingUnits')->get()),
+            'units' => [],
         ]);
     })->name('services.index');
 
     Route::get('/services/medik', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => 'medik',
-            'divisions' => Inertia::defer(fn() => \App\Models\Division::with('supportingUnits')->get()),
+            'units' => Inertia::defer(fn() => \App\Models\SupportingUnit::where('type', 'MEDIK')->get()),
         ]);
     })->name('services.medik');
 
     Route::get('/services/non-medik', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => 'non-medik',
-            'divisions' => Inertia::defer(fn() => \App\Models\Division::with('supportingUnits')->get()),
+            'units' => Inertia::defer(fn() => \App\Models\SupportingUnit::where('type', 'NON_MEDIK')->get()),
         ]);
     })->name('services.non-medik');
 

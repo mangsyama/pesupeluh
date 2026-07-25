@@ -55,11 +55,8 @@ const formatDate = (dateStr) => {
 
 const stats = computed(() => {
     const ds = props.dashboardStats;
-    if (!ds) return [];
 
-    const getStatConfig = (stat) => {
-        if (!stat) return null;
-
+    const getStatConfig = (stat, defaultType, defaultLabel) => {
         const typeConfig = {
             'total': { icon: FileText, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
             'medik': { icon: Activity, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-950/30' },
@@ -69,34 +66,40 @@ const stats = computed(() => {
             'pending': { icon: AlertCircle, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
         };
 
-        const config = typeConfig[stat.type] || typeConfig['total'];
+        const currentType = stat?.type || defaultType;
+        const config = typeConfig[currentType] || typeConfig['total'];
 
         return {
-            label: stat.label,
-            value: String(stat.value ?? 0),
+            label: stat?.label || defaultLabel,
+            value: String(stat?.value ?? 0),
             icon: config.icon,
             color: config.color,
             bg: config.bg,
         };
     };
 
+    if (!ds) {
+        return [
+            getStatConfig(null, 'total', 'Total Laporan'),
+            getStatConfig(null, 'medik', 'Penunjang Medik'),
+            getStatConfig(null, 'non_medik', 'Penunjang Non-Medik'),
+            getStatConfig(null, 'pending', 'Menunggu Verifikasi'),
+        ];
+    }
+
     return [
-        getStatConfig(ds.stat1),
-        getStatConfig(ds.stat2),
-        getStatConfig(ds.stat3),
-        getStatConfig(ds.stat4),
+        getStatConfig(ds.stat1, 'total', 'Total Laporan'),
+        getStatConfig(ds.stat2, 'medik', 'Penunjang Medik'),
+        getStatConfig(ds.stat3, 'non_medik', 'Penunjang Non-Medik'),
+        getStatConfig(ds.stat4, 'pending', 'Menunggu Verifikasi'),
     ].filter(Boolean);
 });
 
 const recentReports = computed(() => {
     return (recentTicketsData.value || []).map(ticket => {
-        // Find division name to determine if Medik or Non-Medik
-        const divName = ticket.category?.unit_feature?.supporting_unit?.division?.name ?? '';
-        const isMedik = divName.toLowerCase().includes('medik') && !divName.toLowerCase().includes('non-medik');
-        
         // Supporting unit name formatted nicely
-        const rawUnitName = ticket.category?.unit_feature?.supporting_unit?.name ?? '';
-        const unitName = rawUnitName ? rawUnitName.charAt(0).toUpperCase() + rawUnitName.slice(1).toLowerCase() : '';
+        const rawUnitName = ticket.category?.supporting_unit?.name ?? ticket.category?.supportingUnit?.name ?? ticket.category?.name ?? '';
+        const unitName = rawUnitName ? rawUnitName.toUpperCase() : '-';
         
         // Map ticket status
         const statusMap = ticket.status === 'COMPLETED' ? 'Verified' : 'Pending';
@@ -105,7 +108,7 @@ const recentReports = computed(() => {
             id: ticket.ticket_number,
             date: formatDate(ticket.created_at),
             author: ticket.reporter?.name ?? '-',
-            category: isMedik ? 'Medik' : 'Non-Medik',
+            category: unitName,
             type: unitName,
             title: ticket.problem_description,
             status: statusMap

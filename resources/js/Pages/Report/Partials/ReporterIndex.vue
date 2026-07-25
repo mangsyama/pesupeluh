@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, getCurrentInstance } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
-import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle } from '@lucide/vue';
+import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, ArrowRight, Inbox, Clock, CheckCircle } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
 
@@ -196,11 +196,10 @@ const formatDate = (dateStr) => {
                                             <div class="flex justify-center">
                                                 <Link
                                                     :href="getDetailRoute(ticket.uuid)"
-                                                    class="w-28 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition duration-150 border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200"
+                                                    class="min-w-[105px] px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition duration-150 border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200"
                                                 >
-                                                    <Eye class="h-3.5 w-3.5" />
-                                                    <span>Detail</span>
-                                                    <ChevronRight class="h-3.5 w-3.5" />
+                                                    <span>Pantau</span>
+                                                    <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                                 </Link>
                                             </div>
                                         </td>
@@ -253,8 +252,8 @@ const formatDate = (dateStr) => {
                                         :href="getDetailRoute(ticket.uuid)"
                                         class="text-indigo-600 dark:text-indigo-405 font-bold flex items-center gap-0.5 hover:underline"
                                     >
-                                        Detail
-                                        <ChevronRight class="h-3 w-3" />
+                                        Pantau
+                                        <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                     </Link>
                                 </div>
                             </div>

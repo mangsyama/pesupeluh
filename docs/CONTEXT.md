@@ -55,51 +55,35 @@ Aplikasi dibangun dengan tumpukan teknologi modern berikut:
 
 ```sql
 -- =========================================================================
--- UPDATE VERSION: ADDED NIP, USER PHOTO, DESCRIPTIONS, & OPERATIONAL STATUS
+-- UPDATE VERSION: STREAMLINED SUPPORTING UNITS & ISSUE CATEGORIES
 -- =========================================================================
 
--- 1. Tabel Master: Divisions (Statis) - Diperbarui dengan Deskripsi
-CREATE TABLE divisions (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description NVARCHAR(MAX) NULL -- Tambahan Deskripsi Divisi
-);
-
--- 2. Tabel Master: Supporting Units (Statis) - Diperbarui dengan Deskripsi & Status
+-- 1. Tabel Master: Supporting Units (Statis - Dengan Type & Slug)
 CREATE TABLE supporting_units (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    division_id INT NOT NULL,
+    type VARCHAR(20) DEFAULT 'NON_MEDIK' NOT NULL, -- MEDIK / NON_MEDIK (Sub-layanan RS)
     name VARCHAR(100) NOT NULL,
-    description NVARCHAR(MAX) NULL, -- Tambahan Deskripsi Unit
-    status VARCHAR(30) DEFAULT 'IN_DEVELOPMENT' NOT NULL, -- Status Kontrol Menu: ACTIVE, IN_DEVELOPMENT, INACTIVE
-    CONSTRAINT FK_supporting_units_divisions FOREIGN KEY (division_id) 
-        REFERENCES divisions(id) ON DELETE NO ACTION,
-    CONSTRAINT CHK_supporting_unit_status CHECK (status IN ('ACTIVE', 'IN_DEVELOPMENT', 'INACTIVE')) -- Pengunci Status Modul
+    slug VARCHAR(100) NOT NULL UNIQUE, -- Unique Identifier Slug (e.g. ipsrs, gizi, laundry, farmasi)
+    description NVARCHAR(MAX) NULL, -- Deskripsi Unit Penunjang
+    status VARCHAR(30) DEFAULT 'IN_DEVELOPMENT' NOT NULL, -- Status Operasional Modul: ACTIVE, IN_DEVELOPMENT, MAINTENANCE, INACTIVE
+    CONSTRAINT CHK_supporting_unit_status CHECK (status IN ('ACTIVE', 'IN_DEVELOPMENT', 'MAINTENANCE', 'INACTIVE')),
+    CONSTRAINT CHK_supporting_unit_type CHECK (type IN ('MEDIK', 'NON_MEDIK'))
 );
 
--- 3. Tabel Master: Unit Features (Statis)
-CREATE TABLE unit_features (
+-- 2. Tabel Master: Issue Categories (Dinamis - Langsung Berelasi ke Supporting Unit)
+CREATE TABLE issue_categories (
     id INT IDENTITY(1,1) PRIMARY KEY,
     supporting_unit_id INT NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    CONSTRAINT FK_unit_features_supporting_units FOREIGN KEY (supporting_unit_id) 
-        REFERENCES supporting_units(id) ON DELETE NO ACTION
-);
-
--- 4. Tabel Master: Feature Categories (Dinamis)
-CREATE TABLE feature_categories (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    feature_id INT NOT NULL,
     name VARCHAR(150) NOT NULL,
     description NVARCHAR(MAX) NULL,
     created_at DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
     updated_at DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
     deleted_at DATETIMEOFFSET NULL,
-    CONSTRAINT FK_feature_categories_unit_features FOREIGN KEY (feature_id) 
-        REFERENCES unit_features(id) ON DELETE NO ACTION
+    CONSTRAINT FK_issue_categories_supporting_units FOREIGN KEY (supporting_unit_id) 
+        REFERENCES supporting_units(id) ON DELETE CASCADE
 );
 
--- 5. Tabel Master: Rooms (Dinamis)
+-- 3. Tabel Master: Rooms (Dinamis)
 CREATE TABLE rooms (
     id INT IDENTITY(1,1) PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -109,13 +93,13 @@ CREATE TABLE rooms (
     deleted_at DATETIMEOFFSET NULL
 );
 
--- 6. Tabel Master: Roles (Statis)
+-- 4. Tabel Master: Roles (Statis)
 CREATE TABLE roles (
     id INT IDENTITY(1,1) PRIMARY KEY,
     name VARCHAR(50) NOT NULL -- ADMINISTRATOR, MANAGEMENT, UNIT_HEAD, TECHNICIAN, ROOM_HEAD, REPORTER
 );
 
--- 7. Tabel Inti: Users - Diperbarui dengan NIP dan Foto Profil Pelamar/Pegawai
+-- 5. Tabel Inti: Users - Diperbarui dengan NIP dan Foto Profil Pelamar/Pegawai
 CREATE TABLE users (
     id INT IDENTITY(1,1) PRIMARY KEY,
     uuid UNIQUEIDENTIFIER DEFAULT NEWID() NOT NULL UNIQUE,
@@ -149,14 +133,14 @@ CREATE TABLE users (
     CONSTRAINT FK_users_approved_by FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE NO ACTION
 );
 
--- 8. Tabel Transaksi Utama: Service Tickets
+-- 6. Tabel Transaksi Utama: Service Tickets
 CREATE TABLE service_tickets (
     id INT IDENTITY(1,1) PRIMARY KEY,
     uuid UNIQUEIDENTIFIER DEFAULT NEWID() NOT NULL UNIQUE,
     ticket_number VARCHAR(50) NOT NULL UNIQUE,
     reporter_id INT NOT NULL,
     room_id INT NOT NULL,
-    category_id INT NOT NULL,
+    category_id INT NOT NULL, -- Menunjuk ke issue_categories.id
     problem_description NVARCHAR(MAX) NOT NULL,
     priority VARCHAR(20) NULL,
     validated_by INT NULL,
@@ -176,7 +160,7 @@ CREATE TABLE service_tickets (
     CONSTRAINT FK_service_tickets_users_reporter FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE NO ACTION,
     CONSTRAINT FK_service_tickets_users_validator FOREIGN KEY (validated_by) REFERENCES users(id) ON DELETE NO ACTION,
     CONSTRAINT FK_service_tickets_rooms FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE NO ACTION,
-    CONSTRAINT FK_service_tickets_feature_categories FOREIGN KEY (category_id) REFERENCES feature_categories(id) ON DELETE NO ACTION
+    CONSTRAINT FK_service_tickets_issue_categories FOREIGN KEY (category_id) REFERENCES issue_categories(id) ON DELETE NO ACTION
 );
 
 -- 9. Tabel Transaksi: Ticket Assignments

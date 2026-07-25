@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, getCurrentInstance } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
-import { Search, Eye, Calendar, MapPin, User, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, Wrench, Play, AlertCircle } from '@lucide/vue';
+import { Search, Eye, Calendar, MapPin, User, Phone, ChevronLeft, ChevronRight, ArrowRight, Inbox, Clock, CheckCircle, Wrench, Play, AlertCircle } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
 
@@ -90,28 +90,28 @@ const formatDate = (dateStr) => {
                 <div class="flex flex-wrap items-center bg-slate-100/80 dark:bg-slate-950/45 p-1 rounded-xl w-full xl:w-fit gap-1">
                     <button
                         @click="setTab('')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === '' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === '' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <Inbox class="h-3.5 w-3.5" />
                         Semua Tugas
                     </button>
                     <button
                         @click="setTab('ASSIGNED')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'ASSIGNED' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'ASSIGNED' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <AlertCircle class="h-3.5 w-3.5" />
                         Tugas Baru
                     </button>
                     <button
                         @click="setTab('IN_PROGRESS,PENDING')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'IN_PROGRESS,PENDING' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'IN_PROGRESS,PENDING' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <Clock class="h-3.5 w-3.5" />
                         Dalam Proses
                     </button>
                     <button
                         @click="setTab('COMPLETED,CANCEL')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'COMPLETED,CANCEL' ? 'bg-white dark:bg-slate-800 text-indigo-650 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'COMPLETED,CANCEL' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <CheckCircle class="h-3.5 w-3.5" />
                         Selesai
@@ -125,7 +125,7 @@ const formatDate = (dateStr) => {
                         v-model="searchQuery"
                         type="text"
                         :placeholder="__('pages.reports.history.search_placeholder')"
-                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-855 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150 shadow-none"
+                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-855 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 shadow-none"
                     />
                 </div>
             </div>
@@ -137,10 +137,10 @@ const formatDate = (dateStr) => {
                                 <thead>
                                     <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
                                         <th class="px-6 py-4">{{ __('pages.reports.history.table_id_date') }}</th>
-                                        <th class="px-6 py-4 text-center">Prioritas</th>
                                         <th class="px-6 py-4">Pelapor</th>
                                         <th class="px-6 py-4">Kategori / Ruangan</th>
                                         <th class="px-6 py-4">Penjelasan Masalah</th>
+                                        <th class="px-6 py-4 text-center">Prioritas</th>
                                         <th class="px-6 py-4 text-center">Status</th>
                                         <th class="px-6 py-4 text-center">Aksi</th>
                                     </tr>
@@ -156,21 +156,23 @@ const formatDate = (dateStr) => {
                                             </div>
                                         </td>
                                     </tr>
-                                    <tr v-for="ticket in tickets.data" :key="'ticket-' + ticket.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition duration-150">
+                                    <tr 
+                                        v-for="ticket in tickets.data" 
+                                        :key="'ticket-' + ticket.id" 
+                                        :class="[
+                                            'transition duration-150',
+                                            ticket.priority === 'URGENT' 
+                                                ? 'bg-rose-50/40 hover:bg-rose-50/70 dark:bg-rose-950/20 dark:hover:bg-rose-950/30' 
+                                                : 'hover:bg-slate-50/30 dark:hover:bg-slate-800/10'
+                                        ]"
+                                    >
                                         <!-- ID & Date -->
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="font-bold text-slate-950 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>
-                                            <div class="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
-                                                <Calendar class="h-3.5 w-3.5" />
+                                            <div class="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
+                                                <Calendar class="h-3 w-3" />
                                                 {{ formatDate(ticket.created_at) }}
                                             </div>
-                                        </td>
-                                        <!-- Priority -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span v-if="ticket.priority" :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getPriority(ticket.priority).badge]">
-                                                {{ getPriority(ticket.priority).label }}
-                                            </span>
-                                            <span v-else class="text-slate-400">-</span>
                                         </td>
                                         <!-- Reporter -->
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -182,16 +184,23 @@ const formatDate = (dateStr) => {
                                         </td>
                                         <!-- Category & Room -->
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="font-semibold text-slate-850 dark:text-slate-200 text-xs">{{ ticket.category?.name ?? '-' }}</div>
+                                            <div class="font-semibold text-emerald-700 dark:text-emerald-400 text-xs">{{ ticket.category?.name ?? '-' }}</div>
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                                                 <MapPin class="h-3.5 w-3.5 text-slate-400" />
                                                 <span>{{ ticket.room?.name ?? '-' }}</span>
                                                 <span v-if="ticket.room?.location_floor" class="opacity-75">({{ ticket.room.location_floor }})</span>
                                             </div>
                                         </td>
-                                        <!-- Problem Desc -->
+                                        <!-- Desc -->
                                         <td class="px-6 py-4 text-xs text-slate-650 dark:text-slate-400 break-words max-w-md">
                                             {{ ticket.problem_description }}
+                                        </td>
+                                        <!-- Priority -->
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <span v-if="ticket.priority" :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getPriority(ticket.priority).badge]">
+                                                {{ getPriority(ticket.priority).label }}
+                                            </span>
+                                            <span v-else class="text-slate-400">-</span>
                                         </td>
                                         <!-- Status -->
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -205,17 +214,14 @@ const formatDate = (dateStr) => {
                                                 <Link
                                                     :href="route('reports-management.show', ticket.uuid)"
                                                     :class="[
-                                                        'w-28 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition duration-150 border',
+                                                        'min-w-[105px] px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition duration-150',
                                                         ticket.status === 'ASSIGNED'
-                                                            ? 'bg-blue-600 hover:bg-blue-500 text-white font-extrabold border-blue-700'
+                                                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold border-transparent'
                                                             : ticket.status === 'IN_PROGRESS'
-                                                            ? 'bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold border-indigo-700'
-                                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                                                            ? 'bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold border-transparent'
+                                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
                                                     ]"
                                                 >
-                                                    <Play v-if="ticket.status === 'ASSIGNED'" class="h-3.5 w-3.5 fill-current" />
-                                                    <Wrench v-else-if="ticket.status === 'IN_PROGRESS'" class="h-3.5 w-3.5" />
-                                                    <Eye v-else class="h-3.5 w-3.5" />
                                                     <span>
                                                         {{ 
                                                             ticket.status === 'ASSIGNED' 
@@ -225,7 +231,7 @@ const formatDate = (dateStr) => {
                                                                 : 'Detail' 
                                                         }}
                                                     </span>
-                                                    <ChevronRight class="h-3.5 w-3.5" />
+                                                    <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                                 </Link>
                                             </div>
                                         </td>
@@ -245,8 +251,13 @@ const formatDate = (dateStr) => {
 
                             <div
                                 v-for="ticket in tickets.data"
-                                :key="'tech-ticket-' + ticket.id"
-                                class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/65 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                                :key="'mobile-ticket-' + ticket.id"
+                                :class="[
+                                    'rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between',
+                                    ticket.priority === 'URGENT'
+                                        ? 'bg-rose-50/40 dark:bg-rose-950/20 border-2 border-rose-300 dark:border-rose-800'
+                                        : 'bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/65'
+                                ]"
                             >
                                 <div class="space-y-3">
                                     <div class="flex justify-between items-start gap-2">
@@ -263,26 +274,18 @@ const formatDate = (dateStr) => {
                                         </span>
                                     </div>
 
-                                    <div class="flex items-center gap-1.5 text-[11px] text-indigo-700 dark:text-indigo-405 bg-indigo-50/50 dark:bg-indigo-950/20 px-2.5 py-1 rounded-xl w-fit font-semibold">
+                                    <div class="flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 px-2.5 py-1 rounded-xl w-fit font-semibold">
                                         <MapPin class="h-3.5 w-3.5" />
                                         <span>{{ ticket.room?.name ?? '-' }}</span>
-                                        <span v-if="ticket.room?.location_floor" class="text-[9px] opacity-75">({{ ticket.room.location_floor }})</span>
                                     </div>
 
-                                    <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                                    <p class="text-xs text-slate-650 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                         {{ ticket.problem_description }}
                                     </p>
 
-                                    <div class="text-[10px] text-slate-400 space-y-1 bg-slate-50 dark:bg-slate-950/20 p-2.5 rounded-xl border border-slate-100 dark:border-slate-850/20">
-                                        <div class="flex justify-between">
-                                            <span class="font-medium text-slate-500">Pelapor:</span>
-                                            <span class="text-slate-700 dark:text-slate-300 font-semibold">{{ ticket.reporter?.name ?? '-' }}</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span class="font-medium text-slate-500">Dibuat:</span>
-                                            <span class="text-slate-700 dark:text-slate-300">{{ formatDate(ticket.created_at) }}</span>
-                                        </div>
-                                        <div v-if="ticket.priority" class="flex justify-between items-center pt-0.5">
+                                    <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/40">
+                                        <span>Pelapor: <strong class="text-slate-700 dark:text-slate-300">{{ ticket.reporter?.name ?? '-' }}</strong></span>
+                                        <div class="flex items-center gap-1.5">
                                             <span class="font-medium text-slate-500">Prioritas:</span>
                                             <span :class="['px-1.5 py-0.2 rounded text-[8px] font-bold', getPriority(ticket.priority).badge]">
                                                 {{ getPriority(ticket.priority).label }}
@@ -295,26 +298,24 @@ const formatDate = (dateStr) => {
                                     <Link
                                         :href="route('reports-management.show', ticket.uuid)"
                                         :class="[
-                                            'w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-150 border',
+                                            'w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-150',
                                             ticket.status === 'ASSIGNED'
-                                                ? 'bg-blue-600 hover:bg-blue-500 text-white font-extrabold border-blue-700'
+                                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold border-transparent'
                                                 : ticket.status === 'IN_PROGRESS'
-                                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold border-indigo-700'
-                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                                                ? 'bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold border-transparent'
+                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
                                         ]"
                                     >
-                                        <Play v-if="ticket.status === 'ASSIGNED'" class="h-3.5 w-3.5 fill-current" />
-                                        <Wrench v-else-if="ticket.status === 'IN_PROGRESS'" class="h-3.5 w-3.5" />
-                                        <Eye v-else class="h-3.5 w-3.5" />
                                         <span>
                                             {{ 
                                                 ticket.status === 'ASSIGNED' 
-                                                    ? 'Mulai Kerjakan (Tiba di Lokasi)' 
+                                                    ? 'Mulai Kerjakan' 
                                                     : ticket.status === 'IN_PROGRESS' 
                                                     ? 'Update Progres Kerjaan' 
                                                     : 'Lihat Detail Laporan' 
                                             }}
                                         </span>
+                                        <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                     </Link>
                                 </div>
                             </div>

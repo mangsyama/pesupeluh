@@ -278,8 +278,8 @@ const contextLabel = computed(() => {
                             <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
                                 #{{ ticket.ticket_number }}
                             </h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">
-                                    {{ ticket.category?.unit_feature?.supporting_unit?.name }} &bull; {{ ticket.category?.unit_feature?.supporting_unit?.division?.name }}
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed uppercase font-semibold">
+                                    {{ ticket.category?.supporting_unit?.name ?? ticket.category?.supportingUnit?.name ?? 'IPSRS' }} &bull; {{ ticket.category?.name ?? 'PELAPORAN' }}
                                 </p>
                             </div>
                         </div>

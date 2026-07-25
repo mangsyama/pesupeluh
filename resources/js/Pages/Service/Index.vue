@@ -23,7 +23,7 @@ const props = defineProps({
         type: String,
         default: null
     },
-    divisions: {
+    units: {
         type: Array,
         default: () => []
     }
@@ -58,20 +58,13 @@ const handleUnitClick = (unit) => {
             confirmButtonColor: '#4f46e5',
         });
     } else {
-        router.visit(route('services.units.show', unit.name.toLowerCase()));
+        router.visit(route('services.units.show', unit.slug || unit.name.toLowerCase()));
     }
 };
 
-const medikDivision = computed(() => {
-    return (props.divisions || []).find(d => d.name.toLowerCase().includes('medik') && !d.name.toLowerCase().includes('non-medik'));
-});
-
-const nonMedikDivision = computed(() => {
-    return (props.divisions || []).find(d => d.name.toLowerCase().includes('non-medik'));
-});
-
 const medikUnits = computed(() => {
-    return (medikDivision.value?.supporting_units || [])
+    return (props.units || [])
+        .filter(u => u.type === 'MEDIK')
         .map(unit => ({
             ...unit,
             disabled: unit.status !== 'ACTIVE'
@@ -83,7 +76,8 @@ const medikUnits = computed(() => {
 });
 
 const nonMedikUnits = computed(() => {
-    return (nonMedikDivision.value?.supporting_units || [])
+    return (props.units || [])
+        .filter(u => u.type === 'NON_MEDIK')
         .map(unit => ({
             ...unit,
             disabled: unit.status !== 'ACTIVE'
@@ -106,14 +100,12 @@ const unitIcons = {
     cssd: Sparkles
 };
 
-const getUnitIcon = (name, divisionName) => {
-    const key = name?.toLowerCase();
+const getUnitIcon = (name, slug, type) => {
+    const key = (slug || name)?.toLowerCase();
     if (unitIcons[key]) return unitIcons[key];
     
-    // Fallback based on division name
-    const isMedik = divisionName?.toLowerCase().includes('medik') && 
-                    !divisionName?.toLowerCase().includes('non-medik');
-    return isMedik ? Stethoscope : ShieldCheck;
+    // Fallback based on type
+    return type === 'MEDIK' ? Stethoscope : ShieldCheck;
 };
 </script>
 
@@ -170,11 +162,11 @@ const getUnitIcon = (name, divisionName) => {
                                         </span>
                                     </div>
                                     
-                                    <h3 class="text-lg font-bold text-slate-950 dark:text-white" :class="{ 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200': activeSection === null }">
-                                        {{ medikDivision?.name }}
+                                    <h3 class="text-lg font-bold text-slate-955 dark:text-white" :class="{ 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200': activeSection === null }">
+                                        {{ __('Penunjang Medik') }}
                                     </h3>
                                     <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed" v-if="activeSection === null">
-                                        {{ medikDivision?.description }}
+                                        {{ __('Mencakup pelaporan operasional unit penunjang pelayanan medis yang terdiri dari unit Farmasi, Radiologi, Laboratorium, dan CSSD.') }}
                                     </p>
                                     <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed" v-else>
                                         {{ __('pages.services.medik_desc_detail') }}
@@ -220,7 +212,7 @@ const getUnitIcon = (name, divisionName) => {
                                                             : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
                                                     ]">
                                                         <Lock v-if="unit.disabled" class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
-                                                        <component :is="getUnitIcon(unit.name, medikDivision?.name)" v-else class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
+                                                        <component :is="getUnitIcon(unit.name, unit.slug, unit.type)" v-else class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
                                                     </div>
 
                                                     <!-- Unit Name -->
@@ -280,11 +272,11 @@ const getUnitIcon = (name, divisionName) => {
                                         </span>
                                     </div>
                                     
-                                    <h3 class="text-lg font-bold text-slate-950 dark:text-white" :class="{ 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200': activeSection === null }">
-                                        {{ nonMedikDivision?.name }}
+                                    <h3 class="text-lg font-bold text-slate-955 dark:text-white" :class="{ 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200': activeSection === null }">
+                                        {{ __('Penunjang Non-Medik') }}
                                     </h3>
                                     <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed" v-if="activeSection === null">
-                                        {{ nonMedikDivision?.description }}
+                                        {{ __('Mencakup pelaporan operasional unit penunjang non-medis yang terdiri dari unit Gizi, Laundry, Kesling, dan IPSRS.') }}
                                     </p>
                                     <p class="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed" v-else>
                                         {{ __('pages.services.non_medik_desc_detail') }}
@@ -330,7 +322,7 @@ const getUnitIcon = (name, divisionName) => {
                                                             : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
                                                     ]">
                                                         <Lock v-if="unit.disabled" class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
-                                                        <component :is="getUnitIcon(unit.name, nonMedikDivision?.name)" v-else class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
+                                                        <component :is="getUnitIcon(unit.name, unit.slug, unit.type)" v-else class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
                                                     </div>
 
                                                     <!-- Unit Name -->

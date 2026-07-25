@@ -7,16 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class SupportingUnit extends Model
 {
     public $timestamps = false;
-    protected $fillable = ['division_id', 'name', 'description', 'status'];
+    protected $fillable = ['type', 'name', 'slug', 'description', 'status'];
 
-    public function division()
+    public function issueCategories()
     {
-        return $this->belongsTo(Division::class);
-    }
-
-    public function unitFeatures()
-    {
-        return $this->hasMany(UnitFeature::class);
+        return $this->hasMany(IssueCategory::class);
     }
 
     public function users()

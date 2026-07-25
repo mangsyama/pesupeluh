@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Division;
 use App\Models\SupportingUnit;
-use App\Models\UnitFeature;
-use App\Models\FeatureCategory;
+use App\Models\IssueCategory;
 use App\Models\Room;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,8 +26,8 @@ class ServiceManagementController extends Controller
     public function indexCategories()
     {
         return Inertia::render('ServiceManagement/Categories', [
-            'categories' => Inertia::defer(fn() => FeatureCategory::with(['unitFeature.supportingUnit'])->orderBy('id', 'desc')->get()),
-            'unitFeatures' => Inertia::defer(fn() => UnitFeature::with(['supportingUnit'])->where('name', 'Pelaporan')->orderBy('name', 'asc')->get()),
+            'categories' => Inertia::defer(fn() => IssueCategory::with(['supportingUnit'])->orderBy('id', 'desc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
         ]);
     }
 
@@ -39,7 +37,7 @@ class ServiceManagementController extends Controller
     public function indexSupportingUnits()
     {
         return Inertia::render('ServiceManagement/SupportingUnits', [
-            'divisions' => Inertia::defer(fn() => Division::with(['supportingUnits'])->orderBy('name', 'asc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('type', 'asc')->orderBy('name', 'asc')->get()),
         ]);
     }
 
@@ -88,12 +86,12 @@ class ServiceManagementController extends Controller
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([
-            'feature_id' => 'required|exists:unit_features,id',
+            'supporting_unit_id' => 'required|exists:supporting_units,id',
             'name' => 'required|string|max:150',
             'description' => 'nullable|string',
         ]);
 
-        FeatureCategory::create($validated);
+        IssueCategory::create($validated);
 
         return redirect()->back()->with('success', 'Kategori kerusakan berhasil ditambahkan.');
     }
@@ -101,10 +99,10 @@ class ServiceManagementController extends Controller
     /**
      * Update the specified category.
      */
-    public function updateCategory(Request $request, FeatureCategory $category)
+    public function updateCategory(Request $request, IssueCategory $category)
     {
         $validated = $request->validate([
-            'feature_id' => 'required|exists:unit_features,id',
+            'supporting_unit_id' => 'required|exists:supporting_units,id',
             'name' => 'required|string|max:150',
             'description' => 'nullable|string',
         ]);
@@ -117,49 +115,10 @@ class ServiceManagementController extends Controller
     /**
      * Remove the specified category.
      */
-    public function destroyCategory(FeatureCategory $category)
+    public function destroyCategory(IssueCategory $category)
     {
         $category->delete();
         return redirect()->back()->with('success', 'Kategori kerusakan berhasil dihapus.');
-    }
-
-    /**
-     * Store a newly created division.
-     */
-    public function storeDivision(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'description' => 'nullable|string',
-        ]);
-
-        Division::create($validated);
-
-        return redirect()->back()->with('success', 'Divisi berhasil ditambahkan.');
-    }
-
-    /**
-     * Update the specified division.
-     */
-    public function updateDivision(Request $request, Division $division)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'description' => 'nullable|string',
-        ]);
-
-        $division->update($validated);
-
-        return redirect()->back()->with('success', 'Divisi berhasil diperbarui.');
-    }
-
-    /**
-     * Remove the specified division.
-     */
-    public function destroyDivision(Division $division)
-    {
-        $division->delete();
-        return redirect()->back()->with('success', 'Divisi berhasil dihapus.');
     }
 
     /**
@@ -168,10 +127,11 @@ class ServiceManagementController extends Controller
     public function storeSupportingUnit(Request $request)
     {
         $validated = $request->validate([
-            'division_id' => 'required|exists:divisions,id',
+            'type' => 'required|in:MEDIK,NON_MEDIK',
             'name' => 'required|string|max:100',
+            'slug' => 'required|string|max:100|unique:supporting_units,slug',
             'description' => 'nullable|string',
-            'status' => 'required|in:ACTIVE,IN_DEVELOPMENT,INACTIVE',
+            'status' => 'required|in:ACTIVE,IN_DEVELOPMENT,MAINTENANCE,INACTIVE',
         ]);
 
         SupportingUnit::create($validated);
@@ -185,10 +145,11 @@ class ServiceManagementController extends Controller
     public function updateSupportingUnit(Request $request, SupportingUnit $unit)
     {
         $validated = $request->validate([
-            'division_id' => 'required|exists:divisions,id',
+            'type' => 'required|in:MEDIK,NON_MEDIK',
             'name' => 'required|string|max:100',
+            'slug' => 'required|string|max:100|unique:supporting_units,slug,' . $unit->id,
             'description' => 'nullable|string',
-            'status' => 'required|in:ACTIVE,IN_DEVELOPMENT,INACTIVE',
+            'status' => 'required|in:ACTIVE,IN_DEVELOPMENT,MAINTENANCE,INACTIVE',
         ]);
 
         $unit->update($validated);

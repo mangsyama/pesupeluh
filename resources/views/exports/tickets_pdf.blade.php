@@ -129,7 +129,7 @@
     <tbody>
         @foreach($tickets as $i => $ticket)
         @php
-            $unitLabel = $ticket->category?->unitFeature?->supportingUnit?->name ?? '-';
+            $unitLabel = $ticket->category?->supportingUnit?->name ?? '-';
             $roomLabel = $ticket->room?->name ?? '-';
 
             $techNames = $ticket->assignments->map(fn($a) => $a->technician?->name)->filter()->implode(', ');

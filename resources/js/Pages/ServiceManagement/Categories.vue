@@ -10,7 +10,7 @@ const props = defineProps({
         type: Array,
         default: () => []
     },
-    unitFeatures: {
+    supportingUnits: {
         type: Array,
         default: () => []
     }
@@ -74,7 +74,7 @@ const triggerAddCategory = () => {
                     <CategoryList 
                         ref="categoryListRef"
                         :categories="categories"
-                        :unit-features="unitFeatures"
+                        :supporting-units="supportingUnits"
                         :search-query="searchQuery"
                     />
                 </div>

@@ -71,7 +71,7 @@ class ServiceTicket extends Model
 
     public function category()
     {
-        return $this->belongsTo(FeatureCategory::class, 'category_id');
+        return $this->belongsTo(IssueCategory::class, 'category_id');
     }
 
     public function assignments()

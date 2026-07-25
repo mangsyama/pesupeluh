@@ -55,9 +55,8 @@ class ReportManagementController extends Controller
         ->with([
             'reporter:id,name,phone_number',
             'room:id,name',
-            'category:id,name,feature_id',
-            'category.unitFeature:id,name,supporting_unit_id',
-            'category.unitFeature.supportingUnit:id,name',
+            'category:id,name,supporting_unit_id',
+            'category.supportingUnit:id,name',
         ])
         ->whereNull('deleted_at');
 
@@ -68,7 +67,7 @@ class ReportManagementController extends Controller
             // Direktur / Manajemen: melihat semua
         } elseif ($roleId === 5) {
             // Kepala Unit (IPRS/dll): melihat tiket yang berada di dalam unit penunjang mereka
-            $query->whereHas('category.unitFeature', function ($q) use ($user) {
+            $query->whereHas('category', function ($q) use ($user) {
                 $q->where('supporting_unit_id', $user->supporting_unit_id);
             });
         } elseif ($roleId === 6) {
@@ -126,7 +125,7 @@ class ReportManagementController extends Controller
     {
         $user = $request->user();
         $roleId = (int) $user->role_id;
-        $supportingUnitId = (int) $ticket->category->unitFeature->supporting_unit_id;
+        $supportingUnitId = (int) ($ticket->category?->supporting_unit_id ?? 0);
 
         // Otorisasi akses detail operasional
         if ($roleId === 1) {
@@ -148,7 +147,7 @@ class ReportManagementController extends Controller
                 'reporter:id,name,nip,phone_number',
                 'validator:id,name,nip',
                 'room:id,name,location_floor',
-                'category.unitFeature.supportingUnit.division',
+                'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
             ])),

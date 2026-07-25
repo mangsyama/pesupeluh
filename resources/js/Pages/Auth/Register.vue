@@ -1,10 +1,10 @@
 <script setup>
-import { ref, getCurrentInstance, nextTick, onBeforeUnmount } from 'vue';
+import { ref, computed, getCurrentInstance, nextTick, onMounted, onUnmounted, onBeforeUnmount } from 'vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ScanFace, RefreshCw, CheckCircle, X, Camera, UploadCloud, User, Image, Eye, EyeOff } from '@lucide/vue';
+import { ScanFace, RefreshCw, CheckCircle, X, Camera, UploadCloud, User, Image, Eye, EyeOff, Search, ChevronDown, Check } from '@lucide/vue';
 import { compressImage } from '@/Utils/imageCompressor';
 
 let faceapi = null;
@@ -12,16 +12,115 @@ let faceapi = null;
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
+const props = defineProps({
+    supportingUnits: {
+        type: Array,
+        default: () => []
+    },
+    rooms: {
+        type: Array,
+        default: () => []
+    }
+});
+
 const form = useForm({
     name: '',
     nip: '',
     username: '',
     email: '',
     phone_number: '',
+    supporting_unit_id: '',
+    room_id: '',
     password: '',
     password_confirmation: '',
     face_descriptor: null,
     profile_photo: null,
+});
+
+// Searchable dropdown state for Supporting Unit
+const isUnitDropdownOpen = ref(false);
+const unitSearchQuery = ref('');
+const unitDropdownRef = ref(null);
+
+const filteredSupportingUnits = computed(() => {
+    const q = unitSearchQuery.value.trim().toLowerCase();
+    if (!q) return props.supportingUnits;
+    return props.supportingUnits.filter(u => 
+        u.name && u.name.toLowerCase().includes(q)
+    );
+});
+
+const selectedUnitLabel = computed(() => {
+    if (!form.supporting_unit_id) return '';
+    const selected = props.supportingUnits.find(u => u.id === form.supporting_unit_id);
+    if (!selected) return '';
+    return `${selected.name} (${selected.type === 'MEDIK' ? 'Penunjang Medik' : 'Penunjang Non-Medik'})`;
+});
+
+const toggleUnitDropdown = (event) => {
+    event?.stopPropagation();
+    isUnitDropdownOpen.value = !isUnitDropdownOpen.value;
+    if (isUnitDropdownOpen.value) {
+        unitSearchQuery.value = '';
+        isRoomDropdownOpen.value = false;
+    }
+};
+
+const selectUnit = (unitId) => {
+    form.supporting_unit_id = unitId;
+    isUnitDropdownOpen.value = false;
+};
+
+// Searchable dropdown state for Room
+const isRoomDropdownOpen = ref(false);
+const roomSearchQuery = ref('');
+const roomDropdownRef = ref(null);
+
+const filteredRooms = computed(() => {
+    const q = roomSearchQuery.value.trim().toLowerCase();
+    if (!q) return props.rooms;
+    return props.rooms.filter(r => 
+        (r.name && r.name.toLowerCase().includes(q)) || 
+        (r.location_floor && r.location_floor.toLowerCase().includes(q))
+    );
+});
+
+const selectedRoomLabel = computed(() => {
+    if (!form.room_id) return '';
+    const selected = props.rooms.find(r => r.id === form.room_id);
+    if (!selected) return '';
+    return selected.location_floor ? `${selected.name} (${selected.location_floor})` : selected.name;
+});
+
+const toggleRoomDropdown = (event) => {
+    event?.stopPropagation();
+    isRoomDropdownOpen.value = !isRoomDropdownOpen.value;
+    if (isRoomDropdownOpen.value) {
+        roomSearchQuery.value = '';
+        isUnitDropdownOpen.value = false;
+    }
+};
+
+const selectRoom = (roomId) => {
+    form.room_id = roomId;
+    isRoomDropdownOpen.value = false;
+};
+
+const handleClickOutsideDropdowns = (event) => {
+    if (isUnitDropdownOpen.value && unitDropdownRef.value && !unitDropdownRef.value.contains(event.target)) {
+        isUnitDropdownOpen.value = false;
+    }
+    if (isRoomDropdownOpen.value && roomDropdownRef.value && !roomDropdownRef.value.contains(event.target)) {
+        isRoomDropdownOpen.value = false;
+    }
+};
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutsideDropdowns);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutsideDropdowns);
 });
 
 // Photo registration logic
@@ -405,6 +504,126 @@ onBeforeUnmount(() => {
                     class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.phone_number" />
+            </div>
+
+            <!-- Searchable Unit Penunjang Dropdown -->
+            <div class="space-y-1 relative" ref="unitDropdownRef">
+                <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">
+                    Unit Penunjang
+                </label>
+                <button 
+                    type="button"
+                    @click="toggleUnitDropdown"
+                    class="w-full border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 text-left flex items-center justify-between focus:border-emerald-600 dark:focus:border-emerald-400 outline-none transition duration-150 text-base"
+                >
+                    <span v-if="selectedUnitLabel" class="text-slate-900 dark:text-white truncate font-medium">
+                        {{ selectedUnitLabel }}
+                    </span>
+                    <span v-else class="text-slate-400 dark:text-slate-500">
+                        Pilih Unit Penunjang
+                    </span>
+                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isUnitDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                </button>
+
+                <!-- Searchable Dropdown List -->
+                <div 
+                    v-if="isUnitDropdownOpen" 
+                    class="absolute left-0 right-0 mt-1 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-2 shadow-xl animate-spa-fade-in"
+                >
+                    <div class="relative">
+                        <Search class="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input 
+                            v-model="unitSearchQuery"
+                            type="text"
+                            placeholder="Cari unit penunjang..."
+                            class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            @click.stop
+                        />
+                    </div>
+
+                    <div class="max-h-52 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                        <div v-if="filteredSupportingUnits.length === 0" class="p-3 text-center text-xs text-slate-400 font-medium">
+                            Unit penunjang tidak ditemukan
+                        </div>
+                        <button
+                            v-else
+                            v-for="unit in filteredSupportingUnits"
+                            :key="unit.id"
+                            type="button"
+                            @click.stop="selectUnit(unit.id)"
+                            :class="[
+                                'w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between transition-colors duration-150',
+                                form.supporting_unit_id === unit.id 
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' 
+                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                            ]"
+                        >
+                            <span>{{ unit.name }} <span class="text-xs font-normal opacity-70">({{ unit.type === 'MEDIK' ? 'Penunjang Medik' : 'Penunjang Non-Medik' }})</span></span>
+                            <Check v-if="form.supporting_unit_id === unit.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        </button>
+                    </div>
+                </div>
+                <InputError class="mt-1" :message="form.errors.supporting_unit_id" />
+            </div>
+
+            <!-- Searchable Ruangan / Lokasi Dropdown -->
+            <div class="space-y-1 relative" ref="roomDropdownRef">
+                <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">
+                    Ruangan / Lokasi
+                </label>
+                <button 
+                    type="button"
+                    @click="toggleRoomDropdown"
+                    class="w-full border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 text-left flex items-center justify-between focus:border-emerald-600 dark:focus:border-emerald-400 outline-none transition duration-150 text-base"
+                >
+                    <span v-if="selectedRoomLabel" class="text-slate-900 dark:text-white truncate font-medium">
+                        {{ selectedRoomLabel }}
+                    </span>
+                    <span v-else class="text-slate-400 dark:text-slate-500">
+                        Pilih Ruangan / Lokasi
+                    </span>
+                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoomDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                </button>
+
+                <!-- Searchable Dropdown List -->
+                <div 
+                    v-if="isRoomDropdownOpen" 
+                    class="absolute left-0 right-0 mt-1 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-2 shadow-xl animate-spa-fade-in"
+                >
+                    <div class="relative">
+                        <Search class="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input 
+                            v-model="roomSearchQuery"
+                            type="text"
+                            placeholder="Cari ruangan atau lokasi..."
+                            class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            @click.stop
+                        />
+                    </div>
+
+                    <div class="max-h-52 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                        <div v-if="filteredRooms.length === 0" class="p-3 text-center text-xs text-slate-400 font-medium">
+                            Ruangan tidak ditemukan
+                        </div>
+                        <button
+                            v-else
+                            v-for="room in filteredRooms"
+                            :key="room.id"
+                            type="button"
+                            @click.stop="selectRoom(room.id)"
+                            :class="[
+                                'w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between transition-colors duration-150',
+                                form.room_id === room.id 
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' 
+                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                            ]"
+                        >
+                            <span>{{ room.name }} <span v-if="room.location_floor" class="text-xs font-normal opacity-70">({{ room.location_floor }})</span></span>
+                            <Check v-if="form.room_id === room.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        </button>
+                    </div>
+                </div>
+                <InputError class="mt-1" :message="form.errors.room_id" />
             </div>
 
             <!-- Password Input Field -->

@@ -12,14 +12,16 @@ class ServiceController extends Controller
 {
     public function showUnit(string $unitName)
     {
-        $supportingUnit = SupportingUnit::whereRaw('LOWER(name) = ?', [strtolower($unitName)])->firstOrFail();
+        $supportingUnit = SupportingUnit::where('slug', strtolower($unitName))
+            ->orWhereRaw('LOWER(name) = ?', [strtolower($unitName)])
+            ->firstOrFail();
 
         if ($supportingUnit->status !== 'ACTIVE') {
             return redirect()->route('services.index')->with('error', 'Unit penunjang ini sedang dalam tahap pengembangan.');
         }
 
         return Inertia::render('Service/Show', [
-            'unit' => $supportingUnit->load(['division', 'unitFeatures.featureCategories']),
+            'unit' => $supportingUnit->load(['issueCategories']),
             'rooms' => Room::orderBy('name', 'asc')->get()
         ]);
     }
@@ -28,7 +30,7 @@ class ServiceController extends Controller
     {
         $validated = $request->validate([
             'room_id' => 'required|exists:rooms,id',
-            'category_id' => 'required|exists:feature_categories,id',
+            'category_id' => 'required|exists:issue_categories,id',
             'problem_description' => 'required|string|min:5',
             'attachments' => 'required|array|min:1|max:5',
             'attachments.*' => 'required|string',
@@ -83,8 +85,8 @@ class ServiceController extends Controller
         }
 
         // Notify Unit Heads of the supporting unit managing this category and all active Administrators
-        $ticket->load(['reporter', 'room', 'category.unitFeature.supportingUnit']);
-        $supportingUnitId = $ticket->category?->unitFeature?->supporting_unit_id;
+        $ticket->load(['reporter', 'room', 'category.supportingUnit']);
+        $supportingUnitId = $ticket->category?->supporting_unit_id;
 
         if ($supportingUnitId) {
             $recipients = \App\Models\User::where('is_active', 1)

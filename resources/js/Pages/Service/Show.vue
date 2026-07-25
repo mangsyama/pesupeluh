@@ -36,22 +36,20 @@ const props = defineProps({
 });
 
 const isMedik = computed(() => {
-    return props.unit?.division?.name?.toLowerCase().includes('medik') && 
-           !props.unit?.division?.name?.toLowerCase().includes('non-medik');
+    return props.unit?.type === 'MEDIK';
 });
 
-// Current selected feature ID (defaults to the first feature if available)
-const selectedFeatureId = ref(null);
+// Default static features for units like IPSRS (Pelaporan, Kalibrasi, Usulan)
+const defaultFeatures = [
+    { id: 'pelaporan', name: 'Pelaporan', key: 'pelaporan' },
+    { id: 'kalibrasi', name: 'Kalibrasi', key: 'kalibrasi' },
+    { id: 'usulan', name: 'Usulan', key: 'usulan' },
+];
 
-watch(() => props.unit, (newUnit) => {
-    if (newUnit?.unit_features?.[0]?.id && !selectedFeatureId.value) {
-        selectedFeatureId.value = newUnit.unit_features[0].id;
-    }
-}, { immediate: true });
+const selectedFeatureId = ref('pelaporan');
 
-// Selected feature object
 const activeFeature = computed(() => {
-    return props.unit?.unit_features?.find(f => f.id === selectedFeatureId.value) || props.unit?.unit_features?.[0] || null;
+    return defaultFeatures.find(f => f.id === selectedFeatureId.value) || defaultFeatures[0];
 });
 
 // Component registry mapping feature names to modular components
@@ -62,8 +60,7 @@ const featureComponents = {
 };
 
 const activeComponent = computed(() => {
-    const featureKey = activeFeature.value?.name?.toLowerCase();
-    return featureComponents[featureKey] || null;
+    return featureComponents[selectedFeatureId.value] || markRaw(ReportingForm);
 });
 
 // Icon registry mapping feature names to specific graphic icons
@@ -73,8 +70,7 @@ const featureIcons = {
     usulan: FilePlus
 };
 
-const getFeatureIcon = (name) => {
-    const key = name?.toLowerCase();
+const getFeatureIcon = (key) => {
     return featureIcons[key] || Activity;
 };
 
@@ -90,8 +86,8 @@ const unitIcons = {
     cssd: Sparkles
 };
 
-const getUnitIcon = (name) => {
-    const key = name?.toLowerCase();
+const getUnitIcon = (name, slug) => {
+    const key = (slug || name)?.toLowerCase();
     if (unitIcons[key]) return unitIcons[key];
     return isMedik.value ? Stethoscope : ShieldCheck;
 };
@@ -118,7 +114,7 @@ const selectFeature = (id) => {
                                     'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
                                 ]"
                             >
-                                <component :is="getUnitIcon(unit.name)" class="h-6 w-6" />
+                                <component :is="getUnitIcon(unit.name, unit.slug)" class="h-6 w-6" />
                             </div>
                             <div>
                                 <div class="flex items-center gap-2">
@@ -131,7 +127,7 @@ const selectFeature = (id) => {
                                             'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
                                         ]"
                                     >
-                                        {{ unit.division?.name }}
+                                        {{ unit.type === 'MEDIK' ? __('Penunjang Medik') : __('Penunjang Non-Medik') }}
                                     </span>
                                 </div>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
@@ -142,7 +138,7 @@ const selectFeature = (id) => {
                     </div>
 
                     <!-- Main Layout -->
-                    <div v-if="unit.unit_features && unit.unit_features.length > 0" class="w-full space-y-4">
+                    <div class="w-full space-y-4">
                         
                         <!-- Feature Tabs -->
                         <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
@@ -153,7 +149,7 @@ const selectFeature = (id) => {
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div 
-                                    v-for="feature in unit.unit_features" 
+                                    v-for="feature in defaultFeatures" 
                                     :key="feature.id"
                                     @click="selectFeature(feature.id)"
                                     :class="[
@@ -172,7 +168,7 @@ const selectFeature = (id) => {
                                         ]"
                                     >
                                         <component 
-                                            :is="getFeatureIcon(feature.name)"
+                                            :is="getFeatureIcon(feature.key)"
                                             :class="[
                                                 'h-5 w-5 transition-colors duration-150',
                                                 selectedFeatureId === feature.id
@@ -204,25 +200,9 @@ const selectFeature = (id) => {
                             :unit="unit"
                             :active-feature="activeFeature"
                             :rooms="rooms"
-                            :is-medik="false"
+                            :is-medik="isMedik"
                         />
 
-                    </div>
-
-                    <!-- Empty State (No features available) -->
-                    <div 
-                        v-else 
-                        class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4"
-                    >
-                        <div class="h-16 w-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-455 dark:text-slate-500">
-                            <AlertCircle class="h-8 w-8" />
-                        </div>
-                        <div class="space-y-1 max-w-sm">
-                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ __('pages.services.empty_features_title') }}</h3>
-                            <p class="text-xs text-slate-400 dark:text-slate-505 leading-relaxed">
-                                {{ __('pages.services.empty_features_desc') }}
-                            </p>
-                        </div>
                     </div>
                 </div>
 

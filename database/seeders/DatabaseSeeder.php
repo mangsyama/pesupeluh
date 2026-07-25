@@ -46,77 +46,71 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 2. Seed Divisions
-        if (DB::table('divisions')->count() === 0) {
-            DB::table('divisions')->insert([
-                [
-                    'name' => 'Penunjang Medik',
-                    'description' => 'Mencakup pelaporan operasional unit penunjang pelayanan medis yang terdiri dari unit Farmasi, Radiologi, Laboratorium, dan CSSD.'
-                ],
-                [
-                    'name' => 'Penunjang Non-Medik',
-                    'description' => 'Mencakup pelaporan operasional unit penunjang non-medis yang terdiri dari unit Gizi, Laundry, Kesling, dan IPSRS.'
-                ],
-            ]);
-        }
-
-        // 3. Seed Supporting Units
+        // 2. Seed Supporting Units
         if (DB::table('supporting_units')->count() === 0) {
             DB::table('supporting_units')->insert([
                 // Medik Units
                 [
-                    'division_id' => 1,
+                    'type' => 'MEDIK',
                     'name' => 'FARMASI',
+                    'slug' => 'farmasi',
                     'description' => 'Sistem pelaporan stok obat, resep, dan kebutuhan apotek.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
-                    'division_id' => 1,
+                    'type' => 'MEDIK',
                     'name' => 'RADIOLOGI',
+                    'slug' => 'radiologi',
                     'description' => 'Pelaporan pemeriksaan radiologi, hasil Rontgen, CT Scan, dan USG.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
-                    'division_id' => 1,
+                    'type' => 'MEDIK',
                     'name' => 'LABORATORIUM',
+                    'slug' => 'laboratorium',
                     'description' => 'Pencatatan pemeriksaan darah, urine, patologi, dan laboratorium klinis.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
-                    'division_id' => 1,
+                    'type' => 'MEDIK',
                     'name' => 'CSSD',
+                    'slug' => 'cssd',
                     'description' => 'Sistem pemantauan sterilisasi alkes medis dan instrumen operasi.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 // Non-Medik Units
                 [
-                    'division_id' => 2,
+                    'type' => 'NON_MEDIK',
                     'name' => 'GIZI',
+                    'slug' => 'gizi',
                     'description' => 'Pelaporan menu makanan pasien, distribusi gizi, dan operasional dapur RS.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
-                    'division_id' => 2,
+                    'type' => 'NON_MEDIK',
                     'name' => 'LAUNDRY',
+                    'slug' => 'laundry',
                     'description' => 'Pencatatan sirkulasi linen medis, kapasitas pencucian, dan inventaris laundry.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
-                    'division_id' => 2,
+                    'type' => 'NON_MEDIK',
                     'name' => 'KESLING',
+                    'slug' => 'kesling',
                     'description' => 'Sistem pelaporan sanitasi lingkungan, pengelolaan limbah B3, dan kualitas air.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
-                    'division_id' => 2,
+                    'type' => 'NON_MEDIK',
                     'name' => 'IPSRS',
+                    'slug' => 'ipsrs',
                     'description' => 'Sistem informasi pemeliharaan sarana prasarana, alkes, listrik, air, dan fasilitas RS.',
                     'status' => 'ACTIVE'
                 ],
             ]);
         }
 
-        // 4. Seed Rooms
+        // 3. Seed Rooms
         if (DB::table('rooms')->count() === 0) {
             DB::table('rooms')->insert([
                 ['name' => 'Ruang IGD (Instalasi Gawat Darurat)', 'location_floor' => 'Lantai 1'],
@@ -132,152 +126,179 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 5. Seed Unit Features & Feature Categories
-        if (DB::table('unit_features')->count() === 0) {
-            // IPSRS (id 8) Features: Pelaporan, Kalibrasi, Usulan
-            $ipsrsPelaporanId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 8, 'name' => 'Pelaporan']);
-            $ipsrsKalibrasiId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 8, 'name' => 'Kalibrasi']);
-            $ipsrsUsulanId = DB::table('unit_features')->insertGetId(['supporting_unit_id' => 8, 'name' => 'Usulan']);
-
-            // Seed Feature Categories under IPSRS - Pelaporan
-            DB::table('feature_categories')->insert([
-                ['feature_id' => $ipsrsPelaporanId, 'name' => 'AC & Pendingin Ruangan', 'description' => 'Suhu ruangan tidak dingin, AC bocor, remote rusak, atau AC mati total.'],
-                ['feature_id' => $ipsrsPelaporanId, 'name' => 'Listrik & Pencahayaan', 'description' => 'Lampu padam, stop kontak rusak/konslet, MCB turun/trip.'],
-                ['feature_id' => $ipsrsPelaporanId, 'name' => 'Plumbing & Sanitasi', 'description' => 'Kran air patah/bocor, wastafel tersumbat, toilet mampet.'],
-                ['feature_id' => $ipsrsPelaporanId, 'name' => 'Alat Medis (Alkes)', 'description' => 'Kerusakan fisik atau fungsi pada alat kesehatan medis.'],
-                ['feature_id' => $ipsrsPelaporanId, 'name' => 'Sarana Fisik Gedung', 'description' => 'Pintu rusak, plafon bocor, dinding retak, kunci rusak.'],
+        // 4. Seed Issue Categories under IPSRS (supporting_unit_id = 8)
+        if (DB::table('issue_categories')->count() === 0) {
+            DB::table('issue_categories')->insert([
+                ['supporting_unit_id' => 8, 'name' => 'AC & Pendingin Ruangan', 'description' => 'Suhu ruangan tidak dingin, AC bocor, remote rusak, atau AC mati total.'],
+                ['supporting_unit_id' => 8, 'name' => 'Listrik & Pencahayaan', 'description' => 'Lampu padam, stop kontak rusak/konslet, MCB turun/trip.'],
+                ['supporting_unit_id' => 8, 'name' => 'Plumbing & Sanitasi', 'description' => 'Kran air patah/bocor, wastafel tersumbat, toilet mampet.'],
+                ['supporting_unit_id' => 8, 'name' => 'Alat Medis (Alkes)', 'description' => 'Kerusakan fisik atau fungsi pada alat kesehatan medis.'],
+                ['supporting_unit_id' => 8, 'name' => 'Sarana Fisik Gedung', 'description' => 'Pintu rusak, plafon bocor, dinding retak, kunci rusak.'],
             ]);
         }
 
-        // 6. Create default users for testing if none exist
-        if (User::count() <= 1) {
-            // Delete any existing default to clean up
-            User::query()->delete();
+        // 5. Seed Users
+        if (DB::table('users')->count() === 0) {
+            $defaultPassword = Hash::make('password123');
 
-            $commonPassword = Hash::make('12345678');
-
-            // 1. Admin User
+            // 1. Super Admin (ADMINISTRATOR)
             User::create([
-                'name' => 'Administrator',
-                'nip' => '197001011995011001',
+                'role_id' => 1,
+                'room_id' => null,
+                'supporting_unit_id' => null,
+                'nip' => '198501012010011001',
                 'username' => 'admin',
-                'email' => 'admin@example.com',
-                'password' => $commonPassword,
-                'role_id' => 1, // ADMINISTRATOR
+                'name' => 'Administrator Utama',
+                'email' => 'admin@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
 
-            // 2. Director User
+            // 2. Director (DIRECTOR)
             User::create([
-                'name' => 'Dr. Hermawan (Direktur)',
-                'nip' => '197102021996021002',
+                'role_id' => 2,
+                'room_id' => null,
+                'supporting_unit_id' => null,
+                'nip' => '197003151998031002',
                 'username' => 'direktur',
-                'email' => 'direktur@example.com',
-                'password' => $commonPassword,
-                'role_id' => 2, // DIRECTOR
+                'name' => 'dr. Budi Santoso, Sp.B',
+                'email' => 'direktur@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
 
-            // 3. Division Head
+            // 3. Division Head - Medik (DIVISION_HEAD)
             User::create([
-                'name' => 'Budi Santoso (Kabid Penunjang)',
-                'nip' => '197203031997031003',
-                'username' => 'kabid',
-                'email' => 'kabid@example.com',
-                'password' => $commonPassword,
-                'role_id' => 3, // DIVISION_HEAD
+                'role_id' => 3,
+                'room_id' => null,
+                'supporting_unit_id' => null,
+                'nip' => '197508202003121003',
+                'username' => 'kabid_medik',
+                'name' => 'dr. Siti Rahma, Sp.A',
+                'email' => 'kabid.medik@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
 
-            // 4. Section Head
+            // 4. Division Head - Non Medik (DIVISION_HEAD)
             User::create([
-                'name' => 'Rina Amelia (Kasi Fasilitas)',
-                'nip' => '197304041998042004',
-                'username' => 'kasi',
-                'email' => 'kasi@example.com',
-                'password' => $commonPassword,
-                'role_id' => 4, // SECTION_HEAD
+                'role_id' => 3,
+                'room_id' => null,
+                'supporting_unit_id' => null,
+                'nip' => '197811052005011004',
+                'username' => 'kabid_nonmedik',
+                'name' => 'H. Ahmad Fauzi, S.T.',
+                'email' => 'kabid.nonmedik@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
 
-            // 5. Unit Head (IPRS)
+            // 5. Section Head - Sarpras (SECTION_HEAD)
             User::create([
-                'name' => 'Hendra Wijaya (Ka. Unit IPSRS)',
-                'nip' => '197405051999051005',
-                'username' => 'kanit_ipsrs',
-                'email' => 'kanit_ipsrs@example.com',
-                'password' => $commonPassword,
-                'role_id' => 5, // UNIT_HEAD
-                'supporting_unit_id' => 8, // IPSRS
+                'role_id' => 4,
+                'room_id' => null,
+                'supporting_unit_id' => null,
+                'nip' => '198204122008041005',
+                'username' => 'kasie_sarpras',
+                'name' => 'Ir. Hendra Wijaya',
+                'email' => 'kasie.sarpras@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
 
-            // 6. Technician 1
+            // 6. Unit Head - IPSRS (UNIT_HEAD, supporting_unit_id = 8)
             User::create([
-                'name' => 'Joko Prasetyo (Teknisi IPSRS)',
-                'nip' => '197506062000061006',
-                'username' => 'teknisi1',
-                'email' => 'teknisi1@example.com',
-                'password' => $commonPassword,
-                'role_id' => 6, // TECHNICIAN
-                'supporting_unit_id' => 8, // IPSRS
+                'role_id' => 5,
+                'room_id' => null,
+                'supporting_unit_id' => 8,
+                'nip' => '198609252011011006',
+                'username' => 'kaunit_ipsrs',
+                'name' => 'Agus Setiawan, S.T. (Ka. Unit IPSRS)',
+                'email' => 'kaunit.ipsrs@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
 
-            // 7. Technician 2
+            // 7. Technician 1 - IPSRS (TECHNICIAN, supporting_unit_id = 8)
             User::create([
-                'name' => 'Agus Setiawan (Teknisi IPSRS)',
-                'nip' => '197607072001071007',
-                'username' => 'teknisi2',
-                'email' => 'teknisi2@example.com',
-                'password' => $commonPassword,
-                'role_id' => 6, // TECHNICIAN
-                'supporting_unit_id' => 8, // IPSRS
+                'role_id' => 6,
+                'room_id' => null,
+                'supporting_unit_id' => 8,
+                'nip' => '199002142014021007',
+                'username' => 'teknisi1_ipsrs',
+                'name' => 'Rizky Pratama (Teknisi Listrik/AC)',
+                'email' => 'teknisi1.ipsrs@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
 
-            // 8. Room Head (IGD)
+            // 8. Technician 2 - IPSRS (TECHNICIAN, supporting_unit_id = 8)
             User::create([
-                'name' => 'Siti Rahmah (Karu IGD)',
-                'nip' => '197708082002082008',
+                'role_id' => 6,
+                'room_id' => null,
+                'supporting_unit_id' => 8,
+                'nip' => '199207302015031008',
+                'username' => 'teknisi2_ipsrs',
+                'name' => 'Dedi Kurniawan (Teknisi Sanitasi/Plumbing)',
+                'email' => 'teknisi2.ipsrs@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
+                'is_active' => true,
+                'approved_at' => now(),
+                'approved_by' => 1,
+            ]);
+
+            // 9. Room Head - IGD (ROOM_HEAD, room_id = 1)
+            User::create([
+                'role_id' => 7,
+                'room_id' => 1,
+                'supporting_unit_id' => null,
+                'nip' => '198805182012012009',
                 'username' => 'karu_igd',
-                'email' => 'karu_igd@example.com',
-                'password' => $commonPassword,
-                'role_id' => 7, // ROOM_HEAD
-                'room_id' => 1, // Ruang IGD
-                'phone_number' => '081234567890',
+                'name' => 'Ns. Dewi Lestari, S.Kep (Karu IGD)',
+                'email' => 'karu.igd@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
 
-            // 9. Reporter / Staff
+            // 10. Reporter / Staff IGD (REPORTER, room_id = 1)
             User::create([
-                'name' => 'Dian Lestari (Staff Perawat)',
-                'nip' => '197809092003092009',
-                'username' => 'staf_dian',
-                'email' => 'staf_dian@example.com',
-                'password' => $commonPassword,
-                'role_id' => 8, // REPORTER
-                'room_id' => 1, // Ruang IGD
-                'phone_number' => '089876543210',
+                'role_id' => 8,
+                'room_id' => 1,
+                'supporting_unit_id' => null,
+                'nip' => '199512102018012010',
+                'username' => 'staf_igd',
+                'name' => 'Bambang Sujatmiko (Perawat IGD)',
+                'email' => 'staf.igd@pesupeluh.rs',
+                'email_verified_at' => now(),
+                'password' => $defaultPassword,
                 'is_active' => true,
-                'approved_by' => 1,
                 'approved_at' => now(),
+                'approved_by' => 1,
             ]);
         }
     }

@@ -2,7 +2,7 @@
 import { ref, computed, watch, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, Link } from '@inertiajs/vue3';
-import { FileText, Download, BarChart3, CheckCircle2, Clock, FileBarChart2, Filter, RotateCcw, Building, MapPin, UserCheck, Eye, ClipboardList, ChevronDown, Check, Search, Calendar } from '@lucide/vue';
+import { FileText, Download, BarChart3, CheckCircle2, Clock, FileBarChart2, Filter, RotateCcw, Building, MapPin, UserCheck, Eye, ExternalLink, ClipboardList, ChevronDown, Check, Search, Calendar } from '@lucide/vue';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 import { Indonesian } from 'flatpickr/dist/l10n/id.js';
@@ -205,17 +205,9 @@ const availableCategories = computed(() => {
     if (!formFilters.value.unit_id) return [];
     
     const unit = props.supportingUnits.find(u => String(u.id) === String(formFilters.value.unit_id));
-    if (!unit || !unit.unit_features) return [];
+    if (!unit) return [];
     
-    const list = [];
-    unit.unit_features.forEach(feature => {
-        if (feature.feature_categories) {
-            feature.feature_categories.forEach(cat => {
-                list.push(cat);
-            });
-        }
-    });
-    return list;
+    return unit.issue_categories || unit.issueCategories || [];
 });
 
 // Reset category if selected unit_id changes
@@ -466,10 +458,10 @@ watch(() => props.filters, (newVal) => {
                                         </div>
                                     </div>
 
-                                    <!-- Kategori Kerusakan -->
+                                    <!-- Kategori Permasalahan -->
                                     <div class="space-y-1.5">
                                         <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">
-                                            Kategori Kerusakan
+                                            Kategori Permasalahan
                                         </label>
                                         <div class="relative">
                                             <button
@@ -740,7 +732,6 @@ watch(() => props.filters, (newVal) => {
                                     <th class="px-6 py-4 whitespace-nowrap">Kategori</th>
                                     <th class="px-6 py-4 whitespace-nowrap">Deskripsi Kerusakan</th>
                                     <th class="px-6 py-4 whitespace-nowrap text-center">Status</th>
-                                    <th class="px-6 py-4 whitespace-nowrap text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
@@ -762,7 +753,7 @@ watch(() => props.filters, (newVal) => {
                                         {{ ticket.room?.name ?? '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-normal break-words max-w-[150px] font-medium text-slate-800 dark:text-slate-200">
-                                        {{ ticket.category?.unit_feature?.supporting_unit?.name ?? '-' }}
+                                        {{ ticket.category?.supporting_unit?.name ?? ticket.category?.supportingUnit?.name ?? '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-normal break-words max-w-[150px] font-medium text-slate-800 dark:text-slate-200">
                                         {{ ticket.category?.name ?? '-' }}
@@ -786,18 +777,9 @@ watch(() => props.filters, (newVal) => {
                                             {{ ticket.status === 'COMPLETED' ? 'Selesai' : (ticket.status === 'PENDING_VALIDATION' ? 'Menunggu' : (ticket.status === 'PENDING' ? 'Tertunda' : (ticket.status === 'CANCEL' ? 'Batal' : 'Progres'))) }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                                        <Link 
-                                            :href="route('reports.show', ticket.uuid)"
-                                            class="w-24 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 border bg-emerald-600 hover:bg-emerald-500 text-white border-transparent shadow-sm shadow-emerald-500/10"
-                                        >
-                                            <span>Detail</span>
-                                            <Eye class="h-3.5 w-3.5" />
-                                        </Link>
-                                    </td>
                                 </tr>
                                 <tr v-if="!tickets.data || tickets.data.length === 0">
-                                    <td colspan="9" class="px-6 py-12 text-center text-slate-400 dark:text-slate-555 font-medium italic">
+                                    <td colspan="8" class="px-6 py-12 text-center text-slate-400 dark:text-slate-555 font-medium italic">
                                         Tidak ada data laporan yang cocok dengan filter yang dipilih.
                                     </td>
                                 </tr>

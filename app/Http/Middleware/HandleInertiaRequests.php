@@ -55,7 +55,7 @@ class HandleInertiaRequests extends Middleware
                     if (in_array($roleId, [1, 2, 3, 4])) {
                         // Admin / Management
                     } elseif ($roleId === 5) {
-                        $query->whereHas('category.unitFeature', function ($q) use ($user) {
+                        $query->whereHas('category', function ($q) use ($user) {
                             $q->where('supporting_unit_id', $user->supporting_unit_id);
                         });
                     } elseif ($roleId === 6) {

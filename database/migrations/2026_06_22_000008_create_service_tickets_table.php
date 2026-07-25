@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('ticket_number', 50)->unique();
             $table->foreignId('reporter_id')->constrained('users');
             $table->foreignId('room_id')->constrained('rooms');
-            $table->foreignId('category_id')->constrained('feature_categories');
+            $table->foreignId('category_id')->constrained('issue_categories');
             $table->text('problem_description');
             
             $table->string('priority', 20)->nullable();

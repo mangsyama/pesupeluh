@@ -23,7 +23,10 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Register');
+        return Inertia::render('Auth/Register', [
+            'supportingUnits' => \App\Models\SupportingUnit::orderBy('name', 'asc')->get(['id', 'name', 'type']),
+            'rooms' => \App\Models\Room::orderBy('name', 'asc')->get(['id', 'name']),
+        ]);
     }
 
     /**
@@ -39,6 +42,8 @@ class RegisteredUserController extends Controller
             'username' => ['required', 'string', 'max:100', \Illuminate\Validation\Rule::unique('users')->whereNull('deleted_at')],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->whereNull('deleted_at')],
             'phone_number' => ['required', 'regex:/^\d+$/', 'max:15'],
+            'supporting_unit_id' => 'nullable|exists:supporting_units,id',
+            'room_id' => 'nullable|exists:rooms,id',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'face_descriptor' => 'nullable|array',
             'profile_photo' => ['required', function ($attribute, $value, $fail) use ($request) {
@@ -83,6 +88,8 @@ class RegisteredUserController extends Controller
             'username' => $request->username,
             'email' => $request->email,
             'phone_number' => $request->phone_number,
+            'supporting_unit_id' => $request->supporting_unit_id,
+            'room_id' => $request->room_id,
             'password' => Hash::make($request->password),
             'face_descriptor' => $request->face_descriptor,
             'role_id' => $reporterRole ? $reporterRole->id : 6,

@@ -32,7 +32,7 @@ class ReportController extends Controller
         ];
 
         // Ambil data master untuk dropdown
-        $supportingUnits = \App\Models\SupportingUnit::with('unitFeatures.featureCategories')->get();
+        $supportingUnits = \App\Models\SupportingUnit::with('issueCategories')->get();
         $rooms = \App\Models\Room::select(['id', 'name', 'location_floor'])->orderBy('name')->get();
         $reporters = \App\Models\User::select(['id', 'name', 'room_id'])->orderBy('name')->get();
 
@@ -45,8 +45,8 @@ class ReportController extends Controller
                 $query = ServiceTicket::with([
                     'reporter:id,name',
                     'room:id,name',
-                    'category:id,name,feature_id',
-                    'category.unitFeature.supportingUnit:id,name',
+                    'category:id,name,supporting_unit_id',
+                    'category.supportingUnit:id,name',
                 ])
                 ->whereNull('deleted_at');
 
@@ -104,9 +104,8 @@ class ReportController extends Controller
         ->with([
             'reporter:id,name,phone_number',
             'room:id,name',
-            'category:id,name,feature_id',
-            'category.unitFeature:id,name,supporting_unit_id',
-            'category.unitFeature.supportingUnit:id,name',
+            'category:id,name,supporting_unit_id',
+            'category.supportingUnit:id,name',
         ])
         ->whereNull('deleted_at')
         ->where('reporter_id', $userId);
@@ -172,7 +171,7 @@ class ReportController extends Controller
                 'reporter:id,name,nip,phone_number',
                 'validator:id,name,nip',
                 'room:id,name,location_floor',
-                'category.unitFeature.supportingUnit.division',
+                'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
             ])),
@@ -190,9 +189,8 @@ class ReportController extends Controller
         $query = ServiceTicket::with([
             'reporter:id,name',
             'room:id,name',
-            'category:id,name,feature_id',
-            'category.unitFeature:id,supporting_unit_id,name',
-            'category.unitFeature.supportingUnit:id,name',
+            'category:id,name,supporting_unit_id',
+            'category.supportingUnit:id,name',
             'assignments.technician:id,name',
             'attachments',
         ])
@@ -215,7 +213,7 @@ class ReportController extends Controller
         }
         $categoryName = null;
         if ($request->filled('category_id')) {
-            $categoryName = \App\Models\FeatureCategory::find($request->input('category_id'))?->name;
+            $categoryName = \App\Models\IssueCategory::find($request->input('category_id'))?->name;
         }
         $roomName = null;
         if ($request->filled('room_id')) {
@@ -266,7 +264,7 @@ class ReportController extends Controller
             $query->where('reporter_id', $userId);
         } elseif (in_array($roleId, [5, 6]) && $user->supporting_unit_id) {
             $unitId = $user->supporting_unit_id;
-            $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+            $query->whereHas('category', function ($q) use ($unitId) {
                 $q->where('supporting_unit_id', $unitId);
             });
         } elseif ($roleId === 7 && $user->room_id) {
@@ -276,7 +274,7 @@ class ReportController extends Controller
         // Filter unit penunjang (supporting_unit_id)
         if ($request->filled('unit_id')) {
             $unitId = $request->input('unit_id');
-            $query->whereHas('category.unitFeature', function ($q) use ($unitId) {
+            $query->whereHas('category', function ($q) use ($unitId) {
                 $q->where('supporting_unit_id', $unitId);
             });
         }

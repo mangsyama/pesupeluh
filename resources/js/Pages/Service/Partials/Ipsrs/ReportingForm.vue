@@ -50,7 +50,8 @@ const userAssignedRoom = computed(() => {
 const selectedCategoryId = ref(null);
 
 const activeCategory = computed(() => {
-    return props.activeFeature.feature_categories?.find(c => c.id === selectedCategoryId.value) || null;
+    const categories = props.unit?.issue_categories || props.activeFeature?.feature_categories || [];
+    return categories.find(c => c.id === selectedCategoryId.value) || null;
 });
 
 // Form state
@@ -239,9 +240,9 @@ const submitReport = () => {
                 <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('pages.services.kategori_di_bawah_desc') }}</p>
             </div>
 
-            <div v-if="activeFeature?.feature_categories && activeFeature.feature_categories.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div v-if="(unit?.issue_categories || activeFeature?.feature_categories || []).length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div 
-                    v-for="cat in activeFeature.feature_categories" 
+                    v-for="cat in (unit?.issue_categories || activeFeature?.feature_categories || [])" 
                     :key="cat.id"
                     @click="selectCategory(cat.id)"
                     :class="[

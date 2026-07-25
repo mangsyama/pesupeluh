@@ -450,11 +450,9 @@ const showNotificationToast = (normalized) => {
 const registerNotificationListeners = () => {
     if (typeof window !== 'undefined' && window.Echo && page.props.auth?.user?.id) {
         const channelName = `App.Models.User.${page.props.auth.user.id}`;
-        console.debug('[Echo] subscribing to private channel', channelName);
 
         window.Echo.private(channelName)
             .notification((notification) => {
-                console.debug('[Echo] notification received', notification);
                 const normalized = normalizeNotificationPayload(notification);
                 notifications.value.unshift(normalized);
 
@@ -482,19 +480,20 @@ const markAsRead = (notif) => {
     showDesktopNotifications.value = false;
     showMobileNotifications.value = false;
 
-    if (notif.route) {
-        router.post(route('notifications.markAsRead', { id: notif.id }), {}, {
-            preserveScroll: true,
-            preserveState: true,
-            onFinish: () => {
-                router.visit(notif.route);
-            }
-        });
-    } else {
-        router.post(route('notifications.markAsRead', { id: notif.id }), {}, {
-            preserveScroll: true,
-            preserveState: true,
-        });
+    let targetRoute = notif.route;
+    if (targetRoute && typeof targetRoute === 'string') {
+        // Fix any old notification payload created with 127.0.0.1:8000
+        targetRoute = targetRoute.replace('http://127.0.0.1:8000', window.location.origin);
+    }
+
+    // Fire & forget markAsRead request so page navigation is never blocked
+    router.post(route('notifications.markAsRead', { id: notif.id }), {}, {
+        preserveScroll: true,
+        preserveState: true,
+    });
+
+    if (targetRoute) {
+        router.visit(targetRoute);
     }
 };
 
@@ -548,7 +547,7 @@ const searchableItems = [
     { label: 'Laporan & Export', routeName: 'reports.index', description: 'Unduh laporan PDF & CSV' },
     { label: 'Riwayat Pelaporan', routeName: 'reports.history', description: 'Daftar riwayat tiket' },
     { label: 'Manajemen Ruangan', routeName: 'service-management.rooms', description: 'Pengelolaan data master ruangan dan lokasi' },
-    { label: 'Kategori Kerusakan', routeName: 'service-management.categories', description: 'Pengelolaan data master kategori kerusakan aset' },
+    { label: 'Kategori Permasalahan', routeName: 'service-management.categories', description: 'Pengelolaan data master kategori permasalahan aset & operasional' },
     { label: 'Layanan Penunjang (Managemen Layanan)', routeName: 'service-management.supporting-units', description: 'Pengelolaan data divisi dan unit penunjang' },
     { label: 'Persetujuan Registrasi', routeName: 'users.approvals', description: 'Persetujuan pendaftar pengguna baru' },
     { label: 'Super Admin', routeName: 'users.admin', description: 'Manajemen pengguna administrator' },
@@ -579,7 +578,7 @@ const mobilePageTitles = [
     { routeName: 'reports-management.index', label: 'Manajemen Laporan' },
     { routeName: 'reports-management.show', label: 'Detail Manajemen Laporan' },
     { routeName: 'service-management.rooms', label: 'Manajemen Ruangan' },
-    { routeName: 'service-management.categories', label: 'Kategori Kerusakan' },
+    { routeName: 'service-management.categories', label: 'Kategori Permasalahan' },
     { routeName: 'service-management.supporting-units', label: 'Layanan Penunjang' },
     { routeName: 'users.approvals', label: 'Persetujuan Registrasi' },
     { routeName: 'users.admin', label: 'Super Admin' },

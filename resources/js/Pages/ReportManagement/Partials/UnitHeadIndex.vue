@@ -137,10 +137,10 @@ const formatDate = (dateStr) => {
                                 <thead>
                                     <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
                                         <th class="px-6 py-4">{{ __('pages.reports.history.table_id_date') }}</th>
-                                        <th class="px-6 py-4 text-center">Prioritas</th>
                                         <th class="px-6 py-4">Pelapor</th>
                                         <th class="px-6 py-4">Kategori / Ruangan</th>
                                         <th class="px-6 py-4">Penjelasan Masalah</th>
+                                        <th class="px-6 py-4 text-center">Prioritas</th>
                                         <th class="px-6 py-4 text-center">Status</th>
                                         <th class="px-6 py-4 text-center">Aksi</th>
                                     </tr>
@@ -156,7 +156,16 @@ const formatDate = (dateStr) => {
                                             </div>
                                         </td>
                                     </tr>
-                                    <tr v-for="ticket in tickets.data" :key="'ticket-' + ticket.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
+                                    <tr 
+                                        v-for="ticket in tickets.data" 
+                                        :key="'ticket-' + ticket.id" 
+                                        :class="[
+                                            'transition-colors duration-150',
+                                            ticket.priority === 'URGENT' 
+                                                ? 'bg-rose-50/40 hover:bg-rose-50/70 dark:bg-rose-950/20 dark:hover:bg-rose-950/30' 
+                                                : 'hover:bg-slate-50/30 dark:hover:bg-slate-800/10'
+                                        ]"
+                                    >
                                         <!-- ID / Date -->
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="font-bold text-slate-950 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>
@@ -164,13 +173,6 @@ const formatDate = (dateStr) => {
                                                 <Calendar class="h-3 w-3" />
                                                 {{ formatDate(ticket.created_at) }}
                                             </div>
-                                        </td>
-                                        <!-- Priority -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span v-if="ticket.priority" :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getPriority(ticket.priority).badge]">
-                                                {{ getPriority(ticket.priority).label }}
-                                            </span>
-                                            <span v-else class="text-slate-400">-</span>
                                         </td>
                                         <!-- Reporter -->
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -193,6 +195,13 @@ const formatDate = (dateStr) => {
                                         <td class="px-6 py-4 text-xs text-slate-650 dark:text-slate-400 break-words max-w-md">
                                             {{ ticket.problem_description }}
                                         </td>
+                                        <!-- Priority -->
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <span v-if="ticket.priority" :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getPriority(ticket.priority).badge]">
+                                                {{ getPriority(ticket.priority).label }}
+                                            </span>
+                                            <span v-else class="text-slate-400">-</span>
+                                        </td>
                                         <!-- Status -->
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <span :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
@@ -205,14 +214,14 @@ const formatDate = (dateStr) => {
                                                 <Link
                                                     :href="route('reports-management.show', ticket.uuid)"
                                                     :class="[
-                                                        'w-28 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 border',
+                                                        'min-w-[105px] px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-all duration-150 border',
                                                         ticket.status === 'PENDING_VALIDATION' 
                                                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-transparent' 
                                                             : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border-slate-200 dark:border-slate-700'
                                                     ]"
                                                 >
                                                     <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Disposisi' : 'Pantau' }}</span>
-                                                    <ArrowRight class="h-3.5 w-3.5" />
+                                                    <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                                 </Link>
                                             </div>
                                         </td>
@@ -233,7 +242,12 @@ const formatDate = (dateStr) => {
                             <div
                                 v-for="ticket in tickets.data"
                                 :key="'mobile-ticket-' + ticket.id"
-                                class="bg-white dark:bg-slate-900 border border-slate-155 dark:border-slate-850/60 rounded-2xl p-4 shadow-sm"
+                                :class="[
+                                    'rounded-2xl p-4 shadow-sm transition-all duration-150',
+                                    ticket.priority === 'URGENT'
+                                        ? 'bg-rose-50/40 dark:bg-rose-950/20 border-2 border-rose-300 dark:border-rose-800'
+                                        : 'bg-white dark:bg-slate-900 border border-slate-155 dark:border-slate-850/60'
+                                ]"
                             >
                                 <div class="flex justify-between items-start mb-2.5">
                                     <div>
@@ -275,15 +289,14 @@ const formatDate = (dateStr) => {
                                     <Link
                                         :href="route('reports-management.show', ticket.uuid)"
                                         :class="[
-                                            'w-full py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1 transition-all duration-150 border',
+                                            'w-full py-2.5 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-all duration-150',
                                             ticket.status === 'PENDING_VALIDATION'
                                                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold border-transparent'
-                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
                                         ]"
                                     >
-                                        <Wrench v-if="ticket.status === 'PENDING_VALIDATION'" class="h-3.5 w-3.5" />
                                         <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Lakukan Disposisi' : 'Detail Pemantauan' }}</span>
-                                        <ArrowRight class="h-3.5 w-3.5" />
+                                        <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                     </Link>
                                 </div>
                             </div>
