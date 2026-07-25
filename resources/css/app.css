@@ -66,5 +66,5 @@
     }
 }
 .animate-spa-fade-in {
-    animation: spa-fade-in 0.12s ease-out both !important;
+    animation: none !important;
 }
