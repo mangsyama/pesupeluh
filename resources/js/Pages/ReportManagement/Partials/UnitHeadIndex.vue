@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, getCurrentInstance } from 'vue';
+import { ref, computed, watch, getCurrentInstance } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, ShieldAlert, ArrowRight, Wrench } from '@lucide/vue';
 
@@ -20,6 +20,7 @@ const searchQuery = ref(props.filters.search || '');
 // Set default tab to '' (Semua Tugas) if status not set
 const currentTab = ref(props.filters.status || ''); 
 const isFiltering = ref(false);
+const isLoading = computed(() => isFiltering.value || !props.tickets?.data);
 
 // Debounce search
 let searchTimeout = null;
@@ -29,9 +30,21 @@ watch(searchQuery, () => {
 });
 
 const setTab = (tabValue) => {
+    if (currentTab.value === tabValue) return;
     currentTab.value = tabValue;
     applyFilters();
 };
+
+watch(() => props.tickets, () => {
+    isFiltering.value = false;
+});
+
+watch(() => props.filters, (newFilters) => {
+    if (newFilters) {
+        if (newFilters.search !== undefined) searchQuery.value = newFilters.search || '';
+        if (newFilters.status !== undefined) currentTab.value = newFilters.status || '';
+    }
+});
 
 const applyFilters = () => {
     isFiltering.value = true;
@@ -42,6 +55,9 @@ const applyFilters = () => {
         preserveState: true,
         replace: true,
         preserveScroll: true,
+        onStart: () => {
+            isFiltering.value = true;
+        },
         onFinish: () => {
             isFiltering.value = false;
         }
@@ -145,8 +161,39 @@ const formatDate = (dateStr) => {
                                         <th class="px-6 py-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-855 dark:text-slate-300">
-                                    <tr v-if="!tickets.data || tickets.data.length === 0">
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                                    <!-- Skeleton Loading Rows -->
+                                    <template v-if="isLoading">
+                                        <tr v-for="n in 5" :key="'skel-t-' + n" class="align-middle">
+                                            <td class="px-6 py-4">
+                                                <div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                <div class="h-3 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1.5"></div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                <div class="h-3 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1.5"></div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="h-4 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                <div class="h-3 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1.5"></div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="h-4 w-56 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="h-6 w-24 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse mx-auto"></div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="h-6 w-24 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse mx-auto"></div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="h-8 w-24 bg-slate-200/80 dark:bg-slate-800 rounded-xl animate-pulse mx-auto"></div>
+                                            </td>
+                                        </tr>
+                                    </template>
+
+                                    <!-- Empty State -->
+                                    <tr v-else-if="!tickets.data || tickets.data.length === 0">
                                         <td colspan="7" class="px-6 py-16 text-center">
                                             <div class="flex flex-col items-center gap-3 text-slate-400">
                                                 <svg class="h-12 w-12 text-slate-200 dark:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -156,7 +203,10 @@ const formatDate = (dateStr) => {
                                             </div>
                                         </td>
                                     </tr>
+
+                                    <!-- Real Data Rows -->
                                     <tr 
+                                        v-else
                                         v-for="ticket in tickets.data" 
                                         :key="'ticket-' + ticket.id" 
                                         :class="[
@@ -168,7 +218,7 @@ const formatDate = (dateStr) => {
                                     >
                                         <!-- ID / Date -->
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="font-bold text-slate-950 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>
+                                            <div class="font-bold text-slate-900 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
                                                 <Calendar class="h-3 w-3" />
                                                 {{ formatDate(ticket.created_at) }}
@@ -232,73 +282,93 @@ const formatDate = (dateStr) => {
 
                         <!-- Mobile View (Optimized with Action Card Layout) -->
                         <div class="md:hidden p-4 space-y-3 bg-slate-50/30 dark:bg-slate-950/10 border-t border-slate-100 dark:border-slate-800/60">
-                            <div v-if="!tickets.data || tickets.data.length === 0" class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 p-12 text-center rounded-2xl">
-                                <svg class="h-10 w-10 mx-auto text-slate-300 dark:text-slate-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span class="text-xs text-slate-400 font-medium">Tidak ada data tiket di antrean ini</span>
-                            </div>
-
-                            <div
-                                v-for="ticket in tickets.data"
-                                :key="'mobile-ticket-' + ticket.id"
-                                :class="[
-                                    'rounded-2xl p-4 shadow-sm transition-all duration-150 space-y-3',
-                                    ticket.priority === 'URGENT'
-                                        ? 'bg-rose-50/40 dark:bg-rose-950/20 border-2 border-rose-300 dark:border-rose-800'
-                                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
-                                ]"
-                            >
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="font-extrabold text-xs text-slate-900 dark:text-white">#{{ ticket.ticket_number }}</span>
-                                        <span v-if="ticket.priority" :class="['px-1.5 py-0.5 rounded text-[8px] font-bold', getPriority(ticket.priority).badge]">
-                                            {{ getPriority(ticket.priority).label }}
+                            <!-- Mobile View Cards -->
+                            <template v-if="isLoading">
+                                <div v-for="n in 3" :key="'skel-m-' + n" class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-4 space-y-3 shadow-sm">
+                                    <div class="flex justify-between items-start">
+                                        <div class="space-y-1">
+                                            <div class="h-3 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                            <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                        </div>
+                                        <div class="h-5 w-20 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse"></div>
+                                    </div>
+                                    <div class="h-3 w-full bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                    <div class="border-t border-slate-100 dark:border-slate-800/50 pt-2.5 flex justify-between items-center">
+                                        <div class="h-3 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                        <div class="h-4 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                    </div>
+                                </div>
+                            </template>
+                            <template v-else-if="!tickets.data || tickets.data.length === 0">
+                                <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 p-12 text-center rounded-2xl">
+                                    <svg class="h-10 w-10 mx-auto text-slate-300 dark:text-slate-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span class="text-xs text-slate-400 font-medium">Tidak ada data tiket di antrean ini</span>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div
+                                    v-for="ticket in tickets.data"
+                                    :key="'mobile-ticket-' + ticket.id"
+                                    :class="[
+                                        'rounded-2xl p-4 shadow-sm transition-all duration-150 space-y-3',
+                                        ticket.priority === 'URGENT'
+                                            ? 'bg-rose-50/40 dark:bg-rose-950/20 border-2 border-rose-300 dark:border-rose-800'
+                                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
+                                    ]"
+                                >
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-extrabold text-xs text-slate-900 dark:text-white">#{{ ticket.ticket_number }}</span>
+                                            <span v-if="ticket.priority" :class="['px-1.5 py-0.5 rounded text-[8px] font-bold', getPriority(ticket.priority).badge]">
+                                                {{ getPriority(ticket.priority).label }}
+                                            </span>
+                                        </div>
+                                        <span :class="['px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
+                                            {{ getStatus(ticket.status).label }}
                                         </span>
                                     </div>
-                                    <span :class="['px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
-                                        {{ getStatus(ticket.status).label }}
-                                    </span>
-                                </div>
 
-                                <h4 class="font-bold text-slate-900 dark:text-white text-xs">
-                                    {{ ticket.category?.name ?? '-' }}
-                                </h4>
+                                    <h4 class="font-bold text-slate-900 dark:text-white text-xs">
+                                        {{ ticket.category?.name ?? '-' }}
+                                    </h4>
 
-                                <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                                    {{ ticket.problem_description }}
-                                </p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                                        {{ ticket.problem_description }}
+                                    </p>
 
-                                <div class="text-[10px] text-slate-400 space-y-1 bg-slate-50 dark:bg-slate-950/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/40">
-                                    <div class="flex justify-between">
-                                        <span class="font-semibold">Pelapor:</span>
-                                        <span>{{ ticket.reporter?.name ?? '-' }}</span>
+                                    <div class="text-[10px] text-slate-400 space-y-1 bg-slate-50 dark:bg-slate-950/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/40">
+                                        <div class="flex justify-between">
+                                            <span class="font-semibold">Pelapor:</span>
+                                            <span>{{ ticket.reporter?.name ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="font-semibold">Ruangan:</span>
+                                            <span>{{ ticket.room?.name ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="font-semibold">Tanggal:</span>
+                                            <span>{{ formatDate(ticket.created_at) }}</span>
+                                        </div>
                                     </div>
-                                    <div class="flex justify-between">
-                                        <span class="font-semibold">Ruangan:</span>
-                                        <span>{{ ticket.room?.name ?? '-' }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="font-semibold">Tanggal:</span>
-                                        <span>{{ formatDate(ticket.created_at) }}</span>
-                                    </div>
-                                </div>
 
-                                <div class="flex justify-end pt-1 border-t border-slate-100 dark:border-slate-800/50">
-                                    <Link
-                                        :href="route('reports-management.show', ticket.uuid)"
-                                        :class="[
-                                            'w-full py-2.5 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-all duration-150',
-                                            ticket.status === 'PENDING_VALIDATION'
-                                                ? 'bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
-                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                                        ]"
-                                    >
-                                        <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Lakukan Disposisi' : 'Detail Pemantauan' }}</span>
-                                        <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
-                                    </Link>
+                                    <div class="flex justify-end pt-1 border-t border-slate-100 dark:border-slate-800/50">
+                                        <Link
+                                            :href="route('reports-management.show', ticket.uuid)"
+                                            :class="[
+                                                'w-full py-2.5 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-all duration-150',
+                                                ticket.status === 'PENDING_VALIDATION'
+                                                    ? 'bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
+                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                                            ]"
+                                        >
+                                            <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Lakukan Disposisi' : 'Detail Pemantauan' }}</span>
+                                            <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
+                            </template>
                         </div>
         </div>
 

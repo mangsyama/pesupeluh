@@ -225,11 +225,25 @@ watch(() => formFilters.value.room_id, (newRoomId) => {
     }
 });
 
+const isFiltering = ref(false);
+const isLoading = computed(() => isFiltering.value || !props.tickets?.data);
+
+watch(() => props.tickets, () => {
+    isFiltering.value = false;
+});
+
 const applyFilters = () => {
+    isFiltering.value = true;
     router.visit(route('reports.index'), {
         data: formFilters.value,
         preserveState: true,
         preserveScroll: true,
+        onStart: () => {
+            isFiltering.value = true;
+        },
+        onFinish: () => {
+            isFiltering.value = false;
+        }
     });
 };
 
@@ -340,7 +354,8 @@ watch(() => props.filters, (newVal) => {
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">
                             <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ __('pages.reports.center.stat_total_month') }}</span>
-                            <div class="text-3xl font-extrabold text-slate-955 dark:text-white mt-0.5">{{ stats?.total_month ?? 0 }}</div>
+                            <div v-if="isLoading" class="h-8 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-0.5"></div>
+                            <div v-else class="text-3xl font-extrabold text-slate-900 dark:text-white mt-0.5">{{ stats?.total_month ?? 0 }}</div>
                         </div>
                         <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-white/10">
                             <BarChart3 class="h-6 w-6 text-emerald-600 dark:text-white" />
@@ -351,7 +366,8 @@ watch(() => props.filters, (newVal) => {
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">
                             <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ __('pages.reports.center.stat_verified') }}</span>
-                            <div class="text-3xl font-extrabold text-slate-955 dark:text-white mt-0.5">{{ stats?.completed ?? 0 }}</div>
+                            <div v-if="isLoading" class="h-8 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-0.5"></div>
+                            <div v-else class="text-3xl font-extrabold text-slate-900 dark:text-white mt-0.5">{{ stats?.completed ?? 0 }}</div>
                         </div>
                         <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-white/10">
                             <CheckCircle2 class="h-6 w-6 text-emerald-600 dark:text-white" />
@@ -362,7 +378,8 @@ watch(() => props.filters, (newVal) => {
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">
                             <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ __('pages.reports.center.stat_pending') }}</span>
-                            <div class="text-3xl font-extrabold text-slate-955 dark:text-white mt-0.5">{{ stats?.pending ?? 0 }}</div>
+                            <div v-if="isLoading" class="h-8 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-0.5"></div>
+                            <div v-else class="text-3xl font-extrabold text-slate-900 dark:text-white mt-0.5">{{ stats?.pending ?? 0 }}</div>
                         </div>
                         <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-white/10">
                             <Clock class="h-6 w-6 text-emerald-600 dark:text-white" />
@@ -735,7 +752,30 @@ watch(() => props.filters, (newVal) => {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
+                                <!-- Skeleton Loading Rows -->
+                                <template v-if="isLoading">
+                                    <tr v-for="n in 5" :key="'skel-t-' + n" class="align-middle">
+                                        <td class="px-6 py-4"><div class="h-4 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div></td>
+                                        <td class="px-6 py-4"><div class="h-4 w-48 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div></td>
+                                        <td class="px-6 py-4 text-center"><div class="h-6 w-20 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse mx-auto"></div></td>
+                                    </tr>
+                                </template>
+
+                                <!-- Empty State -->
+                                <tr v-else-if="!tickets.data || tickets.data.length === 0">
+                                    <td colspan="8" class="px-6 py-12 text-center text-slate-400">
+                                        Tidak ada data laporan yang sesuai filter
+                                    </td>
+                                </tr>
+
+                                <!-- Real Data Rows -->
                                 <tr 
+                                    v-else
                                     v-for="ticket in tickets.data" 
                                     :key="ticket.id"
                                     class="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 text-slate-700 dark:text-slate-300"

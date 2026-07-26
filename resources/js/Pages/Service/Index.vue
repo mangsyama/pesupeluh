@@ -29,6 +29,8 @@ const props = defineProps({
     }
 });
 
+const isUnitsLoading = computed(() => !props.units || props.units.length === 0);
+
 const activeSection = ref(props.initialSection);
 
 watch(() => props.initialSection, (newVal) => {
@@ -189,61 +191,79 @@ const getUnitIcon = (name, slug, type) => {
                                     class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80"
                                 >
                                     <div class="grid grid-cols-1 min-[450px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                                        <div 
-                                            v-for="unit in medikUnits" 
-                                            :key="unit.id"
-                                            @click="handleUnitClick(unit)"
-                                            :class="[
-                                                'group/unit relative overflow-hidden p-3.5 sm:p-5 rounded-2xl border transition-all duration-300 h-full flex flex-col justify-between',
-                                                unit.disabled
-                                                    ? 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800/60 opacity-75 cursor-not-allowed'
-                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-white hover:text-emerald-600 dark:hover:text-white cursor-pointer'
-                                            ]"
-                                        >
-                                            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover/unit:opacity-100 transition-opacity duration-300" v-if="!unit.disabled" />
-                                            
-                                            <div class="relative z-10 flex flex-col h-full justify-between">
-                                                <div>
-                                                    <!-- Icon / Status -->
-                                                    <div :class="[
-                                                        'inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-xl mb-2.5 sm:mb-3 transition-colors duration-300',
-                                                        unit.disabled
-                                                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
-                                                            : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
-                                                    ]">
-                                                        <Lock v-if="unit.disabled" class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
-                                                        <component :is="getUnitIcon(unit.name, unit.slug, unit.type)" v-else class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
+                                        <!-- Skeleton Loading Cards -->
+                                        <template v-if="isUnitsLoading">
+                                            <div 
+                                                v-for="n in 4" 
+                                                :key="'skel-medik-' + n"
+                                                class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-3.5 sm:p-5 flex flex-col justify-between h-[150px]"
+                                            >
+                                                <div class="space-y-2.5">
+                                                    <div class="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-slate-200/80 dark:bg-slate-800 animate-pulse"></div>
+                                                    <div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                    <div class="h-3 w-36 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                </div>
+                                                <div class="h-4 w-16 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse"></div>
+                                            </div>
+                                        </template>
+
+                                        <template v-else>
+                                            <div 
+                                                v-for="unit in medikUnits" 
+                                                :key="unit.id"
+                                                @click="handleUnitClick(unit)"
+                                                :class="[
+                                                    'group/unit relative overflow-hidden p-3.5 sm:p-5 rounded-2xl border transition-all duration-300 h-full flex flex-col justify-between',
+                                                    unit.disabled
+                                                        ? 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800/60 opacity-75 cursor-not-allowed'
+                                                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-white hover:text-emerald-600 dark:hover:text-white cursor-pointer'
+                                                ]"
+                                            >
+                                                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover/unit:opacity-100 transition-opacity duration-300" v-if="!unit.disabled" />
+                                                
+                                                <div class="relative z-10 flex flex-col h-full justify-between">
+                                                    <div>
+                                                        <!-- Icon / Status -->
+                                                        <div :class="[
+                                                            'inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-xl mb-2.5 sm:mb-3 transition-colors duration-300',
+                                                            unit.disabled
+                                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
+                                                                : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
+                                                        ]">
+                                                            <Lock v-if="unit.disabled" class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
+                                                            <component :is="getUnitIcon(unit.name, unit.slug, unit.type)" v-else class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
+                                                        </div>
+
+                                                        <!-- Unit Name -->
+                                                        <h3 :class="[
+                                                            'text-xs sm:text-sm font-bold tracking-wide uppercase leading-tight',
+                                                            unit.disabled ? 'text-slate-550 dark:text-slate-400' : 'text-slate-900 dark:text-white group-hover/unit:text-emerald-600 dark:group-hover/unit:text-white transition-colors duration-200'
+                                                        ]">
+                                                            {{ unit.name }}
+                                                        </h3>
+                                                        <p :class="[
+                                                            'mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] leading-relaxed',
+                                                            unit.disabled ? 'text-slate-405 dark:text-slate-505' : 'text-slate-500 dark:text-slate-400'
+                                                        ]">
+                                                            {{ unit.description }}
+                                                        </p>
                                                     </div>
 
-                                                    <!-- Unit Name -->
-                                                    <h3 :class="[
-                                                        'text-xs sm:text-sm font-bold tracking-wide uppercase leading-tight',
-                                                        unit.disabled ? 'text-slate-550 dark:text-slate-400' : 'text-slate-900 dark:text-white group-hover/unit:text-emerald-600 dark:group-hover/unit:text-white transition-colors duration-200'
-                                                    ]">
-                                                        {{ unit.name }}
-                                                    </h3>
-                                                    <p :class="[
-                                                        'mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] leading-relaxed',
-                                                        unit.disabled ? 'text-slate-405 dark:text-slate-505' : 'text-slate-500 dark:text-slate-400'
-                                                    ]">
-                                                        {{ unit.description }}
-                                                    </p>
-                                                </div>
-
-                                                <!-- Unit Status badge -->
-                                                <div class="mt-3 sm:mt-4 flex items-center justify-between relative z-10">
-                                                    <span :class="[
-                                                        'inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold tracking-wide uppercase',
-                                                        unit.disabled
-                                                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
-                                                            : 'bg-emerald-100 dark:bg-white/10 text-emerald-800 dark:text-white'
-                                                    ]">
-                                                        <span v-if="!unit.disabled" class="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                        {{ unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active') }}
-                                                    </span>
+                                                    <!-- Unit Status badge -->
+                                                    <div class="mt-3 sm:mt-4 flex items-center justify-between relative z-10">
+                                                        <span :class="[
+                                                            'inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold tracking-wide uppercase',
+                                                            unit.disabled
+                                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
+                                                                : 'bg-emerald-100 dark:bg-white/10 text-emerald-800 dark:text-white'
+                                                        ]">
+                                                            <span v-if="!unit.disabled" class="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                            {{ unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active') }}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
@@ -299,61 +319,79 @@ const getUnitIcon = (name, slug, type) => {
                                     class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80"
                                 >
                                     <div class="grid grid-cols-1 min-[450px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                                        <div 
-                                            v-for="unit in nonMedikUnits" 
-                                            :key="unit.id"
-                                            @click="handleUnitClick(unit)"
-                                            :class="[
-                                                'group/unit relative overflow-hidden p-3.5 sm:p-5 rounded-2xl border transition-all duration-300 h-full flex flex-col justify-between',
-                                                unit.disabled
-                                                    ? 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800/60 opacity-75 cursor-not-allowed'
-                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-white hover:text-emerald-600 dark:hover:text-white cursor-pointer'
-                                            ]"
-                                        >
-                                            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover/unit:opacity-100 transition-opacity duration-300" v-if="!unit.disabled" />
-                                            
-                                            <div class="relative z-10 flex flex-col h-full justify-between">
-                                                <div>
-                                                    <!-- Icon / Status -->
-                                                    <div :class="[
-                                                        'inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-xl mb-2.5 sm:mb-3 transition-colors duration-300',
-                                                        unit.disabled
-                                                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
-                                                            : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
-                                                    ]">
-                                                        <Lock v-if="unit.disabled" class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
-                                                        <component :is="getUnitIcon(unit.name, unit.slug, unit.type)" v-else class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
+                                        <!-- Skeleton Loading Cards -->
+                                        <template v-if="isUnitsLoading">
+                                            <div 
+                                                v-for="n in 4" 
+                                                :key="'skel-nonmedik-' + n"
+                                                class="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-3.5 sm:p-5 flex flex-col justify-between h-[150px]"
+                                            >
+                                                <div class="space-y-2.5">
+                                                    <div class="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-slate-200/80 dark:bg-slate-800 animate-pulse"></div>
+                                                    <div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                    <div class="h-3 w-36 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                </div>
+                                                <div class="h-4 w-16 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse"></div>
+                                            </div>
+                                        </template>
+
+                                        <template v-else>
+                                            <div 
+                                                v-for="unit in nonMedikUnits" 
+                                                :key="unit.id"
+                                                @click="handleUnitClick(unit)"
+                                                :class="[
+                                                    'group/unit relative overflow-hidden p-3.5 sm:p-5 rounded-2xl border transition-all duration-300 h-full flex flex-col justify-between',
+                                                    unit.disabled
+                                                        ? 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800/60 opacity-75 cursor-not-allowed'
+                                                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-white hover:text-emerald-600 dark:hover:text-white cursor-pointer'
+                                                ]"
+                                            >
+                                                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover/unit:opacity-100 transition-opacity duration-300" v-if="!unit.disabled" />
+                                                
+                                                <div class="relative z-10 flex flex-col h-full justify-between">
+                                                    <div>
+                                                        <!-- Icon / Status -->
+                                                        <div :class="[
+                                                            'inline-flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-xl mb-2.5 sm:mb-3 transition-colors duration-300',
+                                                            unit.disabled
+                                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
+                                                                : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
+                                                        ]">
+                                                            <Lock v-if="unit.disabled" class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
+                                                            <component :is="getUnitIcon(unit.name, unit.slug, unit.type)" v-else class="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5" />
+                                                        </div>
+
+                                                        <!-- Unit Name -->
+                                                        <h3 :class="[
+                                                            'text-xs sm:text-sm font-bold tracking-wide uppercase leading-tight',
+                                                            unit.disabled ? 'text-slate-550 dark:text-slate-400' : 'text-slate-900 dark:text-white group-hover/unit:text-emerald-600 dark:group-hover/unit:text-white transition-colors duration-200'
+                                                        ]">
+                                                            {{ unit.name }}
+                                                        </h3>
+                                                        <p :class="[
+                                                            'mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] leading-relaxed',
+                                                            unit.disabled ? 'text-slate-405 dark:text-slate-505' : 'text-slate-500 dark:text-slate-400'
+                                                        ]">
+                                                            {{ unit.description }}
+                                                        </p>
                                                     </div>
 
-                                                    <!-- Unit Name -->
-                                                    <h3 :class="[
-                                                        'text-xs sm:text-sm font-bold tracking-wide uppercase leading-tight',
-                                                        unit.disabled ? 'text-slate-550 dark:text-slate-400' : 'text-slate-900 dark:text-white group-hover/unit:text-emerald-600 dark:group-hover/unit:text-white transition-colors duration-200'
-                                                    ]">
-                                                        {{ unit.name }}
-                                                    </h3>
-                                                    <p :class="[
-                                                        'mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] leading-relaxed',
-                                                        unit.disabled ? 'text-slate-405 dark:text-slate-505' : 'text-slate-500 dark:text-slate-400'
-                                                    ]">
-                                                        {{ unit.description }}
-                                                    </p>
-                                                </div>
-
-                                                <!-- Unit Status badge -->
-                                                <div class="mt-3 sm:mt-4 flex items-center justify-between relative z-10">
-                                                    <span :class="[
-                                                        'inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold tracking-wide uppercase',
-                                                        unit.disabled
-                                                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
-                                                            : 'bg-emerald-100 dark:bg-white/10 text-emerald-800 dark:text-white'
-                                                    ]">
-                                                        <span v-if="!unit.disabled" class="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                        {{ unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active') }}
-                                                    </span>
+                                                    <!-- Unit Status badge -->
+                                                    <div class="mt-3 sm:mt-4 flex items-center justify-between relative z-10">
+                                                        <span :class="[
+                                                            'inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold tracking-wide uppercase',
+                                                            unit.disabled
+                                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
+                                                                : 'bg-emerald-100 dark:bg-white/10 text-emerald-800 dark:text-white'
+                                                        ]">
+                                                            <span v-if="!unit.disabled" class="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                            {{ unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active') }}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </template>
                                     </div>
                                 </div>
                             </div>

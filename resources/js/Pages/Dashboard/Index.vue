@@ -26,6 +26,7 @@ const props = defineProps({
     }
 });
 
+const isLoading = computed(() => !props.dashboardStats);
 const recentTicketsData = computed(() => props.dashboardStats?.recentTickets ?? []);
 const breakdownDataData = computed(() => props.dashboardStats?.breakdownData ?? []);
 
@@ -179,13 +180,16 @@ const categoriesBreakdown = computed(() => {
                         <!-- Stats Grid -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div 
-                                v-for="stat in stats" 
-                                :key="stat.label"
+                                v-for="(stat, idx) in stats" 
+                                :key="stat.label || idx"
                                 class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between"
                             >
-                                <div class="space-y-1">
-                                    <span class="text-xs font-semibold text-slate-400 dark:text-slate-505 uppercase tracking-wider">{{ stat.label }}</span>
-                                    <div class="text-3xl font-extrabold text-slate-955 dark:text-white">{{ stat.value }}</div>
+                                <div class="space-y-1 flex-1 min-w-0 pr-2">
+                                    <span class="text-xs font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider block truncate">{{ stat.label }}</span>
+                                    
+                                    <!-- Skeleton for Value when loading -->
+                                    <div v-if="isLoading" class="h-9 w-16 bg-slate-200/80 dark:bg-slate-800 rounded-lg animate-pulse"></div>
+                                    <div v-else class="text-3xl font-extrabold text-slate-900 dark:text-white leading-9">{{ stat.value }}</div>
                                 </div>
                                 <div :class="['h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0', stat.bg]">
                                     <component :is="stat.icon" :class="['h-6 w-6', stat.color]" />
@@ -222,19 +226,42 @@ const categoriesBreakdown = computed(() => {
                                                 </tr>
                                             </thead>
                                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs text-slate-700 dark:text-slate-300">
-                                                <tr v-if="recentReports.length === 0">
-                                                    <td colspan="4" class="py-8 text-center text-slate-400 dark:text-slate-505">
+                                                <!-- Skeleton Loading Rows -->
+                                                <template v-if="isLoading">
+                                                    <tr v-for="n in 4" :key="'skel-rec-' + n" class="align-middle">
+                                                        <td class="py-3.5 pr-4 space-y-1.5">
+                                                            <div class="h-4 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                            <div class="h-3 w-44 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                        </td>
+                                                        <td class="py-3.5 px-4 space-y-1.5">
+                                                            <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                            <div class="h-3 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                        </td>
+                                                        <td class="py-3.5 px-4">
+                                                            <div class="h-5 w-16 bg-slate-200/80 dark:bg-slate-800 rounded-md animate-pulse"></div>
+                                                        </td>
+                                                        <td class="py-3.5 pl-4 text-right">
+                                                            <div class="h-5 w-20 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse ml-auto"></div>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+
+                                                <!-- Empty State -->
+                                                <tr v-else-if="recentReports.length === 0">
+                                                    <td colspan="4" class="py-8 text-center text-slate-400 dark:text-slate-500">
                                                         {{ __('Belum ada aktivitas laporan terbaru.') }}
                                                     </td>
                                                 </tr>
+
+                                                <!-- Data Rows -->
                                                 <tr v-else v-for="report in recentReports" :key="report.id" class="align-middle">
                                                     <td class="py-3.5 pr-4">
-                                                        <div class="font-bold text-slate-955 dark:text-white">{{ report.id }}</div>
-                                                        <div class="text-[11px] text-slate-405 mt-0.5 truncate max-w-[240px]" :title="report.title">{{ report.title }}</div>
+                                                        <div class="font-bold text-slate-900 dark:text-white">{{ report.id }}</div>
+                                                        <div class="text-[11px] text-slate-500 mt-0.5 truncate max-w-[240px]" :title="report.title">{{ report.title }}</div>
                                                     </td>
                                                     <td class="py-3.5 px-4 whitespace-nowrap">
                                                         <div class="font-medium text-slate-800 dark:text-slate-200">{{ report.author }}</div>
-                                                        <div class="text-[10px] text-slate-405 mt-0.5">{{ report.date }}</div>
+                                                        <div class="text-[10px] text-slate-500 mt-0.5">{{ report.date }}</div>
                                                     </td>
                                                     <td class="py-3.5 px-4 whitespace-nowrap">
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-white/10 text-emerald-700 dark:text-white">
@@ -256,13 +283,29 @@ const categoriesBreakdown = computed(() => {
                             <!-- Right: Unit volume breakdown (Hidden for REPORTER) -->
                             <div v-if="userRole !== 'REPORTER'" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
                                 <div>
-                                    <h4 class="text-base font-bold text-slate-955 dark:text-white mb-4">{{ __('pages.dashboard.unit_volume') }}</h4>
+                                    <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4">{{ __('pages.dashboard.unit_volume') }}</h4>
                                     <div class="space-y-4">
-                                        <div v-if="categoriesBreakdown.length === 0" class="text-center py-8 text-xs text-slate-400 dark:text-slate-505 font-semibold">
+                                        <!-- Skeleton Loading Bars -->
+                                        <template v-if="isLoading">
+                                            <div v-for="n in 3" :key="'skel-cat-' + n" class="space-y-1">
+                                                <div class="flex items-center justify-between">
+                                                    <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                    <div class="h-4 w-14 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                </div>
+                                                <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                                    <div class="h-full bg-slate-200/80 dark:bg-slate-700 rounded-full animate-pulse w-3/4"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Empty State -->
+                                        <div v-else-if="categoriesBreakdown.length === 0" class="text-center py-8 text-xs text-slate-400 dark:text-slate-500 font-semibold">
                                             {{ __('Belum ada data volume pelaporan unit.') }}
                                         </div>
+
+                                        <!-- Real Breakdown Data -->
                                         <div v-else v-for="category in categoriesBreakdown" :key="category.name" class="space-y-1">
-                                            <div class="flex items-center justify-between text-xs font-semibold text-slate-705 dark:text-slate-300">
+                                            <div class="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                                                 <span class="truncate max-w-[170px]" :title="category.name">{{ category.name }}</span>
                                                 <span>{{ category.count }} {{ __('pages.dashboard.reports_count') }}</span>
                                             </div>

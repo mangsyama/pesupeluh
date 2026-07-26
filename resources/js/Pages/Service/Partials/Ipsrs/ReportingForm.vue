@@ -50,9 +50,12 @@ const userAssignedRoom = computed(() => {
 // Selected category ID
 const selectedCategoryId = ref(null);
 
+const categoriesList = computed(() => props.unit?.issue_categories || props.activeFeature?.feature_categories || []);
+const isCategoriesLoading = computed(() => !props.unit?.issue_categories && !props.activeFeature?.feature_categories);
+const isRoomsLoading = computed(() => !props.rooms);
+
 const activeCategory = computed(() => {
-    const categories = props.unit?.issue_categories || props.activeFeature?.feature_categories || [];
-    return categories.find(c => c.id === selectedCategoryId.value) || null;
+    return categoriesList.value.find(c => c.id === selectedCategoryId.value) || null;
 });
 
 // Form state
@@ -241,9 +244,25 @@ const submitReport = () => {
                 <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('pages.services.kategori_di_bawah_desc') }}</p>
             </div>
 
-            <div v-if="(unit?.issue_categories || activeFeature?.feature_categories || []).length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <!-- Skeleton Loading Categories -->
+            <div v-if="isCategoriesLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div 
-                    v-for="cat in (unit?.issue_categories || activeFeature?.feature_categories || [])" 
+                    v-for="n in 6" 
+                    :key="'skel-rep-cat-' + n"
+                    class="p-4 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-start justify-between gap-3 min-h-[84px]"
+                >
+                    <div class="flex-1 space-y-2">
+                        <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                        <div class="h-3 w-44 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                    </div>
+                    <div class="h-4 w-4 rounded-full bg-slate-200/80 dark:bg-slate-800 animate-pulse flex-shrink-0"></div>
+                </div>
+            </div>
+
+            <!-- Categories Grid Data -->
+            <div v-else-if="categoriesList.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div 
+                    v-for="cat in categoriesList" 
                     :key="cat.id"
                     @click="selectCategory(cat.id)"
                     :class="[
@@ -257,7 +276,7 @@ const submitReport = () => {
                         <h4 class="text-xs font-bold uppercase tracking-wide leading-tight group-hover:text-emerald-600 dark:group-hover:text-white transition-colors duration-150">
                             {{ cat.name }}
                         </h4>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1.5 whitespace-normal break-words">
+                        <p class="text-[10px] text-slate-400 dark:text-slate-505 leading-relaxed mt-1.5 whitespace-normal break-words">
                             {{ cat.description || __('Tidak ada deskripsi kategori.') }}
                         </p>
                     </div>
@@ -331,7 +350,7 @@ const submitReport = () => {
                     <div v-if="userAssignedRoom" class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-4">
                         <div>
                             <div class="text-xs font-bold text-slate-800 dark:text-white uppercase leading-none">{{ userAssignedRoom.name }}</div>
-                            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1.5 leading-none">{{ userAssignedRoom.location_floor || 'Lokasi Ruangan Penempatan Anda' }}</div>
+                            <div class="text-[10px] text-slate-400 dark:text-slate-505 font-medium mt-1.5 leading-none">{{ userAssignedRoom.location_floor || 'Lokasi Ruangan Penempatan Anda' }}</div>
                         </div>
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-200/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-slate-700/50 shrink-0">
                             <Lock class="h-3 w-3 text-slate-500" />
@@ -341,7 +360,9 @@ const submitReport = () => {
 
                     <!-- Case 2: User has NO assigned room (Custom Searchable & Scrollable Dropdown) -->
                     <div v-else>
+                        <div v-if="isRoomsLoading" class="h-[46px] w-full bg-slate-200/60 dark:bg-slate-800 rounded-xl animate-pulse"></div>
                         <SearchableSelect
+                            v-else
                             v-model="form.room_id"
                             :options="rooms"
                             :placeholder="__('pages.services.pilih_ruangan_default')"

@@ -267,7 +267,44 @@ const contextLabel = computed(() => {
 
 <template>
     <div class="py-4 px-4 sm:px-4 lg:px-4">
-        <div class="w-full space-y-4" v-if="ticket">
+        <!-- Skeleton Loading view when ticket is fetching -->
+        <div class="w-full space-y-4" v-if="!ticket">
+            <!-- Ticket Profile Header Skeleton -->
+            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="h-12 w-12 rounded-xl bg-slate-200/80 dark:bg-slate-800 animate-pulse flex-shrink-0"></div>
+                    <div class="space-y-2">
+                        <div class="h-6 w-36 bg-slate-200/80 dark:bg-slate-800 rounded-lg animate-pulse"></div>
+                        <div class="h-4 w-48 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Layout Grid Skeleton -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                        <div class="h-5 w-40 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                        <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div v-for="i in 4" :key="'skel-info-' + i" class="space-y-1.5">
+                                    <div class="h-3 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                    <div class="h-4 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                        <div class="h-5 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                        <div class="h-10 w-full bg-slate-200/80 dark:bg-slate-800 rounded-xl animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full space-y-4" v-else>
             <!-- Ticket Profile Header Card -->
             <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-center gap-4">

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, getCurrentInstance } from 'vue';
+import { ref, computed, watch, getCurrentInstance } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import { Search, Eye, Calendar, MapPin, User, Phone, ChevronLeft, ChevronRight, ArrowRight, Inbox, Clock, CheckCircle, Wrench, Play, AlertCircle } from '@lucide/vue';
 
@@ -20,6 +20,7 @@ const searchQuery = ref(props.filters.search || '');
 // Set default tab to '' (Semua Tugas) if status not set
 const currentTab = ref(props.filters.status || '');
 const isFiltering = ref(false);
+const isLoading = computed(() => isFiltering.value || !props.tickets?.data);
 
 // Debounce search
 let searchTimeout = null;
@@ -29,9 +30,21 @@ watch(searchQuery, () => {
 });
 
 const setTab = (tabValue) => {
+    if (currentTab.value === tabValue) return;
     currentTab.value = tabValue;
     applyFilters();
 };
+
+watch(() => props.tickets, () => {
+    isFiltering.value = false;
+});
+
+watch(() => props.filters, (newFilters) => {
+    if (newFilters) {
+        if (newFilters.search !== undefined) searchQuery.value = newFilters.search || '';
+        if (newFilters.status !== undefined) currentTab.value = newFilters.status || '';
+    }
+});
 
 const applyFilters = () => {
     isFiltering.value = true;
@@ -42,6 +55,9 @@ const applyFilters = () => {
         preserveState: true,
         replace: true,
         preserveScroll: true,
+        onStart: () => {
+            isFiltering.value = true;
+        },
         onFinish: () => {
             isFiltering.value = false;
         }
@@ -146,7 +162,38 @@ const formatDate = (dateStr) => {
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
-                                    <tr v-if="!tickets.data || tickets.data.length === 0">
+                                    <!-- Skeleton Loading Rows -->
+                                    <template v-if="isLoading">
+                                        <tr v-for="n in 5" :key="'skel-t-' + n" class="align-middle">
+                                            <td class="px-6 py-4">
+                                                <div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                <div class="h-3 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1.5"></div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                <div class="h-3 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1.5"></div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="h-4 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                <div class="h-3 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1.5"></div>
+                                            </td>
+                                            <td class="px-6 py-4">
+                                                <div class="h-4 w-56 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="h-6 w-24 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse mx-auto"></div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="h-6 w-24 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse mx-auto"></div>
+                                            </td>
+                                            <td class="px-6 py-4 text-center">
+                                                <div class="h-8 w-24 bg-slate-200/80 dark:bg-slate-800 rounded-xl animate-pulse mx-auto"></div>
+                                            </td>
+                                        </tr>
+                                    </template>
+
+                                    <!-- Empty State -->
+                                    <tr v-else-if="!tickets.data || tickets.data.length === 0">
                                         <td colspan="7" class="px-6 py-16 text-center">
                                             <div class="flex flex-col items-center gap-3 text-slate-400">
                                                 <svg class="h-12 w-12 text-slate-200 dark:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -156,7 +203,10 @@ const formatDate = (dateStr) => {
                                             </div>
                                         </td>
                                     </tr>
+
+                                    <!-- Real Data Rows -->
                                     <tr 
+                                        v-else
                                         v-for="ticket in tickets.data" 
                                         :key="'ticket-' + ticket.id" 
                                         :class="[
@@ -168,7 +218,7 @@ const formatDate = (dateStr) => {
                                     >
                                         <!-- ID & Date -->
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="font-bold text-slate-950 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>
+                                            <div class="font-bold text-slate-900 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
                                                 <Calendar class="h-3 w-3" />
                                                 {{ formatDate(ticket.created_at) }}
@@ -242,42 +292,63 @@ const formatDate = (dateStr) => {
 
                         <!-- Mobile View: Grid Cards -->
                         <div class="md:hidden p-4 space-y-3 bg-slate-50/30 dark:bg-slate-950/10 border-t border-slate-100 dark:border-slate-800/60">
-                            <div v-if="!tickets.data || tickets.data.length === 0" class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 p-12 text-center rounded-2xl">
-                                <svg class="h-10 w-10 mx-auto text-slate-300 dark:text-slate-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span class="text-xs text-slate-400 font-medium">Tidak ada penugasan tiket di antrean ini</span>
-                            </div>
-
-                            <div
-                                v-for="ticket in tickets.data"
-                                :key="'mobile-ticket-' + ticket.id"
-                                :class="[
-                                    'rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between',
-                                    ticket.priority === 'URGENT'
-                                        ? 'bg-rose-50/40 dark:bg-rose-950/20 border-2 border-rose-300 dark:border-rose-800'
-                                        : 'bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/65'
-                                ]"
-                            >
-                                <div class="space-y-3">
-                                    <div class="flex justify-between items-start gap-2">
-                                        <div class="space-y-0.5">
-                                            <span class="text-[10px] font-extrabold text-slate-400 dark:text-slate-500">
-                                                #{{ ticket.ticket_number }}
-                                            </span>
-                                            <h4 class="font-bold text-slate-955 dark:text-white text-xs line-clamp-1">
-                                                {{ ticket.category?.name ?? '-' }}
-                                            </h4>
+                            <!-- Mobile Skeleton Cards -->
+                            <template v-if="isLoading">
+                                <div v-for="n in 3" :key="'skel-m-' + n" class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-4 space-y-3 shadow-sm">
+                                    <div class="flex justify-between items-start">
+                                        <div class="space-y-1">
+                                            <div class="h-3 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                            <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
                                         </div>
-                                        <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border', getStatus(ticket.status).badge]">
-                                            {{ getStatus(ticket.status).label }}
-                                        </span>
+                                        <div class="h-5 w-20 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse"></div>
                                     </div>
+                                    <div class="h-3 w-full bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                    <div class="border-t border-slate-100 dark:border-slate-800/50 pt-2.5 flex justify-between items-center">
+                                        <div class="h-3 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                        <div class="h-4 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                    </div>
+                                </div>
+                            </template>
 
-                                    <div class="flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 px-2.5 py-1 rounded-xl w-fit font-semibold">
-                                        <MapPin class="h-3.5 w-3.5" />
-                                        <span>{{ ticket.room?.name ?? '-' }}</span>
-                                    </div>
+                            <template v-else-if="!tickets.data || tickets.data.length === 0">
+                                <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 p-12 text-center rounded-2xl">
+                                    <svg class="h-10 w-10 mx-auto text-slate-300 dark:text-slate-700 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span class="text-xs text-slate-400 font-medium">Tidak ada penugasan tiket di antrean ini</span>
+                                </div>
+                            </template>
+
+                            <template v-else>
+                                <div
+                                    v-for="ticket in tickets.data"
+                                    :key="'mobile-ticket-' + ticket.id"
+                                    :class="[
+                                        'rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between',
+                                        ticket.priority === 'URGENT'
+                                            ? 'bg-rose-50/40 dark:bg-rose-950/20 border-2 border-rose-300 dark:border-rose-800'
+                                            : 'bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/65'
+                                    ]"
+                                >
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-start gap-2">
+                                            <div class="space-y-0.5">
+                                                <span class="text-[10px] font-extrabold text-slate-400 dark:text-slate-500">
+                                                    #{{ ticket.ticket_number }}
+                                                </span>
+                                                <h4 class="font-bold text-slate-900 dark:text-white text-xs line-clamp-1">
+                                                    {{ ticket.category?.name ?? '-' }}
+                                                </h4>
+                                            </div>
+                                            <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border', getStatus(ticket.status).badge]">
+                                                {{ getStatus(ticket.status).label }}
+                                            </span>
+                                        </div>
+
+                                        <div class="flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 px-2.5 py-1 rounded-xl w-fit font-semibold">
+                                            <MapPin class="h-3.5 w-3.5" />
+                                            <span>{{ ticket.room?.name ?? '-' }}</span>
+                                        </div>
 
                                     <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                         {{ ticket.problem_description }}
@@ -319,8 +390,9 @@ const formatDate = (dateStr) => {
                                     </Link>
                                 </div>
                             </div>
-                        </div>
-        </div>
+                        </template>
+                    </div>
+                    </div>
 
         <!-- Pagination -->
         <div v-if="tickets.meta && tickets.meta.last_page > 1" class="flex items-center justify-between mt-4">
