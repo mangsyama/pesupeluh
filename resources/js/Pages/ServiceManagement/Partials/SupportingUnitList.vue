@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
-import { Edit2, Trash2, X, ChevronDown, Check, Stethoscope, ShieldCheck } from '@lucide/vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
+import { Edit2, Trash2, X, Stethoscope, ShieldCheck } from '@lucide/vue';
 
 const props = defineProps({
     supportingUnits: {
@@ -188,7 +189,7 @@ defineExpose({
                 <!-- LEFT COLUMN: PENUNJANG MEDIK -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
                     <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4">
-                        <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
+                        <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white flex items-center justify-center font-bold flex-shrink-0">
                             <Stethoscope class="h-5 w-5" />
                         </div>
                         <div>
@@ -265,7 +266,7 @@ defineExpose({
                 <!-- RIGHT COLUMN: PENUNJANG NON-MEDIK -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
                     <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-4">
-                        <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
+                        <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white flex items-center justify-center font-bold flex-shrink-0">
                             <ShieldCheck class="h-5 w-5" />
                         </div>
                         <div>
@@ -347,7 +348,7 @@ defineExpose({
             <div v-if="showUnitModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
                 <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
-                        <h3 class="text-base font-bold text-slate-955 dark:text-white">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">
                             {{ isEditingUnit ? 'Edit Unit Penunjang' : 'Tambah Unit Penunjang' }}
                         </h3>
                         <button type="button" @click="showUnitModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
@@ -357,32 +358,14 @@ defineExpose({
                     <form @submit.prevent="submitUnitForm" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Kelompok Layanan</label>
-                            <div class="relative" ref="typeDropdownRef">
-                                <button 
-                                    type="button"
-                                    @click="toggleTypeDropdown"
-                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                >
-                                    <span>{{ selectedTypeLabel }}</span>
-                                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isTypeDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                </button>
-                                <div 
-                                    v-if="isTypeDropdownOpen" 
-                                    class="absolute left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg z-50 p-1.5 space-y-1"
-                                >
-                                    <button
-                                        v-for="opt in typeOptions"
-                                        :key="opt.value"
-                                        type="button"
-                                        @click="selectType(opt.value)"
-                                        class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                        :class="unitForm.type === opt.value ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                    >
-                                        <span>{{ opt.label }}</span>
-                                        <Check v-if="unitForm.type === opt.value" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                    </button>
-                                </div>
-                            </div>
+                            <SearchableSelect
+                                v-model="unitForm.type"
+                                :options="typeOptions"
+                                :searchable="false"
+                                value-key="value"
+                                label-key="label"
+                                placeholder="Pilih Kelompok Layanan..."
+                            />
                         </div>
 
                         <div>
@@ -391,7 +374,7 @@ defineExpose({
                                 v-model="unitForm.name"
                                 @input="autoGenerateSlug"
                                 type="text" 
-                                class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 placeholder="Contoh: IPSRS"
                                 required
                             />
@@ -402,7 +385,7 @@ defineExpose({
                             <input 
                                 v-model="unitForm.slug"
                                 type="text" 
-                                class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 placeholder="ipsrs"
                                 required
                             />
@@ -413,45 +396,26 @@ defineExpose({
                             <textarea 
                                 v-model="unitForm.description"
                                 rows="3" 
-                                class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                                class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 placeholder="Jelaskan peran unit penunjang ini..."
                             ></textarea>
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Status Ketersediaan</label>
-                            <div class="relative" ref="statusDropdownRef">
-                                <button 
-                                    type="button"
-                                    @click="toggleStatusDropdown"
-                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                >
-                                    <span>{{ selectedStatusLabel }}</span>
-                                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isStatusDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                </button>
-
-                                <div 
-                                    v-if="isStatusDropdownOpen" 
-                                    class="absolute left-0 right-0 bottom-full mb-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg z-50 p-1.5 space-y-1 max-h-48 overflow-y-auto custom-scrollbar"
-                                >
-                                    <button
-                                        v-for="opt in statusOptions"
-                                        :key="opt.value"
-                                        type="button"
-                                        @click="selectStatus(opt.value)"
-                                        class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                        :class="unitForm.status === opt.value ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                    >
-                                        <span>{{ opt.label }}</span>
-                                        <Check v-if="unitForm.status === opt.value" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                    </button>
-                                </div>
-                            </div>
+                            <SearchableSelect
+                                v-model="unitForm.status"
+                                :options="statusOptions"
+                                :searchable="false"
+                                value-key="value"
+                                label-key="label"
+                                placeholder="Pilih Status Ketersediaan..."
+                            />
                         </div>
 
                         <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
                             <button type="button" @click="showUnitModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150">{{ __('global.cancel') }}</button>
-                            <button type="submit" :disabled="unitForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 disabled:opacity-50">Simpan Unit</button>
+                            <button type="submit" :disabled="unitForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 border-0 shadow-sm disabled:opacity-50">Simpan Unit</button>
                         </div>
                     </form>
                 </div>

@@ -53,7 +53,7 @@ const statusConfig = {
     ASSIGNED:           { label: 'Tugas Baru',   badge: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200/50' },
     IN_PROGRESS:        { label: 'Dikerjakan',   badge: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 border border-violet-200/50' },
     PENDING:            { label: 'Tertunda',     badge: 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-200/50' },
-    COMPLETED:          { label: 'Selesai',      badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50' },
+    COMPLETED:          { label: 'Selesai',      badge: 'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white border border-emerald-200/50 dark:border-white/20' },
     CANCEL:             { label: 'Dibatalkan',   badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200/50' },
 };
 
@@ -90,28 +90,28 @@ const formatDate = (dateStr) => {
                 <div class="flex flex-wrap items-center bg-slate-100/80 dark:bg-slate-950/45 p-1 rounded-xl w-full xl:w-fit gap-1">
                     <button
                         @click="setTab('')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === '' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === '' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <Inbox class="h-3.5 w-3.5" />
                         Semua Tugas
                     </button>
                     <button
                         @click="setTab('ASSIGNED')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'ASSIGNED' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'ASSIGNED' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <AlertCircle class="h-3.5 w-3.5" />
                         Tugas Baru
                     </button>
                     <button
                         @click="setTab('IN_PROGRESS,PENDING')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'IN_PROGRESS,PENDING' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'IN_PROGRESS,PENDING' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <Clock class="h-3.5 w-3.5" />
                         Dalam Proses
                     </button>
                     <button
                         @click="setTab('COMPLETED,CANCEL')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'COMPLETED,CANCEL' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'COMPLETED,CANCEL' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                     >
                         <CheckCircle class="h-3.5 w-3.5" />
                         Selesai
@@ -125,7 +125,7 @@ const formatDate = (dateStr) => {
                         v-model="searchQuery"
                         type="text"
                         :placeholder="__('pages.reports.history.search_placeholder')"
-                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-855 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 shadow-none"
+                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-855 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-white transition-all duration-150 shadow-none"
                     />
                 </div>
             </div>
@@ -145,7 +145,7 @@ const formatDate = (dateStr) => {
                                         <th class="px-6 py-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-850 dark:text-slate-300">
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
                                     <tr v-if="!tickets.data || tickets.data.length === 0">
                                         <td colspan="7" class="px-6 py-16 text-center">
                                             <div class="flex flex-col items-center gap-3 text-slate-400">
@@ -184,7 +184,7 @@ const formatDate = (dateStr) => {
                                         </td>
                                         <!-- Category & Room -->
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="font-semibold text-emerald-700 dark:text-emerald-400 text-xs">{{ ticket.category?.name ?? '-' }}</div>
+                                            <div class="font-semibold text-emerald-700 dark:text-white text-xs">{{ ticket.category?.name ?? '-' }}</div>
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                                                 <MapPin class="h-3.5 w-3.5 text-slate-400" />
                                                 <span>{{ ticket.room?.name ?? '-' }}</span>
@@ -192,7 +192,7 @@ const formatDate = (dateStr) => {
                                             </div>
                                         </td>
                                         <!-- Desc -->
-                                        <td class="px-6 py-4 text-xs text-slate-650 dark:text-slate-400 break-words max-w-md">
+                                        <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 break-words max-w-md">
                                             {{ ticket.problem_description }}
                                         </td>
                                         <!-- Priority -->
@@ -216,10 +216,10 @@ const formatDate = (dateStr) => {
                                                     :class="[
                                                         'min-w-[105px] px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition duration-150',
                                                         ticket.status === 'ASSIGNED'
-                                                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold border-transparent'
+                                                            ? 'bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
                                                             : ticket.status === 'IN_PROGRESS'
-                                                            ? 'bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold border-transparent'
-                                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                                                            ? 'bg-emerald-700 hover:bg-emerald-600 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
+                                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
                                                     ]"
                                                 >
                                                     <span>
@@ -279,7 +279,7 @@ const formatDate = (dateStr) => {
                                         <span>{{ ticket.room?.name ?? '-' }}</span>
                                     </div>
 
-                                    <p class="text-xs text-slate-650 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                                    <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                         {{ ticket.problem_description }}
                                     </p>
 
@@ -300,10 +300,10 @@ const formatDate = (dateStr) => {
                                         :class="[
                                             'w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-150',
                                             ticket.status === 'ASSIGNED'
-                                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold border-transparent'
+                                                ? 'bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
                                                 : ticket.status === 'IN_PROGRESS'
-                                                ? 'bg-emerald-700 hover:bg-emerald-600 text-white font-extrabold border-transparent'
-                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                                                ? 'bg-emerald-700 hover:bg-emerald-600 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
+                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
                                         ]"
                                     >
                                         <span>

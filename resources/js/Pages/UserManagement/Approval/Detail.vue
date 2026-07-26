@@ -1,15 +1,13 @@
 <script setup>
-import { ref, computed, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { ref, computed, getCurrentInstance } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import {
     User,
-    Check,
-    ChevronDown,
     UserCheck,
     UserX,
     X,
-    Search
 } from '@lucide/vue';
 
 const props = defineProps({
@@ -41,93 +39,22 @@ const form = useForm({
     room_id: props.targetUser.room_id || '',
 });
 
-// Dropdown States
-const isRoleDropdownOpen = ref(false);
-const isUnitDropdownOpen = ref(false);
-const isRoomDropdownOpen = ref(false);
-const roomSearchQuery = ref('');
-
-const roleDropdownRef = ref(null);
-const unitDropdownRef = ref(null);
-const roomDropdownRef = ref(null);
-
-const handleClickOutside = (event) => {
-    if (isRoleDropdownOpen.value && roleDropdownRef.value && !roleDropdownRef.value.contains(event.target)) {
-        isRoleDropdownOpen.value = false;
-    }
-    if (isUnitDropdownOpen.value && unitDropdownRef.value && !unitDropdownRef.value.contains(event.target)) {
-        isUnitDropdownOpen.value = false;
-    }
-    if (isRoomDropdownOpen.value && roomDropdownRef.value && !roomDropdownRef.value.contains(event.target)) {
-        isRoomDropdownOpen.value = false;
-    }
-};
-
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
+const roleOptions = computed(() => {
+    return (props.roles || []).map(r => ({
+        id: r.id,
+        name: proxy.__('roles.' + r.name)
+    }));
 });
 
-onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
-});
+const unitOptions = computed(() => [
+    { id: '', name: 'Tanpa Unit Penunjang' },
+    ...(props.supportingUnits || [])
+]);
 
-// Computed Labels
-const selectedRoleLabel = computed(() => {
-    if (!form.role_id) return '';
-    const r = props.roles.find(item => item.id === form.role_id);
-    return r ? proxy.__('roles.' + r.name) : '';
-});
-
-const selectedUnitLabel = computed(() => {
-    if (!form.supporting_unit_id) return '';
-    const u = props.supportingUnits.find(item => item.id === form.supporting_unit_id);
-    return u ? u.name : '';
-});
-
-const selectedRoomLabel = computed(() => {
-    if (!form.room_id) return '';
-    const rm = props.rooms.find(item => item.id === form.room_id);
-    return rm ? rm.name + (rm.location_floor ? ' (' + rm.location_floor + ')' : '') : '';
-});
-
-const filteredRooms = computed(() => {
-    const list = props.rooms || [];
-    const q = roomSearchQuery.value.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(rm =>
-        (rm.name && rm.name.toLowerCase().includes(q)) ||
-        (rm.location_floor && rm.location_floor.toLowerCase().includes(q))
-    );
-});
-
-// Toggle Handlers
-const toggleRoleDropdown = (event) => {
-    event?.stopPropagation();
-    isRoleDropdownOpen.value = !isRoleDropdownOpen.value;
-    isUnitDropdownOpen.value = false;
-    isRoomDropdownOpen.value = false;
-};
-
-const toggleUnitDropdown = (event) => {
-    event?.stopPropagation();
-    isUnitDropdownOpen.value = !isUnitDropdownOpen.value;
-    isRoleDropdownOpen.value = false;
-    isRoomDropdownOpen.value = false;
-};
-
-const toggleRoomDropdown = (event) => {
-    event?.stopPropagation();
-    isRoomDropdownOpen.value = !isRoomDropdownOpen.value;
-    isRoleDropdownOpen.value = false;
-    isUnitDropdownOpen.value = false;
-    if (isRoomDropdownOpen.value) {
-        roomSearchQuery.value = '';
-    }
-};
-
-const selectRole = (id) => { form.role_id = id; isRoleDropdownOpen.value = false; };
-const selectUnit = (id) => { form.supporting_unit_id = id; isUnitDropdownOpen.value = false; };
-const selectRoom = (id) => { form.room_id = id; isRoomDropdownOpen.value = false; };
+const roomOptions = computed(() => [
+    { id: '', name: 'Tanpa Ruangan' },
+    ...(props.rooms || [])
+]);
 
 const submitApproval = () => {
     proxy.$swal({
@@ -193,7 +120,7 @@ const formatDate = (dateStr) => {
             <!-- Premium Header Panel -->
             <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                    <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                         <UserCheck class="h-6 w-6" />
                     </div>
                     <div>
@@ -201,7 +128,7 @@ const formatDate = (dateStr) => {
                             <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
                                 Detail Persetujuan Pendaftar
                             </h2>
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                            <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase text-center leading-none bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border border-amber-200/50 dark:border-amber-500/20">
                                 Menunggu Verifikasi
                             </span>
                         </div>
@@ -279,103 +206,58 @@ const formatDate = (dateStr) => {
                             <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Atur hak akses peran serta unit/ruangan penempatan pendaftar.</p>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <!-- Select Role -->
-                            <div class="space-y-1.5 relative" ref="roleDropdownRef">
+                            <div class="space-y-1.5 md:col-span-1">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                     Peran Akses Sistem <span class="text-red-400">*</span>
                                 </label>
-                                <button type="button" @click="toggleRoleDropdown"
-                                    class="w-full h-11 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                >
-                                    <span v-if="selectedRoleLabel" class="font-semibold text-slate-800 dark:text-slate-100 truncate">{{ selectedRoleLabel }}</span>
-                                    <span v-else class="text-slate-400 dark:text-slate-500">Pilih Peran Akses...</span>
-                                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoleDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                </button>
-                                <div v-if="isRoleDropdownOpen" class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-1 shadow-sm">
-                                    <button v-for="r in roles" :key="r.id" type="button" @click.stop="selectRole(r.id)"
-                                        class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                        :class="form.role_id === r.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'"
-                                    >
-                                        <span class="truncate">{{ __('roles.' + r.name) }}</span>
-                                        <Check v-if="form.role_id === r.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />
-                                    </button>
-                                </div>
+                                <SearchableSelect
+                                    v-model="form.role_id"
+                                    :options="roleOptions"
+                                    :searchable="false"
+                                    :absolute="false"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Pilih Peran Akses..."
+                                />
                                 <div v-if="form.errors.role_id" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.role_id }}</div>
                             </div>
 
                             <!-- Select Unit Penunjang -->
-                            <div class="space-y-1.5 relative" ref="unitDropdownRef">
+                            <div class="space-y-1.5 md:col-span-1">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                     Unit Penunjang
                                 </label>
-                                <button type="button" @click="toggleUnitDropdown"
-                                    class="w-full h-11 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                >
-                                    <span v-if="selectedUnitLabel" class="text-slate-800 dark:text-slate-100 truncate font-medium">{{ selectedUnitLabel }}</span>
-                                    <span v-else class="text-slate-400 dark:text-slate-500">Tanpa Unit Penunjang</span>
-                                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isUnitDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                </button>
-                                <div v-if="isUnitDropdownOpen" class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-1 shadow-sm">
-                                    <button type="button" @click.stop="selectUnit('')"
-                                        class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                                        :class="!form.supporting_unit_id ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold' : 'text-slate-600 dark:text-slate-400 font-medium'"
-                                    >
-                                        <span class="truncate">Tanpa Unit Penunjang</span>
-                                        <Check v-if="!form.supporting_unit_id" class="h-4 w-4 text-slate-500 shrink-0 ml-2" />
-                                    </button>
-                                    <button v-for="u in supportingUnits" :key="u.id" type="button" @click.stop="selectUnit(u.id)"
-                                        class="w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                        :class="form.supporting_unit_id === u.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'"
-                                    >
-                                        <span class="truncate">{{ u.name }}</span>
-                                        <Check v-if="form.supporting_unit_id === u.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />
-                                    </button>
-                                </div>
+                                <SearchableSelect
+                                    v-model="form.supporting_unit_id"
+                                    :options="unitOptions"
+                                    :searchable="true"
+                                    :absolute="false"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Tanpa Unit Penunjang"
+                                    search-placeholder="Cari unit penunjang..."
+                                />
                                 <div v-if="form.errors.supporting_unit_id" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.supporting_unit_id }}</div>
                             </div>
 
                             <!-- Select Ruangan -->
-                            <div class="space-y-1.5 relative" ref="roomDropdownRef">
+                            <div class="space-y-1.5 md:col-span-2">
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                     Penempatan Ruangan
                                 </label>
-                                <button type="button" @click="toggleRoomDropdown"
-                                    class="w-full h-11 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                >
-                                    <span v-if="selectedRoomLabel" class="text-slate-800 dark:text-slate-100 truncate font-medium">{{ selectedRoomLabel }}</span>
-                                    <span v-else class="text-slate-400 dark:text-slate-500">Tanpa Ruangan</span>
-                                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoomDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                </button>
-                                <div v-if="isRoomDropdownOpen" class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-2 shadow-sm">
-                                    <div class="relative">
-                                        <Search class="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input v-model="roomSearchQuery" type="text" placeholder="Cari nama ruangan..."
-                                            class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                            @click.stop
-                                        />
-                                    </div>
-                                    <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                        <button type="button" @click.stop="selectRoom('')"
-                                            class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                                            :class="!form.room_id ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold' : 'text-slate-600 dark:text-slate-400 font-medium'"
-                                        >
-                                            <span class="truncate">Tanpa Ruangan</span>
-                                            <Check v-if="!form.room_id" class="h-4 w-4 text-slate-500 shrink-0 ml-2" />
-                                        </button>
-                                        <div v-if="filteredRooms.length === 0" class="p-3 text-center text-sm text-slate-400 italic">Ruangan tidak ditemukan</div>
-                                        <button v-else v-for="rm in filteredRooms" :key="rm.id" type="button" @click.stop="selectRoom(rm.id)"
-                                            class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                            :class="form.room_id === rm.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300 font-medium'"
-                                        >
-                                            <div>
-                                                <span class="truncate font-semibold">{{ rm.name }}</span>
-                                                <span v-if="rm.location_floor" class="text-xs text-slate-400 ml-1.5 font-normal">({{ rm.location_floor }})</span>
-                                            </div>
-                                            <Check v-if="form.room_id === rm.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 ml-2" />
-                                        </button>
-                                    </div>
-                                </div>
+                                <SearchableSelect
+                                    v-model="form.room_id"
+                                    :options="roomOptions"
+                                    :searchable="true"
+                                    :absolute="false"
+                                    value-key="id"
+                                    label-key="name"
+                                    subtitle-key="location_floor"
+                                    placeholder="Tanpa Ruangan"
+                                    search-placeholder="Cari nama ruangan..."
+                                />
                                 <div v-if="form.errors.room_id" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.room_id }}</div>
                             </div>
                         </div>
@@ -385,17 +267,27 @@ const formatDate = (dateStr) => {
 
                 <!-- Footer Actions -->
                 <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-end gap-3">
-                    <button type="button" @click="rejectUser"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-400 font-semibold text-xs rounded-xl border border-rose-200/60 dark:border-rose-900/50 transition duration-150"
+                    <button 
+                        type="button" 
+                        @click="rejectUser"
+                        class="w-1/2 sm:w-auto h-11 px-6 inline-flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition duration-150 shadow-sm border-0"
                     >
-                        <UserX class="h-4 w-4" />
-                        <span>Tolak Pendaftaran</span>
+                        <UserX class="h-4 w-4 shrink-0" />
+                        <span class="sm:hidden">Tolak</span>
+                        <span class="hidden sm:inline">Tolak Pendaftaran</span>
                     </button>
-                    <button type="button" @click="submitApproval" :disabled="form.processing"
-                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl transition duration-150 shadow-sm disabled:opacity-50"
+                    <button 
+                        type="button" 
+                        @click="submitApproval" 
+                        :disabled="form.processing"
+                        class="w-1/2 sm:w-auto h-11 px-6 inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-xs rounded-xl transition duration-150 shadow-sm border-0 disabled:opacity-50"
                     >
-                        <UserCheck class="h-4 w-4" />
-                        <span>{{ form.processing ? __('pages.user_management.alerts.saving') : 'Setujui & Verifikasi' }}</span>
+                        <UserCheck class="h-4 w-4 shrink-0" />
+                        <span v-if="form.processing">{{ __('pages.user_management.alerts.saving') }}</span>
+                        <template v-else>
+                            <span class="sm:hidden">Setujui</span>
+                            <span class="hidden sm:inline">Setujui & Verifikasi</span>
+                        </template>
                     </button>
                 </div>
             </div>

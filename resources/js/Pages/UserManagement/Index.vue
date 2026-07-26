@@ -2,7 +2,8 @@
 import { ref, computed, getCurrentInstance } from 'vue';
 import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw, ChevronDown, Check } from '@lucide/vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
+import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw } from '@lucide/vue';
 
 const props = defineProps({
     users: {
@@ -31,6 +32,23 @@ const page = usePage();
 const { proxy } = getCurrentInstance();
 const searchQuery = ref('');
 const currentTab = ref('all');
+
+const roleOptions = computed(() => {
+    return (props.roles || []).map(r => ({
+        id: r.id,
+        name: proxy.__('roles.' + r.name)
+    }));
+});
+
+const unitOptions = computed(() => [
+    { id: '', name: proxy.__('pages.user_management.form.no_unit') },
+    ...(props.supportingUnits || [])
+]);
+
+const roomOptions = computed(() => [
+    { id: '', name: proxy.__('pages.user_management.form.no_room') },
+    ...(props.rooms || [])
+]);
 
 const __ = (key) => {
     const translations = page.props.translations || {};
@@ -84,8 +102,8 @@ const filteredUsers = computed(() => {
 
 const getStatusBadge = (isActive) => {
     return isActive
-        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50'
-        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50';
+        ? 'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white dark:border-white/20 border border-emerald-200/50'
+        : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20 border border-amber-200/50';
 };
 
 const formatDate = (dateStr) => {
@@ -386,11 +404,11 @@ const savePermissions = () => {
                 <!-- Header Panel (ALWAYS VISIBLE) -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <Users class="h-6 w-6" />
                         </div>
                         <div class="space-y-0.5">
-                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
                                 {{ __('pages.user_management.user_list_title') }}
                             </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-2xl leading-relaxed">
@@ -400,7 +418,7 @@ const savePermissions = () => {
                     </div>
                     <button
                         @click="openAddModal"
-                        class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
+                        class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-sm border-0"
                     >
                         <Plus class="h-4 w-4" />
                         {{ __('pages.user_management.add_user_btn') }}
@@ -416,7 +434,7 @@ const savePermissions = () => {
                                 v-for="tab in roleTabs"
                                 :key="tab.key"
                                 @click="currentTab = tab.key"
-                                :class="['w-full px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap', currentTab === tab.key ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
+                                :class="['w-full px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap', currentTab === tab.key ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
                             >
                                 <component :is="tab.icon" class="h-3.5 w-3.5" />
                                 {{ tab.label }}
@@ -428,7 +446,7 @@ const savePermissions = () => {
                                 v-model="searchQuery"
                                 type="text"
                                 :placeholder="__('pages.user_management.search_all_placeholder')"
-                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 shadow-none"
+                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-0 focus:border-emerald-500 dark:focus:border-white transition-all duration-150 shadow-none"
                             />
                         </div>
                     </div>
@@ -533,8 +551,8 @@ const savePermissions = () => {
         </div>
 
         <Teleport to="body">
-            <div v-if="showModal" @click="closeAllDropdowns" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col" @click.stop>
+            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+                <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
                         <h3 class="text-base font-bold text-slate-955 dark:text-white">
                             {{ isEditing ? __('pages.user_management.edit_user_title') : __('pages.user_management.add_user_title') }}
@@ -553,7 +571,7 @@ const savePermissions = () => {
                                     v-model="form.name"
                                     type="text"
                                     required
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
                                     :placeholder="__('pages.user_management.form.full_name_placeholder')"
                                 />
                                 <div v-if="form.errors.name" class="text-xs text-red-500 mt-1">{{ form.errors.name }}</div>
@@ -566,7 +584,7 @@ const savePermissions = () => {
                                     v-model="form.nip"
                                     type="text"
                                     required
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
                                     :placeholder="__('pages.user_management.form.nip_placeholder')"
                                 />
                                 <div v-if="form.errors.nip" class="text-xs text-red-500 mt-1">{{ form.errors.nip }}</div>
@@ -578,7 +596,7 @@ const savePermissions = () => {
                                 <input
                                     v-model="form.username"
                                     type="text"
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
                                     :placeholder="__('pages.user_management.form.username_placeholder')"
                                 />
                                 <div v-if="form.errors.username" class="text-xs text-red-500 mt-1">{{ form.errors.username }}</div>
@@ -591,7 +609,7 @@ const savePermissions = () => {
                                     v-model="form.email"
                                     type="email"
                                     required
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
                                     :placeholder="__('pages.user_management.form.email_placeholder')"
                                 />
                                 <div v-if="form.errors.email" class="text-xs text-red-500 mt-1">{{ form.errors.email }}</div>
@@ -603,7 +621,7 @@ const savePermissions = () => {
                                 <input
                                     v-model="form.phone_number"
                                     type="text"
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
                                     :placeholder="__('pages.user_management.form.phone_placeholder')"
                                 />
                                 <div v-if="form.errors.phone_number" class="text-xs text-red-500 mt-1">{{ form.errors.phone_number }}</div>
@@ -618,7 +636,7 @@ const savePermissions = () => {
                                     v-model="form.password"
                                     type="password"
                                     :required="!isEditing"
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
                                     :placeholder="isEditing ? __('pages.user_management.form.password_placeholder_edit') : __('pages.user_management.form.password_placeholder_add')"
                                 />
                                 <div v-if="form.errors.password" class="text-xs text-red-500 mt-1">{{ form.errors.password }}</div>
@@ -627,132 +645,45 @@ const savePermissions = () => {
                             <!-- 7. Peran Spesifik (Role) -->
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.specific_role') }}</label>
-                                <div class="relative">
-                                    <button
-                                        type="button"
-                                        @click="toggleRoleDropdown"
-                                        class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                    >
-                                        <span v-if="selectedRoleLabel" class="text-slate-800 dark:text-slate-100 truncate font-medium">
-                                            {{ selectedRoleLabel }}
-                                        </span>
-                                        <span v-else class="text-slate-400 dark:text-slate-500">
-                                            Pilih Peran...
-                                        </span>
-                                        <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoleDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                    </button>
-
-                                    <div
-                                        v-if="isRoleDropdownOpen"
-                                        class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-1 shadow-md"
-                                    >
-                                        <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                            <button
-                                                v-for="role in (props.roles || [])"
-                                                :key="role.id"
-                                                type="button"
-                                                @click.stop="selectRole(role.id)"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                :class="form.role_id === role.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                            >
-                                                <span class="truncate">{{ __('roles.' + role.name) }}</span>
-                                                <Check v-if="form.role_id === role.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <SearchableSelect
+                                    v-model="form.role_id"
+                                    :options="roleOptions"
+                                    :searchable="false"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Pilih Peran..."
+                                />
                                 <div v-if="form.errors.role_id" class="text-xs text-red-500 mt-1">{{ form.errors.role_id }}</div>
                             </div>
 
                             <!-- 8. Unit Penunjang -->
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.supporting_unit') }}</label>
-                                <div class="relative">
-                                    <button
-                                        type="button"
-                                        @click="toggleUnitDropdown"
-                                        class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                    >
-                                        <span class="truncate font-medium text-slate-800 dark:text-slate-100">
-                                            {{ selectedUnitLabel }}
-                                        </span>
-                                        <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isUnitDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                    </button>
-
-                                    <div
-                                        v-if="isUnitDropdownOpen"
-                                        class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-1 shadow-md"
-                                    >
-                                        <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                            <button
-                                                type="button"
-                                                @click.stop="selectUnit('')"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                :class="!form.supporting_unit_id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                            >
-                                                <span class="truncate">{{ __('pages.user_management.form.no_unit') }}</span>
-                                                <Check v-if="!form.supporting_unit_id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                            <button
-                                                v-for="unit in (supportingUnits || [])"
-                                                :key="unit.id"
-                                                type="button"
-                                                @click.stop="selectUnit(unit.id)"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                :class="form.supporting_unit_id === unit.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                            >
-                                                <span class="truncate">{{ unit.name }}</span>
-                                                <Check v-if="form.supporting_unit_id === unit.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <SearchableSelect
+                                    v-model="form.supporting_unit_id"
+                                    :options="unitOptions"
+                                    :searchable="true"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Tanpa Unit Penunjang"
+                                    search-placeholder="Cari unit..."
+                                />
                                 <div v-if="form.errors.supporting_unit_id" class="text-xs text-red-500 mt-1">{{ form.errors.supporting_unit_id }}</div>
                             </div>
 
                             <!-- 9. Ruangan -->
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.room') }}</label>
-                                <div class="relative">
-                                    <button
-                                        type="button"
-                                        @click="toggleRoomDropdown"
-                                        class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                    >
-                                        <span class="truncate font-medium text-slate-800 dark:text-slate-100">
-                                            {{ selectedRoomLabel }}
-                                        </span>
-                                        <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoomDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                    </button>
-
-                                    <div
-                                        v-if="isRoomDropdownOpen"
-                                        class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-1 shadow-md"
-                                    >
-                                        <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                            <button
-                                                type="button"
-                                                @click.stop="selectRoom('')"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                :class="!form.room_id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                            >
-                                                <span class="truncate">{{ __('pages.user_management.form.no_room') }}</span>
-                                                <Check v-if="!form.room_id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                            <button
-                                                v-for="room in (rooms || [])"
-                                                :key="room.id"
-                                                type="button"
-                                                @click.stop="selectRoom(room.id)"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                :class="form.room_id === room.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                            >
-                                                <span class="truncate">{{ room.name }}</span>
-                                                <Check v-if="form.room_id === room.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <SearchableSelect
+                                    v-model="form.room_id"
+                                    :options="roomOptions"
+                                    :searchable="true"
+                                    value-key="id"
+                                    label-key="name"
+                                    subtitle-key="location_floor"
+                                    placeholder="Tanpa Ruangan"
+                                    search-placeholder="Cari ruangan..."
+                                />
                                 <div v-if="form.errors.room_id" class="text-xs text-red-500 mt-1">{{ form.errors.room_id }}</div>
                             </div>
 
@@ -782,7 +713,7 @@ const savePermissions = () => {
                             <button
                                 type="submit"
                                 :disabled="form.processing"
-                                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 disabled:opacity-50 border-0 shadow-none"
+                                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 disabled:opacity-50 border-0 shadow-sm"
                             >
                                 {{ form.processing ? __('pages.user_management.alerts.saving') : __('Save') }}
                             </button>
@@ -799,12 +730,12 @@ const savePermissions = () => {
                     <!-- Header -->
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl flex-shrink-0">
                         <div>
-                            <h3 class="text-base font-bold text-slate-955 dark:text-white">
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">
                                 Pengaturan Akses Halaman
                             </h3>
                             <p v-if="permissionUser" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                 {{ permissionUser.name }}
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 ml-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 dark:bg-white/10 dark:text-white ml-1">
                                     {{ permissionUser.role?.name ? __('roles.' + permissionUser.role.name) : '-' }}
                                 </span>
                             </p>
@@ -822,8 +753,8 @@ const savePermissions = () => {
                                 <span :class="[
                                     'inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors',
                                     permissionUseDefault
-                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50'
-                                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50'
+                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white border border-emerald-200/50 dark:border-white/10'
+                                        : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border border-amber-200/50 dark:border-amber-500/20'
                                 ]">
                                     {{ permissionUseDefault ? 'Menggunakan Default Role' : 'Custom Override' }}
                                 </span>
@@ -831,7 +762,7 @@ const savePermissions = () => {
                             <button
                                 v-if="!permissionUseDefault"
                                 @click="resetToDefault"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                             >
                                 <RotateCcw class="h-3 w-3" />
                                 Reset ke Default
@@ -853,7 +784,7 @@ const savePermissions = () => {
                                         :class="[
                                             'flex items-center gap-3 px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all duration-150 select-none group',
                                             permissionChecked.includes(perm.key)
-                                                ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/50 shadow-sm'
+                                                ? 'bg-emerald-50/70 dark:bg-white/10 border-emerald-300 dark:border-white/30 shadow-sm'
                                                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                                         ]"
                                     >
@@ -862,7 +793,7 @@ const savePermissions = () => {
                                                 type="checkbox"
                                                 :checked="permissionChecked.includes(perm.key)"
                                                 @change="togglePermission(perm.key)"
-                                                class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500 dark:bg-slate-800 cursor-pointer"
+                                                class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 dark:text-white focus:ring-0 focus:ring-offset-0 focus:outline-none dark:bg-slate-800 cursor-pointer"
                                             />
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -877,7 +808,7 @@ const savePermissions = () => {
                                         </div>
                                         <span
                                             v-if="isRoleDefault(perm.key)"
-                                            class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                                            class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300"
                                         >
                                             default
                                         </span>
@@ -899,7 +830,7 @@ const savePermissions = () => {
                         <button
                             @click="savePermissions"
                             :disabled="permissionProcessing"
-                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 border-0 shadow-none disabled:opacity-50 flex items-center gap-2"
+                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 border-0 shadow-sm disabled:opacity-50 flex items-center gap-2"
                         >
                             <KeyRound v-if="!permissionProcessing" class="h-3.5 w-3.5" />
                             {{ permissionProcessing ? 'Menyimpan...' : 'Simpan Akses' }}

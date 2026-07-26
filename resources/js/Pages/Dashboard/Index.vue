@@ -58,12 +58,12 @@ const stats = computed(() => {
 
     const getStatConfig = (stat, defaultType, defaultLabel) => {
         const typeConfig = {
-            'total': { icon: FileText, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-            'medik': { icon: Activity, color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-950/30' },
-            'non_medik': { icon: Settings, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-            'progress': { icon: Clock, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
-            'completed': { icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
-            'pending': { icon: AlertCircle, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/30' },
+            'total': { icon: FileText, color: 'text-emerald-600 dark:text-white', bg: 'bg-emerald-50 dark:bg-white/10' },
+            'medik': { icon: Activity, color: 'text-emerald-600 dark:text-white', bg: 'bg-emerald-50 dark:bg-white/10' },
+            'non_medik': { icon: Settings, color: 'text-emerald-600 dark:text-white', bg: 'bg-emerald-50 dark:bg-white/10' },
+            'progress': { icon: Clock, color: 'text-emerald-600 dark:text-white', bg: 'bg-emerald-50 dark:bg-white/10' },
+            'completed': { icon: CheckCircle2, color: 'text-emerald-600 dark:text-white', bg: 'bg-emerald-50 dark:bg-white/10' },
+            'pending': { icon: AlertCircle, color: 'text-emerald-600 dark:text-white', bg: 'bg-emerald-50 dark:bg-white/10' },
         };
 
         const currentType = stat?.type || defaultType;
@@ -137,7 +137,7 @@ const categoriesBreakdown = computed(() => {
             name: displayName,
             percentage: item.percentage,
             count: item.count,
-            color: item.color
+            color: 'bg-emerald-600 dark:bg-white'
         };
     });
 });
@@ -151,24 +151,26 @@ const categoriesBreakdown = computed(() => {
             <div class="w-full space-y-4">
 
                 <!-- Welcome Card -->
-                <div class="overflow-hidden bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-emerald-950 dark:to-slate-900 shadow-sm rounded-2xl text-white p-6 sm:p-8 relative flex items-center justify-between gap-4 sm:gap-6">
-                    <!-- Text Info -->
-                    <div class="relative z-10 flex-1 min-w-0">
-                        <h3 class="text-2xl font-extrabold mb-1">PESU PELUH</h3>
-                        <p class="text-emerald-100 dark:text-slate-300 text-sm font-medium leading-relaxed break-words">
-                            {{ __('pages.dashboard.desc') }}
-                        </p>
-                    </div>
+                <div class="p-[1px] rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-800 dark:bg-none dark:bg-slate-800 shadow-sm">
+                    <div class="overflow-hidden bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-slate-900 dark:to-slate-900 rounded-[15px] text-white p-6 sm:p-8 relative flex items-center justify-between gap-4 sm:gap-6">
+                        <!-- Text Info -->
+                        <div class="relative z-10 flex-1 min-w-0">
+                            <h3 class="text-2xl font-extrabold mb-1">PESU PELUH</h3>
+                            <p class="text-emerald-100 dark:text-slate-300 text-sm font-medium leading-relaxed break-words">
+                                Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
+                            </p>
+                        </div>
 
-                    <!-- Right White Logo -->
-                    <div class="relative z-10 flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0">
-                        <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity" />
-                    </div>
+                        <!-- Right White Logo -->
+                        <div class="relative z-10 flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0">
+                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity" />
+                        </div>
 
-                    <!-- Decorative background patterns -->
-                    <div class="absolute inset-0 opacity-10 dark:opacity-5 pointer-events-none overflow-hidden select-none">
-                        <div class="absolute -right-28 -top-28 w-80 h-80 border-2 border-white rounded-[80px] rotate-[15deg]"></div>
-                        <div class="absolute -right-40 -top-40 w-80 h-80 border-2 border-white rounded-[100px] rotate-[15deg]"></div>
+                        <!-- Decorative background patterns -->
+                        <div class="absolute inset-0 opacity-10 dark:opacity-5 pointer-events-none overflow-hidden select-none">
+                            <div class="absolute -right-28 -top-28 w-80 h-80 border-2 border-white rounded-[80px] rotate-[15deg]"></div>
+                            <div class="absolute -right-40 -top-40 w-80 h-80 border-2 border-white rounded-[100px] rotate-[15deg]"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -197,15 +199,15 @@ const categoriesBreakdown = computed(() => {
                             <!-- Left: Recent Reports Table -->
                             <div :class="[userRole === 'REPORTER' ? 'lg:col-span-3' : 'lg:col-span-2', 'bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4']">
                                 <div>
-                                    <div class="flex items-center justify-between mb-4">
-                                        <h4 class="text-base font-bold text-slate-955 dark:text-white">{{ __('pages.dashboard.recent_activities') }}</h4>
+                                    <div class="flex items-start justify-between gap-3 mb-4">
+                                        <h4 class="text-base font-bold text-slate-900 dark:text-white leading-tight">{{ __('pages.dashboard.recent_activities') }}</h4>
                                         <Link 
                                             :href="route('reports.history')" 
                                             prefetch
-                                            class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 flex items-center gap-1 transition-colors duration-150"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 border border-emerald-200/60 dark:border-white/10 transition duration-150"
                                         >
-                                            {{ __('pages.dashboard.view_all') }}
-                                            <ArrowUpRight class="h-3.5 w-3.5" />
+                                            <span>{{ __('pages.dashboard.view_all') }}</span>
+                                            <ArrowUpRight class="h-3.5 w-3.5 shrink-0" />
                                         </Link>
                                     </div>
                                     
@@ -235,22 +237,12 @@ const categoriesBreakdown = computed(() => {
                                                         <div class="text-[10px] text-slate-405 mt-0.5">{{ report.date }}</div>
                                                     </td>
                                                     <td class="py-3.5 px-4 whitespace-nowrap">
-                                                        <span :class="[
-                                                            'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold',
-                                                            report.category === 'Medik' 
-                                                                ? 'bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400' 
-                                                                : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400'
-                                                        ]">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-white/10 text-emerald-700 dark:text-white">
                                                             {{ report.type || '-' }}
                                                         </span>
                                                     </td>
                                                     <td class="py-3.5 pl-4 text-right whitespace-nowrap">
-                                                        <span :class="[
-                                                            'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold',
-                                                            report.status === 'Verified'
-                                                                ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300'
-                                                                : 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300'
-                                                        ]">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-white/10 text-emerald-800 dark:text-white">
                                                             {{ report.status === 'Verified' ? __('Verified') : __('Pending') }}
                                                         </span>
                                                     </td>

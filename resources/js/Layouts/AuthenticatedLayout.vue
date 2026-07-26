@@ -733,7 +733,7 @@ const getGroupInitials = (title) => {
                                 :title="__('Switch Language')"
                             >
                                 <Languages class="h-4.5 w-4.5 text-slate-400 dark:text-slate-500" />
-                                <span class="uppercase text-[11px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-100/30 dark:border-emerald-900/40">
+                                <span class="uppercase text-[11px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-white/10 text-emerald-700 dark:text-white">
                                     {{ $page.props.locale === 'id' ? 'ID' : 'EN' }}
                                 </span>
                             </Link>
@@ -746,7 +746,7 @@ const getGroupInitials = (title) => {
                                 :title="__('Switch Theme')"
                             >
                                 <Sun v-if="!isDark" class="h-5 w-5 text-amber-500" />
-                                <Moon v-else class="h-5 w-5 text-emerald-400" />
+                                <Moon v-else class="h-5 w-5 text-white" />
                             </button>
 
                             <!-- Notifikasi (Desktop) -->
@@ -790,17 +790,13 @@ const getGroupInitials = (title) => {
                                              @click="markAsRead(notif)"
                                              :class="[
                                                  'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                                 !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
+                                                 !notif.read_at ? 'bg-emerald-50/30 dark:bg-white/5' : ''
                                              ]"
                                          >
                                              <!-- Icon -->
                                              <div :class="[
                                                  'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                                                 notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
-                                                 notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                                 notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                                                 notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                                 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
+                                                 notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
                                              ]">
                                                  <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
                                                  <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
@@ -814,7 +810,7 @@ const getGroupInitials = (title) => {
                                                           <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
                                                           <span v-if="notif.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500 text-white flex-shrink-0 animate-pulse">URGENT</span>
                                                       </div>
-                                                     <span v-if="!notif.read_at" :class="['h-2 w-2 rounded-full flex-shrink-0 mt-1', notif.priority === 'URGENT' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500']"></span>
+                                                     <span v-if="!notif.read_at" :class="['h-2 w-2 rounded-full flex-shrink-0 mt-1', notif.priority === 'URGENT' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500 dark:bg-white']"></span>
                                                  </div>
                                                  <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
                                                  <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
@@ -927,7 +923,7 @@ const getGroupInitials = (title) => {
                                     >
                                         <Languages class="h-4 w-4 text-slate-400" />
                                         <span class="flex-1 text-left font-medium">{{ __('Language') }}</span>
-                                        <span class="text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-100/30 dark:border-emerald-900/40">
+                                        <span class="text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-white/10 text-emerald-700 dark:text-white px-2 py-0.5 rounded">
                                             {{ $page.props.locale === 'id' ? 'ID' : 'EN' }}
                                         </span>
                                     </Link>
@@ -940,18 +936,18 @@ const getGroupInitials = (title) => {
                                     >
                                         <div class="flex items-center gap-3">
                                             <Sun v-if="!isDark" class="h-4 w-4 text-amber-500" />
-                                            <Moon v-else class="h-4 w-4 text-emerald-400" />
+                                            <Moon v-else class="h-4 w-4 text-white" />
                                             <span class="font-medium">{{ __('Dark Mode') }}</span>
                                         </div>
                                         <div 
                                             :class="[
                                                 'w-8 h-4 rounded-full p-0.5 transition-colors duration-200',
-                                                isDark ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-800'
+                                                isDark ? 'bg-white' : 'bg-slate-200 dark:bg-slate-800'
                                             ]"
                                         >
                                             <div 
                                                 :class="[
-                                                    'bg-white w-3 h-3 rounded-full shadow-md transform transition-transform duration-200',
+                                                    isDark ? 'bg-slate-900 w-3 h-3 rounded-full shadow-md transform transition-all duration-200' : 'bg-white w-3 h-3 rounded-full shadow-md transform transition-all duration-200',
                                                     isDark ? 'translate-x-4' : 'translate-x-0'
                                                 ]"
                                             />
@@ -1031,18 +1027,14 @@ const getGroupInitials = (title) => {
                                              @click="markAsRead(notif)"
                                              :class="[
                                                  'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                                 !notif.read_at ? 'bg-emerald-50/30 dark:bg-emerald-950/10' : ''
+                                                 !notif.read_at ? 'bg-emerald-50/30 dark:bg-white/5' : ''
                                              ]"
                                          >
                                              <!-- Icon -->
                                              <div :class="[
-                                                 'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                                                 notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
-                                                 notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                                 notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                                                 notif.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                                                 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
-                                             ]">
+                                                  'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
+                                                  notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
+                                              ]">
                                                  <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
                                                  <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
                                                  <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
@@ -1055,7 +1047,7 @@ const getGroupInitials = (title) => {
                                                          <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
                                                          <span v-if="notif.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500 text-white flex-shrink-0 animate-pulse">URGENT</span>
                                                      </div>
-                                                     <span v-if="!notif.read_at" :class="['h-2 w-2 rounded-full flex-shrink-0 mt-1', notif.priority === 'URGENT' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500']"></span>
+                                                     <span v-if="!notif.read_at" :class="['h-2 w-2 rounded-full flex-shrink-0 mt-1', notif.priority === 'URGENT' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500 dark:bg-white']"></span>
                                                  </div>
                                                  <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
                                                  <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
@@ -1073,7 +1065,7 @@ const getGroupInitials = (title) => {
                                               {{ __('Mark All as Read') }}
                                           </button>
                                           <div v-else class="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                                              <CheckCheck class="h-3.5 w-3.5 text-emerald-500" />
+                                              <CheckCheck class="h-3.5 w-3.5 text-emerald-500 dark:text-white" />
                                               Semua terbaca
                                           </div>
                                           
@@ -1119,11 +1111,7 @@ const getGroupInitials = (title) => {
                     <!-- Icon -->
                     <div :class="[
                         'h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0',
-                        toast.priority === 'URGENT' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/25 animate-pulse' :
-                        toast.type === 'ticket' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                        toast.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                        toast.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
-                        'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500'
+                        toast.priority === 'URGENT' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/25 animate-pulse' : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
                     ]">
                         <Bell v-if="toast.type === 'ticket'" class="h-4.5 w-4.5" />
                         <Clock v-else-if="toast.type === 'progress'" class="h-4.5 w-4.5" />
@@ -1239,7 +1227,7 @@ const getGroupInitials = (title) => {
                             title="Expand Sidebar"
                         >
                             <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert transition-all duration-200 group-hover:opacity-0" />
-                            <ChevronRight class="absolute inset-0 m-auto h-5.5 w-5.5 text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all duration-200" />
+                            <ChevronRight class="absolute inset-0 m-auto h-5.5 w-5.5 text-emerald-600 dark:text-white opacity-0 group-hover:opacity-100 transition-all duration-200" />
                         </button>
                     </div>
                     
@@ -1306,11 +1294,11 @@ const getGroupInitials = (title) => {
                                     sidebarCollapsed 
                                         ? 'h-11 w-11 mx-auto flex items-center justify-center rounded-xl transition-all duration-150' 
                                         : 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-150',
-                                    'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                    'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-white'
                                 ]"
                                 :title="sidebarCollapsed ? __(item.label) : ''"
                             >
-                                <component :is="item.icon" class="h-5 w-5 flex-shrink-0 text-slate-400 group-hover:text-emerald-500 transition duration-150" />
+                                <component :is="item.icon" class="h-5 w-5 flex-shrink-0 text-slate-400 group-hover:text-emerald-500 dark:group-hover:text-white transition duration-150" />
                                 <span v-if="!sidebarCollapsed" class="flex-1 min-w-0 truncate">{{ __(item.label) }}</span>
                                 <ChevronRight v-if="!sidebarCollapsed" class="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition duration-150 text-slate-400" />
                             </a>
@@ -1334,8 +1322,8 @@ const getGroupInitials = (title) => {
                                         :class="[
                                             'relative group h-11 w-11 flex items-center justify-center rounded-xl transition-all duration-150 focus:outline-none',
                                             isChildActive(item.children)
-                                                ? 'bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                                ? 'bg-emerald-50/50 dark:bg-white/10 text-emerald-700 dark:text-white'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-white'
                                         ]"
                                         :title="__(item.label)"
                                     >
@@ -1344,8 +1332,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'h-5 w-5 flex-shrink-0 transition duration-150',
                                                 isChildActive(item.children)
-                                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                                    : 'text-slate-400 group-hover:text-emerald-500'
+                                                    ? 'text-emerald-600 dark:text-white'
+                                                    : 'text-slate-400 group-hover:text-emerald-500 dark:group-hover:text-white'
                                             ]"
                                         />
                                         <!-- Tiny dot when collapsed & closed -->
@@ -1361,7 +1349,7 @@ const getGroupInitials = (title) => {
                                                     ? 'opacity-60 rotate-180' 
                                                     : 'opacity-0 group-hover:opacity-50',
                                                 isChildActive(item.children)
-                                                    ? 'text-emerald-500 dark:text-emerald-400'
+                                                    ? 'text-emerald-500 dark:text-white'
                                                     : 'text-slate-400'
                                             ]"
                                         />
@@ -1377,8 +1365,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'relative h-9 w-9 flex items-center justify-center rounded-lg transition-all duration-150',
                                                 isItemActive(child)
-                                                    ? 'bg-emerald-600 text-white shadow-sm dark:bg-emerald-950/50 dark:text-emerald-400 dark:shadow-none'
-                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                                    ? 'bg-emerald-600 text-white shadow-sm dark:bg-white/15 dark:text-white dark:shadow-none'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-white'
                                             ]"
                                             :title="__(child.label)"
                                         >
@@ -1388,8 +1376,8 @@ const getGroupInitials = (title) => {
                                                 :class="[
                                                     'h-4 w-4 flex-shrink-0 transition duration-150',
                                                     isItemActive(child)
-                                                        ? 'text-white dark:text-emerald-400'
-                                                        : 'text-slate-400 group-hover:text-emerald-500'
+                                                        ? 'text-white dark:text-white'
+                                                        : 'text-slate-400 group-hover:text-emerald-500 dark:group-hover:text-white'
                                                 ]"
                                             />
                                             <!-- Tiny Dot indicator for pending items when collapsed -->
@@ -1408,8 +1396,8 @@ const getGroupInitials = (title) => {
                                         :class="[
                                             'w-full group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-150 text-left focus:outline-none',
                                             isChildActive(item.children)
-                                                ? 'bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
-                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                                ? 'bg-emerald-50/50 dark:bg-white/10 text-emerald-700 dark:text-white'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-white'
                                         ]"
                                     >
                                         <component
@@ -1417,8 +1405,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'h-5 w-5 flex-shrink-0 transition duration-150',
                                                 isChildActive(item.children)
-                                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                                    : 'text-slate-400 group-hover:text-emerald-500'
+                                                    ? 'text-emerald-600 dark:text-white'
+                                                    : 'text-slate-400 group-hover:text-emerald-500 dark:group-hover:text-white'
                                             ]"
                                         />
                                         <span class="flex-1 min-w-0 truncate">{{ __(item.label) }}</span>
@@ -1431,8 +1419,8 @@ const getGroupInitials = (title) => {
                                                     'h-4 w-4 transition-all duration-200 absolute',
                                                     openMenus[item.label] ? 'rotate-180' : '',
                                                     isChildActive(item.children)
-                                                        ? 'text-emerald-600 dark:text-emerald-400'
-                                                        : 'text-slate-400 group-hover:text-emerald-500',
+                                                        ? 'text-emerald-600 dark:text-white'
+                                                        : 'text-slate-400 group-hover:text-emerald-500 dark:group-hover:text-white',
                                                     (item.label === 'menu.user_management' && !openMenus[item.label] && pendingApprovalsCount > 0)
                                                         ? 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'
                                                         : 'opacity-100 scale-100'
@@ -1465,8 +1453,8 @@ const getGroupInitials = (title) => {
                                             :class="[
                                                 'group flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition duration-150',
                                                 isItemActive(child)
-                                                    ? 'bg-emerald-600 text-white shadow-sm font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:shadow-none'
-                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                                    ? 'bg-emerald-600 text-white shadow-sm font-semibold dark:bg-white/15 dark:text-white dark:shadow-none'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-white'
                                             ]"
                                         >
                                             <component
@@ -1475,8 +1463,8 @@ const getGroupInitials = (title) => {
                                                 :class="[
                                                     'h-4 w-4 flex-shrink-0 transition duration-150 ml-6',
                                                     isItemActive(child)
-                                                        ? 'text-white dark:text-emerald-400'
-                                                        : 'text-slate-400 group-hover:text-emerald-500'
+                                                        ? 'text-white dark:text-white'
+                                                        : 'text-slate-400 group-hover:text-emerald-500 dark:group-hover:text-white'
                                                 ]"
                                             />
                                             <span class="flex-1 min-w-0 truncate">{{ __(child.label) }}</span>
@@ -1502,8 +1490,8 @@ const getGroupInitials = (title) => {
                                         ? 'h-11 w-11 mx-auto flex items-center justify-center rounded-xl transition-all duration-150 relative' 
                                         : 'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 relative',
                                     isRouteActive(item)
-                                        ? 'bg-emerald-600 text-white shadow-sm font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:shadow-none'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-emerald-400'
+                                        ? 'bg-emerald-600 text-white shadow-sm font-semibold dark:bg-white/15 dark:text-white dark:shadow-none'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-white'
                                 ]"
                                 :title="sidebarCollapsed ? __(item.label) : ''"
                             >
@@ -1512,8 +1500,8 @@ const getGroupInitials = (title) => {
                                     :class="[
                                         'h-5 w-5 flex-shrink-0 transition duration-150',
                                         isRouteActive(item)
-                                            ? 'text-white dark:text-emerald-400'
-                                            : 'text-slate-400 group-hover:text-emerald-500'
+                                            ? 'text-white dark:text-white'
+                                            : 'text-slate-400 group-hover:text-emerald-500 dark:group-hover:text-white'
                                     ]"
                                 />
                                 <span v-if="!sidebarCollapsed" class="flex-1 min-w-0 truncate">{{ __(item.label) }}</span>
@@ -1535,7 +1523,7 @@ const getGroupInitials = (title) => {
                                     <ChevronRight
                                         v-if="isRouteActive(item)"
                                         :class="[
-                                            'h-3.5 w-3.5 text-white dark:text-emerald-400 absolute transition-all duration-200',
+                                            'h-3.5 w-3.5 text-white dark:text-white absolute transition-all duration-200',
                                             (item.routeName === 'reports-management.index' && pendingReportsCount > 0) ? 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100' : 'opacity-100'
                                         ]"
                                     />

@@ -411,7 +411,7 @@ onBeforeUnmount(() => {
 
         <!-- Form Title -->
         <div class="mb-8">
-            <h1 class="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight">
+            <h1 class="text-3xl font-extrabold text-emerald-700 dark:text-white tracking-tight">
                 {{ __('auth.register.title') }}
             </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -432,7 +432,7 @@ onBeforeUnmount(() => {
                     autofocus
                     autocomplete="name"
                     :placeholder="__('auth.register.name_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-white focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.name" />
             </div>
@@ -450,7 +450,7 @@ onBeforeUnmount(() => {
                     maxlength="18"
                     required
                     :placeholder="__('auth.register.nip_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-white focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.nip" />
             </div>
@@ -466,7 +466,7 @@ onBeforeUnmount(() => {
                     v-model="form.username"
                     required
                     :placeholder="__('auth.register.username_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-white focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.username" />
             </div>
@@ -483,7 +483,7 @@ onBeforeUnmount(() => {
                     required
                     autocomplete="username"
                     :placeholder="__('auth.register.email_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-white focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.email" />
             </div>
@@ -501,7 +501,7 @@ onBeforeUnmount(() => {
                     maxlength="15"
                     required
                     :placeholder="__('auth.register.phone_placeholder')"
-                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                    class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 focus:border-emerald-600 dark:focus:border-white focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                 />
                 <InputError class="mt-1" :message="form.errors.phone_number" />
             </div>
@@ -514,7 +514,7 @@ onBeforeUnmount(() => {
                 <button 
                     type="button"
                     @click="toggleUnitDropdown"
-                    class="w-full border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 text-left flex items-center justify-between focus:border-emerald-600 dark:focus:border-emerald-400 outline-none transition duration-150 text-base"
+                    class="w-full border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 text-left flex items-center justify-between focus:border-emerald-600 dark:focus:border-white outline-none transition duration-150 text-base"
                 >
                     <span v-if="selectedUnitLabel" class="text-slate-900 dark:text-white truncate font-medium">
                         {{ selectedUnitLabel }}
@@ -522,7 +522,7 @@ onBeforeUnmount(() => {
                     <span v-else class="text-slate-400 dark:text-slate-500">
                         Pilih Unit Penunjang
                     </span>
-                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isUnitDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isUnitDropdownOpen ? 'rotate-180 text-emerald-500 dark:text-white' : '']" />
                 </button>
 
                 <!-- Searchable Dropdown List -->
@@ -536,7 +536,7 @@ onBeforeUnmount(() => {
                             v-model="unitSearchQuery"
                             type="text"
                             placeholder="Cari unit penunjang..."
-                            class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:focus:ring-white"
                             @click.stop
                         />
                     </div>
@@ -554,12 +554,12 @@ onBeforeUnmount(() => {
                             :class="[
                                 'w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between transition-colors duration-150',
                                 form.supporting_unit_id === unit.id 
-                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' 
+                                    ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' 
                                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                             ]"
                         >
                             <span>{{ unit.name }} <span class="text-xs font-normal opacity-70">({{ unit.type === 'MEDIK' ? 'Penunjang Medik' : 'Penunjang Non-Medik' }})</span></span>
-                            <Check v-if="form.supporting_unit_id === unit.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <Check v-if="form.supporting_unit_id === unit.id" class="h-4 w-4 text-emerald-600 dark:text-white shrink-0" />
                         </button>
                     </div>
                 </div>
@@ -574,7 +574,7 @@ onBeforeUnmount(() => {
                 <button 
                     type="button"
                     @click="toggleRoomDropdown"
-                    class="w-full border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 text-left flex items-center justify-between focus:border-emerald-600 dark:focus:border-emerald-400 outline-none transition duration-150 text-base"
+                    class="w-full border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 text-left flex items-center justify-between focus:border-emerald-600 dark:focus:border-white outline-none transition duration-150 text-base"
                 >
                     <span v-if="selectedRoomLabel" class="text-slate-900 dark:text-white truncate font-medium">
                         {{ selectedRoomLabel }}
@@ -582,7 +582,7 @@ onBeforeUnmount(() => {
                     <span v-else class="text-slate-400 dark:text-slate-500">
                         Pilih Ruangan / Lokasi
                     </span>
-                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoomDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoomDropdownOpen ? 'rotate-180 text-emerald-500 dark:text-white' : '']" />
                 </button>
 
                 <!-- Searchable Dropdown List -->
@@ -596,7 +596,7 @@ onBeforeUnmount(() => {
                             v-model="roomSearchQuery"
                             type="text"
                             placeholder="Cari ruangan atau lokasi..."
-                            class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:focus:ring-white"
                             @click.stop
                         />
                     </div>
@@ -614,12 +614,12 @@ onBeforeUnmount(() => {
                             :class="[
                                 'w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between transition-colors duration-150',
                                 form.room_id === room.id 
-                                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' 
+                                    ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' 
                                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                             ]"
                         >
                             <span>{{ room.name }} <span v-if="room.location_floor" class="text-xs font-normal opacity-70">({{ room.location_floor }})</span></span>
-                            <Check v-if="form.room_id === room.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <Check v-if="form.room_id === room.id" class="h-4 w-4 text-emerald-600 dark:text-white shrink-0" />
                         </button>
                     </div>
                 </div>
@@ -639,7 +639,7 @@ onBeforeUnmount(() => {
                         required
                         autocomplete="new-password"
                         placeholder="••••••••"
-                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-emerald-600 dark:focus:border-white focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                     />
                     <button
                         type="button"
@@ -666,7 +666,7 @@ onBeforeUnmount(() => {
                         required
                         autocomplete="new-password"
                         placeholder="••••••••"
-                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-emerald-600 dark:focus:border-emerald-400 focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
+                        class="border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 pe-10 ps-0 focus:border-emerald-600 dark:focus:border-white focus:ring-0 outline-none w-full border-t-0 border-l-0 border-r-0 rounded-none transition duration-150 text-slate-900 dark:text-white text-base"
                     />
                     <button
                         type="button"
@@ -683,7 +683,7 @@ onBeforeUnmount(() => {
             <!-- Profile Photo (Required) Card -->
             <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-slate-50 dark:bg-slate-900/50 space-y-4">
                 <div>
-                    <label class="text-sm font-bold text-emerald-700 dark:text-emerald-400 block mb-1">
+                    <label class="text-sm font-bold text-emerald-700 dark:text-white block mb-1">
                         {{ __('auth.register.profile_photo_title') }}
                     </label>
                     <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-4">
@@ -696,7 +696,7 @@ onBeforeUnmount(() => {
                     <button 
                         @click="setPhotoMode('upload')"
                         type="button" 
-                        :class="['flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition duration-150', photoMode === 'upload' ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200']"
+                        :class="['flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition duration-150', photoMode === 'upload' ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200']"
                     >
                         <UploadCloud class="h-3.5 w-3.5 inline-block me-1" />
                         {{ __('auth.register.upload_file_tab') }}
@@ -704,7 +704,7 @@ onBeforeUnmount(() => {
                     <button 
                         @click="setPhotoMode('camera')"
                         type="button" 
-                        :class="['flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition duration-150', photoMode === 'camera' ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200']"
+                        :class="['flex-1 flex items-center justify-center px-3 py-2 text-xs font-bold rounded-lg transition duration-150', photoMode === 'camera' ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200']"
                     >
                         <Camera class="h-3.5 w-3.5 inline-block me-1" />
                         {{ __('auth.register.take_photo_tab') }}
@@ -713,7 +713,7 @@ onBeforeUnmount(() => {
 
                 <!-- Photo Upload Mode -->
                 <div class="photo-upload-mode" v-if="photoMode === 'upload'">
-                    <div class="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-2 text-center hover:border-emerald-500/50 dark:hover:border-emerald-400/50 transition cursor-pointer relative overflow-hidden h-72 w-full max-w-md flex items-center justify-center bg-slate-100/50 dark:bg-slate-900/30 mx-auto">
+                    <div class="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-2 text-center hover:border-emerald-500/50 dark:hover:border-white/30 transition cursor-pointer relative overflow-hidden h-72 w-full max-w-md flex items-center justify-center bg-slate-100/50 dark:bg-slate-900/30 mx-auto">
                         <input 
                             type="file" 
                             accept="image/*"
@@ -790,7 +790,7 @@ onBeforeUnmount(() => {
 
             <!-- Optional Face Registration Card -->
             <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 bg-slate-50 dark:bg-slate-900/50">
-                <label class="text-sm font-bold text-emerald-700 dark:text-emerald-400 block mb-1">
+                <label class="text-sm font-bold text-emerald-700 dark:text-white block mb-1">
                     {{ __('auth.register.face_login_title') }}
                 </label>
                 <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
@@ -798,7 +798,7 @@ onBeforeUnmount(() => {
                 </p>
 
                 <!-- Status indicator -->
-                <div v-if="hasFaceScan" class="mb-4 flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                <div v-if="hasFaceScan" class="mb-4 flex items-center text-xs font-bold text-emerald-600 dark:text-white bg-emerald-50 dark:bg-white/10 p-3 rounded-xl border border-emerald-100 dark:border-white/20">
                     <CheckCircle class="h-5 w-5 me-2 shrink-0" />
                     <span>{{ __('auth.register.face_success_msg') }}</span>
                 </div>
@@ -807,9 +807,9 @@ onBeforeUnmount(() => {
                 <button
                     @click="loadModelsAndStart"
                     type="button"
-                    class="w-full inline-flex items-center justify-center px-4 py-3 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold rounded-xl border border-emerald-100 dark:border-emerald-900/30 transition duration-150 text-sm"
+                    class="w-full inline-flex items-center justify-center px-4 py-3 bg-emerald-50 hover:bg-emerald-100 dark:bg-white/10 dark:hover:bg-white/15 text-emerald-700 dark:text-white font-bold rounded-xl border border-emerald-100 dark:border-white/20 transition duration-150 text-sm"
                 >
-                    <ScanFace class="h-5 w-5 me-2 text-emerald-600 dark:text-emerald-400" />
+                    <ScanFace class="h-5 w-5 me-2 text-emerald-600 dark:text-white" />
                     {{ hasFaceScan ? __('auth.register.retry_scan_btn') : __('auth.register.face_scan_btn') }}
                 </button>
             </div>
@@ -818,12 +818,12 @@ onBeforeUnmount(() => {
             <div class="pt-4 space-y-4">
                 <button
                     type="submit"
-                    class="w-full text-center py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-white dark:focus:ring-offset-slate-900 flex items-center justify-center gap-3"
+                    class="w-full text-center py-4 bg-emerald-600 hover:bg-emerald-700 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-bold rounded-xl text-base tracking-wide transition duration-150 select-none outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 dark:focus:ring-white focus:ring-offset-white dark:focus:ring-offset-slate-900 flex items-center justify-center gap-3"
                     :class="{ 'opacity-25 cursor-not-allowed': form.processing }"
                     :disabled="form.processing"
                     :aria-busy="form.processing"
                 >
-                    <RefreshCw v-if="form.processing" class="h-4 w-4 animate-spin text-white" />
+                    <RefreshCw v-if="form.processing" class="h-4 w-4 animate-spin text-white dark:text-slate-900" />
                     <span>
                         {{ form.processing ? __('auth.register.loading') : __('global.register') }}
                     </span>
@@ -834,7 +834,7 @@ onBeforeUnmount(() => {
                     <Link
                         :href="route('login')"
                         prefetch
-                        class="font-bold text-emerald-600 dark:text-emerald-400 hover:underline outline-none ms-1"
+                        class="font-bold text-emerald-600 dark:text-white hover:underline outline-none ms-1"
                     >
                         {{ __('auth.register.log_in_link') }}
                     </Link>

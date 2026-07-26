@@ -47,11 +47,11 @@ const formatDate = (dateStr) => {
                 <!-- Premium Header Panel -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <UserCheck class="h-6 w-6" />
                         </div>
                         <div class="space-y-0.5">
-                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
                                 {{ __('pages.user_management.approval_title') }}
                             </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
@@ -69,7 +69,7 @@ const formatDate = (dateStr) => {
                                 v-model="searchQuery"
                                 type="text" 
                                 :placeholder="__('pages.user_management.search_all_placeholder')" 
-                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150 shadow-none"
+                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-0 focus:border-emerald-500 dark:focus:border-white transition-all duration-150 shadow-none"
                             />
                         </div>
                     </div>
@@ -79,7 +79,7 @@ const formatDate = (dateStr) => {
                 <div class="overflow-x-auto bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                            <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
                                 <th class="px-6 py-4">{{ __('pages.user_management.table.name_email') }}</th>
                                 <th class="px-6 py-4">{{ __('pages.user_management.table.nip') }}</th>
                                 <th class="px-6 py-4">{{ __('pages.user_management.table.phone') }}</th>
@@ -111,7 +111,7 @@ const formatDate = (dateStr) => {
                                             <User v-else class="h-4.5 w-4.5 text-slate-500" />
                                         </div>
                                         <div>
-                                            <div class="font-semibold text-slate-955 dark:text-white">
+                                            <div class="font-semibold text-slate-900 dark:text-white">
                                                 {{ user.name }}
                                             </div>
                                             <div class="text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</div>
@@ -120,12 +120,12 @@ const formatDate = (dateStr) => {
                                 </td>
                                 
                                 <!-- NIP -->
-                                <td class="px-6 py-4 text-slate-650 dark:text-slate-400 text-xs">
+                                <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
                                     {{ user.nip || '-' }}
                                 </td>
                                 
                                 <!-- Nomor HP -->
-                                <td class="px-6 py-4 text-slate-650 dark:text-slate-400 text-xs">
+                                <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
                                     {{ user.phone_number || '-' }}
                                 </td>
 
@@ -142,7 +142,7 @@ const formatDate = (dateStr) => {
                                     <div class="flex items-center justify-center">
                                         <Link
                                             :href="route('users.approvals.show', user.uuid)"
-                                            class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 border bg-emerald-600 hover:bg-emerald-500 text-white border-transparent"
+                                            class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 border bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 border-transparent shadow-sm"
                                             title="Detail Pendaftar"
                                         >
                                             <span>Detail</span>

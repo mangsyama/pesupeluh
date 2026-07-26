@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
-import { Edit2, Trash2, X, ChevronDown, Check } from '@lucide/vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
+import { Edit2, Trash2, X } from '@lucide/vue';
 
 const props = defineProps({
     categories: {
@@ -19,6 +20,8 @@ const props = defineProps({
 });
 
 const { proxy } = getCurrentInstance();
+
+const unitOptions = computed(() => (props.supportingUnits || []));
 
 const showCategoryModal = ref(false);
 const isEditingCategory = ref(false);
@@ -204,7 +207,7 @@ defineExpose({
             <div v-if="showCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
                 <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
-                        <h3 class="text-base font-bold text-slate-955 dark:text-white">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">
                             {{ isEditingCategory ? __('pages.service_management.categories.edit_title') : __('pages.service_management.categories.add_title') }}
                         </h3>
                         <button type="button" @click="showCategoryModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
@@ -218,50 +221,22 @@ defineExpose({
                                 v-model="categoryForm.name"
                                 type="text" 
                                 required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 :placeholder="__('pages.service_management.categories.placeholder_name')"
                             />
                             <div v-if="categoryForm.errors.name" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.name }}</div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Unit Penunjang</label>
-                            <div class="relative" ref="unitDropdownRef">
-                                <button 
-                                    type="button"
-                                    @click="toggleUnitDropdown"
-                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                >
-                                    <span v-if="selectedUnitLabel" class="text-slate-800 dark:text-slate-100 truncate">
-                                        {{ selectedUnitLabel }}
-                                    </span>
-                                    <span v-else class="text-slate-400 dark:text-slate-500">
-                                        Pilih Unit Penunjang...
-                                    </span>
-                                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isUnitDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                </button>
-
-                                <div 
-                                    v-if="isUnitDropdownOpen"
-                                    class="relative z-10 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-1 shadow-sm"
-                                >
-                                    <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                        <button
-                                            v-for="u in (supportingUnits || [])"
-                                            :key="u.id"
-                                            type="button"
-                                            @click.stop="selectUnit(u.id)"
-                                            class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                            :class="categoryForm.supporting_unit_id === u.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                        >
-                                            <span class="truncate">{{ u.name }}</span>
-                                            <Check v-if="categoryForm.supporting_unit_id === u.id" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                        </button>
-                                        <div v-if="(supportingUnits || []).length === 0" class="px-3 py-2 text-sm text-slate-400 italic text-center">
-                                            Tidak ada pilihan
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <SearchableSelect
+                                v-model="categoryForm.supporting_unit_id"
+                                :options="unitOptions"
+                                :searchable="true"
+                                value-key="id"
+                                label-key="name"
+                                placeholder="Pilih Unit Penunjang..."
+                                search-placeholder="Cari unit penunjang..."
+                            />
                             <div v-if="categoryForm.errors.supporting_unit_id" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.supporting_unit_id }}</div>
                         </div>
                         <div>
@@ -269,14 +244,14 @@ defineExpose({
                             <textarea 
                                 v-model="categoryForm.description"
                                 rows="3"
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 :placeholder="__('pages.service_management.categories.placeholder_description')"
                             ></textarea>
                             <div v-if="categoryForm.errors.description" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.description }}</div>
                         </div>
                         <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
                             <button type="button" @click="showCategoryModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150">{{ __('global.cancel') }}</button>
-                            <button type="submit" :disabled="categoryForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 disabled:opacity-50">{{ __('pages.service_management.categories.btn_save') }}</button>
+                            <button type="submit" :disabled="categoryForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 border-0 shadow-sm disabled:opacity-50">{{ __('pages.service_management.categories.btn_save') }}</button>
                         </div>
                     </form>
                 </div>

@@ -111,7 +111,7 @@ const selectFeature = (id) => {
                             <div 
                                 :class="[
                                     'hidden sm:flex h-12 w-12 rounded-xl items-center justify-center flex-shrink-0',
-                                    'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                                    'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
                                 ]"
                             >
                                 <component :is="getUnitIcon(unit.name, unit.slug)" class="h-6 w-6" />
@@ -124,7 +124,7 @@ const selectFeature = (id) => {
                                     <span 
                                         :class="[
                                             'px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase',
-                                            'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                            'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white'
                                         ]"
                                     >
                                         {{ unit.type === 'MEDIK' ? __('Penunjang Medik') : __('Penunjang Non-Medik') }}
@@ -155,15 +155,15 @@ const selectFeature = (id) => {
                                     :class="[
                                         'p-4 rounded-xl border text-left transition-all duration-200 select-none cursor-pointer flex items-center gap-3',
                                         selectedFeatureId === feature.id
-                                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40'
-                                            : 'border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/40 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800/60'
+                                            ? 'border-emerald-500 dark:border-white bg-emerald-50 dark:bg-white/10'
+                                            : 'border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/40 hover:bg-emerald-50/40 dark:hover:bg-white/5 hover:border-emerald-300 dark:hover:border-white/30'
                                     ]"
                                 >
                                     <div 
                                         :class="[
                                             'h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-150',
                                             selectedFeatureId === feature.id
-                                                ? 'bg-emerald-100 dark:bg-emerald-900/60'
+                                                ? 'bg-emerald-100 dark:bg-white/15'
                                                 : 'bg-slate-100 dark:bg-slate-800'
                                         ]"
                                     >
@@ -172,7 +172,7 @@ const selectFeature = (id) => {
                                             :class="[
                                                 'h-5 w-5 transition-colors duration-150',
                                                 selectedFeatureId === feature.id
-                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                    ? 'text-emerald-600 dark:text-white'
                                                     : 'text-slate-500 dark:text-slate-400'
                                             ]"
                                         />
@@ -182,7 +182,7 @@ const selectFeature = (id) => {
                                             :class="[
                                                 'text-sm font-bold truncate transition-colors duration-150',
                                                 selectedFeatureId === feature.id
-                                                    ? 'text-emerald-700 dark:text-emerald-300'
+                                                    ? 'text-emerald-700 dark:text-white'
                                                     : 'text-slate-800 dark:text-slate-200'
                                             ]"
                                         >

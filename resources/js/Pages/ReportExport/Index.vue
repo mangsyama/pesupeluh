@@ -320,7 +320,7 @@ watch(() => props.filters, (newVal) => {
                 <!-- Premium Header Panel -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm">
                     <div class="flex items-center gap-3">
-                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <FileBarChart2 class="h-6 w-6" />
                         </div>
                         <div class="space-y-0.5">
@@ -339,33 +339,33 @@ watch(() => props.filters, (newVal) => {
                     <!-- Total Laporan Bulan Ini -->
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">
-                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-505 uppercase tracking-wider">{{ __('pages.reports.center.stat_total_month') }}</span>
+                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ __('pages.reports.center.stat_total_month') }}</span>
                             <div class="text-3xl font-extrabold text-slate-955 dark:text-white mt-0.5">{{ stats?.total_month ?? 0 }}</div>
                         </div>
-                        <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-indigo-50 dark:bg-indigo-950/30">
-                            <BarChart3 class="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                        <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-white/10">
+                            <BarChart3 class="h-6 w-6 text-emerald-600 dark:text-white" />
                         </div>
                     </div>
 
                     <!-- Laporan Terverifikasi -->
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">
-                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-505 uppercase tracking-wider">{{ __('pages.reports.center.stat_verified') }}</span>
+                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ __('pages.reports.center.stat_verified') }}</span>
                             <div class="text-3xl font-extrabold text-slate-955 dark:text-white mt-0.5">{{ stats?.completed ?? 0 }}</div>
                         </div>
-                        <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-emerald-950/30">
-                            <CheckCircle2 class="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                        <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-white/10">
+                            <CheckCircle2 class="h-6 w-6 text-emerald-600 dark:text-white" />
                         </div>
                     </div>
 
                     <!-- Menunggu Review -->
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">
-                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-505 uppercase tracking-wider">{{ __('pages.reports.center.stat_pending') }}</span>
+                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{{ __('pages.reports.center.stat_pending') }}</span>
                             <div class="text-3xl font-extrabold text-slate-955 dark:text-white mt-0.5">{{ stats?.pending ?? 0 }}</div>
                         </div>
-                        <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-amber-50 dark:bg-amber-950/30">
-                            <Clock class="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                        <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-white/10">
+                            <Clock class="h-6 w-6 text-emerald-600 dark:text-white" />
                         </div>
                     </div>
                 </div>
@@ -410,7 +410,7 @@ watch(() => props.filters, (newVal) => {
                                                 <span class="truncate font-medium text-slate-800 dark:text-slate-100 text-center">
                                                     {{ selectedUnitLabel }}
                                                 </span>
-                                                <ChevronDown :class="['absolute right-4 h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0', isUnitDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                                                <ChevronDown :class="['absolute right-4 h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0', isUnitDropdownOpen ? 'rotate-180 text-emerald-500 dark:text-white' : '']" />
                                             </button>
 
                                             <div
@@ -436,22 +436,22 @@ watch(() => props.filters, (newVal) => {
                                                         v-else
                                                         type="button"
                                                         @click.stop="selectUnit('')"
-                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                        :class="!formFilters.unit_id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
+                                                        :class="!formFilters.unit_id ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
                                                         <span class="truncate">-- Semua Unit --</span>
-                                                        <Check v-if="!formFilters.unit_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        <Check v-if="!formFilters.unit_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                     <button
                                                         v-for="unit in filteredSupportingUnits"
                                                         :key="unit.id"
                                                         type="button"
                                                         @click.stop="selectUnit(unit.id)"
-                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                        :class="String(formFilters.unit_id) === String(unit.id) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
+                                                        :class="String(formFilters.unit_id) === String(unit.id) ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
                                                         <span class="truncate">{{ unit.name }}</span>
-                                                        <Check v-if="String(formFilters.unit_id) === String(unit.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        <Check v-if="String(formFilters.unit_id) === String(unit.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -473,7 +473,7 @@ watch(() => props.filters, (newVal) => {
                                                 <span class="truncate font-medium text-slate-800 dark:text-slate-100 text-center">
                                                     {{ selectedCategoryLabel }}
                                                 </span>
-                                                <ChevronDown :class="['absolute right-4 h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0', isCategoryDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                                                <ChevronDown :class="['absolute right-4 h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0', isCategoryDropdownOpen ? 'rotate-180 text-emerald-500 dark:text-white' : '']" />
                                             </button>
 
                                             <div
@@ -492,29 +492,29 @@ watch(() => props.filters, (newVal) => {
                                                     />
                                                 </div>
                                                 <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                                    <div v-if="filteredCategories.length === 0" class="p-3 text-center text-xs text-slate-400 dark:text-slate-505">
+                                                    <div v-if="filteredCategories.length === 0" class="p-3 text-center text-xs text-slate-400 dark:text-slate-500">
                                                         Kategori tidak ditemukan
                                                     </div>
                                                     <button
                                                         v-else
                                                         type="button"
                                                         @click.stop="selectCategory('')"
-                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                        :class="!formFilters.category_id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
+                                                        :class="!formFilters.category_id ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
                                                         <span class="truncate">-- Semua Kategori --</span>
-                                                        <Check v-if="!formFilters.category_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        <Check v-if="!formFilters.category_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                     <button
                                                         v-for="cat in filteredCategories"
                                                         :key="cat.id"
                                                         type="button"
                                                         @click.stop="selectCategory(cat.id)"
-                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                        :class="String(formFilters.category_id) === String(cat.id) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
+                                                        :class="String(formFilters.category_id) === String(cat.id) ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
                                                         <span class="truncate">{{ cat.name }}</span>
-                                                        <Check v-if="String(formFilters.category_id) === String(cat.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        <Check v-if="String(formFilters.category_id) === String(cat.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -535,7 +535,7 @@ watch(() => props.filters, (newVal) => {
                                                 <span class="truncate font-medium text-slate-800 dark:text-slate-100 text-center">
                                                     {{ selectedRoomLabel }}
                                                 </span>
-                                                <ChevronDown :class="['absolute right-4 h-4 w-4 text-slate-455 transition-transform duration-200 shrink-0', isRoomDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                                                <ChevronDown :class="['absolute right-4 h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0', isRoomDropdownOpen ? 'rotate-180 text-emerald-500 dark:text-white' : '']" />
                                             </button>
 
                                             <div
@@ -554,29 +554,29 @@ watch(() => props.filters, (newVal) => {
                                                     />
                                                 </div>
                                                 <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                                    <div v-if="filteredRooms.length === 0" class="p-3 text-center text-xs text-slate-400 dark:text-slate-505">
+                                                    <div v-if="filteredRooms.length === 0" class="p-3 text-center text-xs text-slate-400 dark:text-slate-500">
                                                         Ruangan tidak ditemukan
                                                     </div>
                                                     <button
                                                         v-else
                                                         type="button"
                                                         @click.stop="selectRoom('')"
-                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                        :class="!formFilters.room_id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
+                                                        :class="!formFilters.room_id ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
                                                         <span class="truncate">-- Semua Ruangan --</span>
-                                                        <Check v-if="!formFilters.room_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        <Check v-if="!formFilters.room_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                     <button
                                                         v-for="room in filteredRooms"
                                                         :key="room.id"
                                                         type="button"
                                                         @click.stop="selectRoom(room.id)"
-                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                        :class="String(formFilters.room_id) === String(room.id) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
+                                                        :class="String(formFilters.room_id) === String(room.id) ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
                                                         <span class="truncate">{{ room.name }} (Lt. {{ room.location_floor }})</span>
-                                                        <Check v-if="String(formFilters.room_id) === String(room.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        <Check v-if="String(formFilters.room_id) === String(room.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -597,7 +597,7 @@ watch(() => props.filters, (newVal) => {
                                                 <span class="truncate font-medium text-slate-800 dark:text-slate-100 text-center">
                                                     {{ selectedReporterLabel }}
                                                 </span>
-                                                <ChevronDown :class="['absolute right-4 h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0', isReporterDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
+                                                <ChevronDown :class="['absolute right-4 h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0', isReporterDropdownOpen ? 'rotate-180 text-emerald-500 dark:text-white' : '']" />
                                             </button>
 
                                             <div
@@ -616,29 +616,29 @@ watch(() => props.filters, (newVal) => {
                                                     />
                                                 </div>
                                                 <div class="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                                                    <div v-if="filteredReporters.length === 0" class="p-3 text-center text-xs text-slate-450 dark:text-slate-500">
+                                                    <div v-if="filteredReporters.length === 0" class="p-3 text-center text-xs text-slate-400 dark:text-slate-500">
                                                         Staf tidak ditemukan
                                                     </div>
                                                     <button
                                                         v-else
                                                         type="button"
                                                         @click.stop="selectReporter('')"
-                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                        :class="!formFilters.reporter_id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
+                                                        :class="!formFilters.reporter_id ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
                                                         <span class="truncate">-- Semua Pelapor --</span>
-                                                        <Check v-if="!formFilters.reporter_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        <Check v-if="!formFilters.reporter_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                     <button
                                                         v-for="rep in filteredReporters"
                                                         :key="rep.id"
                                                         type="button"
                                                         @click.stop="selectReporter(rep.id)"
-                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                        :class="String(formFilters.reporter_id) === String(rep.id) ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                                                        class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
+                                                        :class="String(formFilters.reporter_id) === String(rep.id) ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
                                                         <span class="truncate">{{ rep.name }}</span>
-                                                        <Check v-if="String(formFilters.reporter_id) === String(rep.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                        <Check v-if="String(formFilters.reporter_id) === String(rep.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -661,7 +661,7 @@ watch(() => props.filters, (newVal) => {
                                 <button 
                                     type="button"
                                     @click="applyFilters"
-                                    class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm shadow-emerald-500/10"
+                                    class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 text-xs font-bold transition shadow-sm shadow-emerald-500/10"
                                 >
                                     <Filter class="h-3.5 w-3.5" />
                                     Terapkan Filter
@@ -697,7 +697,7 @@ watch(() => props.filters, (newVal) => {
                                 <!-- CSV Button -->
                                 <button
                                     @click="exportCsv"
-                                    class="w-full inline-flex items-center justify-center px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition duration-150 shadow-sm gap-2"
+                                    class="w-full inline-flex items-center justify-center px-4 py-3 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold text-xs rounded-xl transition duration-150 shadow-sm gap-2"
                                 >
                                     <BarChart3 class="h-4 w-4" />
                                     {{ __('pages.reports.center.csv_btn') }}
@@ -715,7 +715,7 @@ watch(() => props.filters, (newVal) => {
                                 Preview Data Laporan
                             </h3>
                         </div>
-                        <span class="text-xs text-slate-400 dark:text-slate-505">
+                        <span class="text-xs text-slate-400 dark:text-slate-500">
                             Menampilkan {{ tickets.data?.length ?? 0 }} data dari total {{ tickets.total ?? 0 }} laporan terfilter
                         </span>
                     </div>
@@ -738,9 +738,9 @@ watch(() => props.filters, (newVal) => {
                                 <tr 
                                     v-for="ticket in tickets.data" 
                                     :key="ticket.id"
-                                    class="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 text-slate-700 dark:text-slate-350"
+                                    class="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 text-slate-700 dark:text-slate-300"
                                 >
-                                    <td class="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                                    <td class="px-6 py-4 font-bold text-emerald-600 dark:text-white whitespace-nowrap">
                                         {{ ticket.ticket_number }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -766,7 +766,7 @@ watch(() => props.filters, (newVal) => {
                                             :class="[
                                                 'inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border',
                                                 ticket.status === 'COMPLETED' 
-                                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
+                                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white dark:border-white/20' 
                                                     : (ticket.status === 'PENDING_VALIDATION' || ticket.status === 'PENDING')
                                                         ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200 dark:border-amber-800'
                                                         : ticket.status === 'CANCEL'
@@ -779,7 +779,7 @@ watch(() => props.filters, (newVal) => {
                                     </td>
                                 </tr>
                                 <tr v-if="!tickets.data || tickets.data.length === 0">
-                                    <td colspan="8" class="px-6 py-12 text-center text-slate-400 dark:text-slate-555 font-medium italic">
+                                    <td colspan="8" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500 font-medium italic">
                                         Tidak ada data laporan yang cocok dengan filter yang dipilih.
                                     </td>
                                 </tr>
@@ -803,10 +803,10 @@ watch(() => props.filters, (newVal) => {
                             class="h-8 min-w-[32px] px-2.5 rounded-lg text-xs font-bold flex items-center justify-center transition"
                             :class="[
                                 link.active 
-                                    ? 'bg-emerald-600 text-white' 
+                                    ? 'bg-emerald-600 dark:bg-white text-white dark:text-slate-900' 
                                     : link.url 
-                                        ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-850' 
-                                        : 'text-slate-350 dark:text-slate-650 cursor-not-allowed'
+                                        ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800' 
+                                        : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
                             ]"
                             v-html="link.label"
                         />

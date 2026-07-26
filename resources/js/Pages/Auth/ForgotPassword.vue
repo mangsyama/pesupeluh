@@ -25,7 +25,7 @@ const submit = () => {
 
         <!-- Form Title -->
         <div class="mb-8">
-            <h1 class="text-3xl font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight">
+            <h1 class="text-3xl font-extrabold text-emerald-700 dark:text-white tracking-tight">
                 {{ __('auth.forgot_password.title') }}
             </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -43,7 +43,7 @@ const submit = () => {
 
         <div
             v-if="status"
-            class="mb-6 text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/30"
+            class="mb-6 text-sm font-medium text-emerald-600 dark:text-white bg-emerald-50 dark:bg-white/10 p-3 rounded-xl border border-emerald-100 dark:border-white/20"
         >
             {{ status }}
         </div>

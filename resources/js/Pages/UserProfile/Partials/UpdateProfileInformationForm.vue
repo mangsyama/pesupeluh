@@ -5,30 +5,36 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
-import { ref, getCurrentInstance } from 'vue';
-import { User } from '@lucide/vue';
+import { ref, computed, getCurrentInstance } from 'vue';
+import { User, Lock } from '@lucide/vue';
 import { compressImage } from '@/Utils/imageCompressor';
 
-defineProps({
+const props = defineProps({
     mustVerifyEmail: {
         type: Boolean,
     },
     status: {
         type: String,
     },
+    user: {
+        type: Object,
+        default: null,
+    },
 });
 
-const user = usePage().props.auth.user;
+const pageAuthUser = usePage().props.auth.user;
+const currentUser = computed(() => props.user || pageAuthUser);
+
 const photoPreview = ref(null);
 const photoInput = ref(null);
 const isPhotoDeleted = ref(false);
 
 const form = useForm({
-    name: user.name,
-    email: user.email,
-    username: user.username,
-    nip: user.nip,
-    phone_number: user.phone_number || '',
+    name: currentUser.value.name || '',
+    nip: currentUser.value.nip || '',
+    username: currentUser.value.username || '',
+    email: currentUser.value.email || '',
+    phone_number: currentUser.value.phone_number || '',
     profile_photo: null,
 });
 
@@ -87,9 +93,9 @@ const submit = () => {
 <template>
     <section>
         <header>
-            <h2 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2.5">
-                <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center flex-shrink-0">
-                    <User class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <h2 class="text-md font-bold text-slate-955 dark:text-white flex items-center gap-2.5">
+                <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <User class="h-4 w-4 text-emerald-600 dark:text-white" />
                 </div>
                 <span>{{ __('pages.profile.info_title') }}</span>
             </h2>
@@ -99,16 +105,13 @@ const submit = () => {
             </p>
         </header>
 
-        <form
-            @submit.prevent="submit"
-            class="mt-6 space-y-6"
-        >
-            <!-- Profile Photo Upload -->
-            <div class="flex items-center gap-5 pb-6 border-b border-slate-100 dark:border-slate-800/80">
-                <div class="relative h-20 w-20 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 flex items-center justify-center">
+        <form @submit.prevent="submit" class="mt-6 space-y-6">
+            <!-- 1. Foto Profil (SELALU DI ATAS) -->
+            <div class="flex items-center gap-5 pb-6 border-b border-slate-100 dark:border-slate-800">
+                <div class="relative h-20 w-20 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 flex items-center justify-center shadow-sm">
                     <img 
-                        v-if="!isPhotoDeleted && (photoPreview || user.profile_photo_path)" 
-                        :src="photoPreview || user.profile_photo_path" 
+                        v-if="!isPhotoDeleted && (photoPreview || currentUser.profile_photo_path)" 
+                        :src="photoPreview || currentUser.profile_photo_path" 
                         class="h-full w-full object-cover" 
                         alt="Profile Photo"
                     />
@@ -123,7 +126,7 @@ const submit = () => {
                         accept="image/*"
                         @change="handlePhotoChange"
                     />
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 mt-1">
                         <SecondaryButton 
                             type="button" 
                             class="!px-3 !py-2 !text-xs"
@@ -132,7 +135,7 @@ const submit = () => {
                             {{ __('pages.profile.change_photo') || 'Pilih Foto' }}
                         </SecondaryButton>
                         <SecondaryButton 
-                            v-if="!isPhotoDeleted && (photoPreview || user.profile_photo_path)"
+                            v-if="!isPhotoDeleted && (photoPreview || currentUser.profile_photo_path)"
                             type="button" 
                             class="!px-3 !py-2 !text-xs !text-red-600 dark:!text-red-400 !border-red-200 dark:!border-red-950/40 hover:!bg-red-50 dark:hover:!bg-red-950/20"
                             @click="deletePhoto"
@@ -144,9 +147,23 @@ const submit = () => {
                 </div>
             </div>
 
-            <!-- Fields Grid -->
+            <!-- 2. Grid Data Profil -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- NIP -->
+                <!-- Nama Lengkap (Editable) -->
+                <div>
+                    <InputLabel for="name" :value="__('global.name') || 'Nama Lengkap'" />
+                    <TextInput
+                        id="name"
+                        type="text"
+                        class="mt-1 block w-full"
+                        v-model="form.name"
+                        required
+                        autocomplete="name"
+                    />
+                    <InputError class="mt-2" :message="form.errors.name" />
+                </div>
+
+                <!-- NIP (Editable) -->
                 <div>
                     <InputLabel for="nip" :value="__('pages.profile.nip') || 'NIP'" />
                     <TextInput
@@ -162,7 +179,7 @@ const submit = () => {
                     <InputError class="mt-2" :message="form.errors.nip" />
                 </div>
 
-                <!-- Username -->
+                <!-- Nama Pengguna / Username (Editable) -->
                 <div>
                     <InputLabel for="username" :value="__('pages.profile.username') || 'Nama Pengguna'" />
                     <TextInput
@@ -176,23 +193,9 @@ const submit = () => {
                     <InputError class="mt-2" :message="form.errors.username" />
                 </div>
 
-                <!-- Name -->
+                <!-- Email (Editable) -->
                 <div>
-                    <InputLabel for="name" :value="__('global.name')" />
-                    <TextInput
-                        id="name"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="form.name"
-                        required
-                        autocomplete="name"
-                    />
-                    <InputError class="mt-2" :message="form.errors.name" />
-                </div>
-
-                <!-- Email -->
-                <div>
-                    <InputLabel for="email" :value="__('global.email')" />
+                    <InputLabel for="email" :value="__('global.email') || 'Email'" />
                     <TextInput
                         id="email"
                         type="email"
@@ -204,9 +207,9 @@ const submit = () => {
                     <InputError class="mt-2" :message="form.errors.email" />
                 </div>
 
-                <!-- Phone Number -->
-                <div class="md:col-span-2">
-                    <InputLabel for="phone_number" :value="__('pages.profile.phone') || 'No. Telepon'" />
+                <!-- Nomor HP / WhatsApp (Editable) -->
+                <div>
+                    <InputLabel for="phone_number" :value="__('pages.profile.phone') || 'Nomor HP'" />
                     <TextInput
                         id="phone_number"
                         type="text"
@@ -218,10 +221,67 @@ const submit = () => {
                     />
                     <InputError class="mt-2" :message="form.errors.phone_number" />
                 </div>
+
+                <!-- Peran Spesifik (Role) - TERKUNCI -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <InputLabel for="role" value="Peran Spesifik (Role)" class="!mb-0" />
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                            <Lock class="h-3 w-3" />
+                            Terkunci
+                        </span>
+                    </div>
+                    <TextInput
+                        id="role"
+                        type="text"
+                        class="block w-full opacity-70 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/60"
+                        :model-value="currentUser.role?.name || 'User'"
+                        disabled
+                        readonly
+                    />
+                </div>
+
+                <!-- Unit Penunjang - TERKUNCI -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <InputLabel for="supporting_unit" value="Unit Penunjang" class="!mb-0" />
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                            <Lock class="h-3 w-3" />
+                            Terkunci
+                        </span>
+                    </div>
+                    <TextInput
+                        id="supporting_unit"
+                        type="text"
+                        class="block w-full opacity-70 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/60"
+                        :model-value="currentUser.supporting_unit?.name || currentUser.supportingUnit?.name || '-'"
+                        disabled
+                        readonly
+                    />
+                </div>
+
+                <!-- Ruangan - TERKUNCI -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <InputLabel for="room" value="Ruangan" class="!mb-0" />
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                            <Lock class="h-3 w-3" />
+                            Terkunci
+                        </span>
+                    </div>
+                    <TextInput
+                        id="room"
+                        type="text"
+                        class="block w-full opacity-70 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/60"
+                        :model-value="currentUser.room?.name || '-'"
+                        disabled
+                        readonly
+                    />
+                </div>
             </div>
 
             <!-- Email verification notice -->
-            <div v-if="mustVerifyEmail && user.email_verified_at === null">
+            <div v-if="mustVerifyEmail && currentUser.email_verified_at === null">
                 <p class="mt-2 text-xs text-slate-800 dark:text-slate-200">
                     {{ __('pages.profile.email_unverified') }}
                     <Link
@@ -236,14 +296,14 @@ const submit = () => {
 
                 <div
                     v-show="status === 'verification-link-sent'"
-                    class="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                    class="mt-2 text-xs font-semibold text-emerald-600 dark:text-white"
                 >
                     {{ __('pages.profile.verification_sent') }}
                 </div>
             </div>
 
             <!-- Save Button -->
-            <div class="flex items-center justify-end gap-4">
+            <div class="flex items-center justify-end gap-4 pt-2">
                 <Transition
                     enter-active-class="transition ease-in-out"
                     enter-from-class="opacity-0"
@@ -252,7 +312,7 @@ const submit = () => {
                 >
                     <p
                         v-if="form.recentlySuccessful"
-                        class="text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                        class="text-xs font-semibold text-emerald-600 dark:text-white"
                     >
                         {{ __('pages.profile.saved') }}
                     </p>

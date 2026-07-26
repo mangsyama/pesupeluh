@@ -33,11 +33,11 @@ const triggerAddCategory = () => {
                 <!-- Premium Header Panel (Title, Description, Search & Add Buttons) -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <Layers class="h-6 w-6" />
                         </div>
                         <div class="space-y-0.5">
-                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
                                 {{ __('pages.service_management.categories.title') }}
                             </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed">
@@ -54,14 +54,14 @@ const triggerAddCategory = () => {
                                 v-model="searchQuery"
                                 type="text" 
                                 :placeholder="__('pages.service_management.categories.search_placeholder')" 
-                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 shadow-none"
+                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-0 focus:border-emerald-500 dark:focus:border-white transition-all duration-150 shadow-none"
                             />
                         </div>
                         
                         <!-- Add Button -->
                         <button 
                             @click="triggerAddCategory"
-                            class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
+                            class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-none border-0"
                         >
                             <Plus class="h-4 w-4" />
                             {{ __('pages.service_management.categories.add_button') }}

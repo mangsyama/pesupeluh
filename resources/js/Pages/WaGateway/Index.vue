@@ -129,7 +129,7 @@ onUnmounted(() => {
                 <!-- Header Panel (ALWAYS VISIBLE) -->
                 <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex items-center gap-3">
-                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                        <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <MessageSquareCode class="h-6 w-6" />
                         </div>
                         <div class="space-y-0.5">
@@ -145,7 +145,7 @@ onUnmounted(() => {
                     <div class="flex items-center gap-3">
                         <div class="inline-flex items-center gap-2 px-3.5 h-10 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300">
                             <Cpu class="h-4 w-4 text-emerald-500" />
-                            <span>Driver: <strong class="uppercase text-emerald-600 dark:text-emerald-400">{{ driver }}</strong></span>
+                            <span>Driver: <strong class="uppercase text-emerald-600 dark:text-white">{{ driver }}</strong></span>
                         </div>
 
                         <button 
@@ -174,7 +174,7 @@ onUnmounted(() => {
                                     :class="[
                                         'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase border',
                                         gatewayStatus === 'connected' 
-                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' 
+                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white dark:border-white/20' 
                                             : (gatewayStatus === 'connecting' || gatewayStatus === 'disconnected')
                                                 ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border-amber-200 dark:border-amber-800'
                                                 : 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border-rose-200 dark:border-rose-800'
@@ -313,7 +313,7 @@ onUnmounted(() => {
                                         type="text" 
                                         placeholder="Contoh: 081234567890"
                                         required
-                                        class="w-full px-4 h-10 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-950 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                                        class="w-full px-4 h-10 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-white transition"
                                     />
                                     <div v-if="testForm.errors.phone" class="text-[10px] text-red-500 font-semibold">{{ testForm.errors.phone }}</div>
                                 </div>
@@ -326,7 +326,7 @@ onUnmounted(() => {
                                         v-model="testForm.message"
                                         rows="4"
                                         required
-                                        class="w-full p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-950 text-slate-850 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition leading-relaxed"
+                                        class="w-full p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-white transition leading-relaxed"
                                     ></textarea>
                                     <div v-if="testForm.errors.message" class="text-[10px] text-red-500 font-semibold">{{ testForm.errors.message }}</div>
                                 </div>
@@ -334,7 +334,7 @@ onUnmounted(() => {
                                 <button 
                                     type="submit" 
                                     :disabled="testForm.processing"
-                                    class="w-full h-10 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
+                                    class="w-full h-10 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
                                 >
                                     <Send class="h-3.5 w-3.5" />
                                     <span>{{ testForm.processing ? 'Mengirim...' : 'Kirim Pesan Uji Coba' }}</span>

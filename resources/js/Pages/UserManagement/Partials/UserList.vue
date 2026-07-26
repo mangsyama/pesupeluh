@@ -1,7 +1,8 @@
 <script setup>
 import { ref, getCurrentInstance, computed } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
-import { Shield, ShieldAlert, Edit2, Trash2, Search, Plus, X, UserX, UserCheck, ChevronDown, Check, Users, Wrench, MapPin, Layers, User } from '@lucide/vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
+import { Shield, ShieldAlert, Edit2, Trash2, Search, Plus, X, UserX, UserCheck, Users, Wrench, MapPin, Layers, User } from '@lucide/vue';
 
 
 const props = defineProps({
@@ -41,6 +42,23 @@ const props = defineProps({
 
 const { proxy } = getCurrentInstance();
 
+const roleOptions = computed(() => {
+    return (props.roles || []).map(r => ({
+        id: r.id,
+        name: proxy.__('roles.' + r.name)
+    }));
+});
+
+const unitOptions = computed(() => [
+    { id: '', name: proxy.__('pages.user_management.form.no_unit') },
+    ...(props.supportingUnits || [])
+]);
+
+const roomOptions = computed(() => [
+    { id: '', name: proxy.__('pages.user_management.form.no_room') },
+    ...(props.rooms || [])
+]);
+
 const getHeaderIcon = computed(() => {
     switch (props.roleId) {
         case 1:
@@ -63,7 +81,7 @@ const getHeaderIcon = computed(() => {
 });
 
 const getIconColorClass = computed(() => {
-    return 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400';
+    return 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white';
 });
 
 const searchQuery = ref('');
@@ -274,13 +292,13 @@ const deleteUser = (user) => {
                         v-model="searchQuery"
                         type="text" 
                         :placeholder="__('pages.user_management.search_placeholder_tpl').replace('{role}', roleName)" 
-                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-150 shadow-none"
+                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-0 focus:border-emerald-500 dark:focus:border-white transition-all duration-150 shadow-none"
                     />
                 </div>
                 <!-- Add Button -->
                 <button 
                     @click="openAddModal"
-                    class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl transition duration-150 whitespace-nowrap"
+                    class="w-full sm:w-auto h-10 inline-flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 whitespace-nowrap shadow-sm"
                 >
                     <Plus class="h-4 w-4" />
                     {{ __('pages.user_management.add_role_btn').replace('{role}', roleName) }}
@@ -292,7 +310,7 @@ const deleteUser = (user) => {
         <div class="overflow-x-auto bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                    <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
                         <th class="px-6 py-4">{{ __('pages.user_management.table.name_email') }}</th>
                         <th class="px-6 py-4">{{ __('pages.user_management.table.nip') }}</th>
                         <th class="px-6 py-4">{{ __('pages.user_management.table.phone') }}</th>
@@ -319,11 +337,11 @@ const deleteUser = (user) => {
                                     <div class="flex items-center gap-3">
                                         <div class="h-9 w-9 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
                                             <img v-if="user.profile_photo_path" :src="user.profile_photo_path" class="h-full w-full object-cover cursor-zoom-in" @click="viewPhoto(user)" :title="__('pages.user_management.table.zoom_photo')" />
-                                            <Shield v-else-if="roleId === 1" class="h-4 w-4 text-indigo-500" />
+                                            <Shield v-else-if="roleId === 1" class="h-4 w-4 text-emerald-600 dark:text-white" />
                                             <ShieldAlert v-else class="h-4 w-4 text-slate-500" />
                                         </div>
                                         <div>
-                                            <div class="font-semibold text-slate-955 dark:text-white">
+                                            <div class="font-semibold text-slate-900 dark:text-white">
                                                 {{ user.name }}
                                             </div>
                                             <div class="text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</div>
@@ -346,7 +364,7 @@ const deleteUser = (user) => {
                                     <div v-if="user.supporting_unit" class="text-xs font-semibold text-slate-700 dark:text-slate-300">
                                         {{ user.supporting_unit.name }} ({{ __('Unit') }})
                                     </div>
-                                    <div v-if="user.room" class="text-[11px] text-slate-450 dark:text-slate-500">
+                                    <div v-if="user.room" class="text-[11px] text-slate-400 dark:text-slate-500">
                                         {{ user.room.name }} ({{ __('Ruangan') }})
                                     </div>
                                     <span v-if="!user.supporting_unit && !user.room" class="text-slate-400 dark:text-slate-600">-</span>
@@ -354,7 +372,7 @@ const deleteUser = (user) => {
 
                                 <!-- Role -->
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-500/20">
                                         {{ user.role ? __('roles.' + user.role.name) : roleName }}
                                     </span>
                                 </td>
@@ -363,10 +381,10 @@ const deleteUser = (user) => {
                                 <td class="px-6 py-4">
                                     <span 
                                         :class="[
-                                            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold',
+                                            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border',
                                             user.is_active 
-                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' 
-                                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white dark:border-white/20 border-emerald-200/50' 
+                                                : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border-amber-200/50 dark:border-amber-500/20'
                                             ]"
                                         >
                                         {{ user.is_active ? __('global.verified') : __('global.pending') }}
@@ -415,8 +433,8 @@ const deleteUser = (user) => {
             <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
                 <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
                     <!-- Modal Header -->
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-900/50 rounded-t-2xl">
-                        <h3 class="text-base font-bold text-slate-955 dark:text-white">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">
                             {{ isEditing ? __('pages.user_management.edit_role_title').replace('{role}', roleName) : __('pages.user_management.add_role_title').replace('{role}', roleName) }}
                         </h3>
                         <button type="button" @click="showModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
@@ -432,7 +450,7 @@ const deleteUser = (user) => {
                                 v-model="form.name"
                                 type="text" 
                                 required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 :placeholder="__('pages.user_management.form.full_name_placeholder')"
                             />
                             <div v-if="form.errors.name" class="text-xs text-red-500 mt-1">{{ form.errors.name }}</div>
@@ -445,7 +463,7 @@ const deleteUser = (user) => {
                                 v-model="form.nip"
                                 type="text" 
                                 required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 :placeholder="__('pages.user_management.form.nip_placeholder')"
                             />
                             <div v-if="form.errors.nip" class="text-xs text-red-500 mt-1">{{ form.errors.nip }}</div>
@@ -458,7 +476,7 @@ const deleteUser = (user) => {
                                 v-model="form.email"
                                 type="email" 
                                 required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 :placeholder="__('pages.user_management.form.email_placeholder')"
                             />
                             <div v-if="form.errors.email" class="text-xs text-red-500 mt-1">{{ form.errors.email }}</div>
@@ -467,15 +485,14 @@ const deleteUser = (user) => {
                         <!-- Specific Role Selection -->
                         <div v-if="roles && roles.length > 0">
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.specific_role') }}</label>
-                            <select 
+                            <SearchableSelect
                                 v-model="form.role_id"
-                                required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                            >
-                                <option v-for="r in roles" :key="r.id" :value="r.id">
-                                    {{ __('roles.' + r.name) }}
-                                </option>
-                            </select>
+                                :options="roleOptions"
+                                :searchable="false"
+                                value-key="id"
+                                label-key="name"
+                                placeholder="Pilih Peran Akses..."
+                            />
                             <div v-if="form.errors.role_id" class="text-xs text-red-500 mt-1">{{ form.errors.role_id }}</div>
                         </div>
 
@@ -488,7 +505,7 @@ const deleteUser = (user) => {
                                 v-model="form.password"
                                 type="password" 
                                 :required="!isEditing"
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 :placeholder="isEditing ? __('pages.user_management.form.password_placeholder_edit') : __('pages.user_management.form.password_placeholder_add')"
                             />
                             <div v-if="form.errors.password" class="text-xs text-red-500 mt-1">{{ form.errors.password }}</div>
@@ -500,7 +517,7 @@ const deleteUser = (user) => {
                             <input 
                                 v-model="form.phone_number"
                                 type="text"
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
                                 :placeholder="__('pages.user_management.form.phone_placeholder')"
                             />
                             <div v-if="form.errors.phone_number" class="text-xs text-red-500 mt-1">{{ form.errors.phone_number }}</div>
@@ -510,115 +527,30 @@ const deleteUser = (user) => {
                         <div v-if="showPlacement" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.supporting_unit') }}</label>
-                                <div class="relative">
-                                    <button 
-                                        type="button"
-                                        @click="toggleUnitDropdown"
-                                        class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                    >
-                                        <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">
-                                            {{ selectedUnitLabel }}
-                                        </span>
-                                        <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isUnitDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                    </button>
-
-                                    <div 
-                                        v-if="isUnitDropdownOpen"
-                                        class="absolute z-50 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-2 shadow-lg"
-                                    >
-                                        <div class="relative">
-                                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                            <input
-                                                v-model="unitSearchQuery"
-                                                type="text"
-                                                placeholder="Cari unit..."
-                                                class="w-full h-8 pl-8 pr-3 text-xs border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                            />
-                                        </div>
-                                        <div class="max-h-44 overflow-y-auto space-y-1 pr-1">
-                                            <button
-                                                type="button"
-                                                @click="selectUnit('')"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 italic"
-                                                :class="!form.supporting_unit_id ? 'bg-slate-100 dark:bg-slate-800 font-bold' : ''"
-                                            >
-                                                <span>{{ __('pages.user_management.form.no_unit') }}</span>
-                                                <Check v-if="!form.supporting_unit_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                            <button
-                                                v-for="unit in filteredUnits"
-                                                :key="unit.id"
-                                                type="button"
-                                                @click="selectUnit(unit.id)"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                :class="form.supporting_unit_id === unit.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                            >
-                                                <span class="truncate">{{ unit.name }}</span>
-                                                <Check v-if="form.supporting_unit_id === unit.id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                            <div v-if="filteredUnits.length === 0" class="px-3 py-2 text-xs text-slate-400 italic text-center">
-                                                Tidak ditemukan
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <SearchableSelect
+                                    v-model="form.supporting_unit_id"
+                                    :options="unitOptions"
+                                    :searchable="true"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Tanpa Unit Penunjang"
+                                    search-placeholder="Cari unit..."
+                                />
                                 <div v-if="form.errors.supporting_unit_id" class="text-xs text-red-500 mt-1">{{ form.errors.supporting_unit_id }}</div>
                             </div>
 
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.room') }}</label>
-                                <div class="relative">
-                                    <button 
-                                        type="button"
-                                        @click="toggleRoomDropdown"
-                                        class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150"
-                                    >
-                                        <span class="font-semibold text-slate-800 dark:text-slate-100 truncate">
-                                            {{ selectedRoomLabel }}
-                                        </span>
-                                        <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isRoomDropdownOpen ? 'rotate-180 text-emerald-500' : '']" />
-                                    </button>
-
-                                    <div 
-                                        v-if="isRoomDropdownOpen"
-                                        class="absolute z-50 mt-1.5 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden p-2 space-y-2 shadow-lg"
-                                    >
-                                        <div class="relative">
-                                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                            <input
-                                                v-model="roomSearchQuery"
-                                                type="text"
-                                                placeholder="Cari ruangan..."
-                                                class="w-full h-8 pl-8 pr-3 text-xs border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                            />
-                                        </div>
-                                        <div class="max-h-44 overflow-y-auto space-y-1 pr-1">
-                                            <button
-                                                type="button"
-                                                @click="selectRoom('')"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 italic"
-                                                :class="!form.room_id ? 'bg-slate-100 dark:bg-slate-800 font-bold' : ''"
-                                            >
-                                                <span>{{ __('pages.user_management.form.no_room') }}</span>
-                                                <Check v-if="!form.room_id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                            <button
-                                                v-for="room in filteredRooms"
-                                                :key="room.id"
-                                                type="button"
-                                                @click="selectRoom(room.id)"
-                                                class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
-                                                :class="form.room_id === room.id ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
-                                            >
-                                                <span class="truncate">{{ room.name }} <span v-if="room.location_floor" class="text-slate-400">({{ room.location_floor }})</span></span>
-                                                <Check v-if="form.room_id === room.id" class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                            </button>
-                                            <div v-if="filteredRooms.length === 0" class="px-3 py-2 text-xs text-slate-400 italic text-center">
-                                                Tidak ditemukan
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <SearchableSelect
+                                    v-model="form.room_id"
+                                    :options="roomOptions"
+                                    :searchable="true"
+                                    value-key="id"
+                                    label-key="name"
+                                    subtitle-key="location_floor"
+                                    placeholder="Tanpa Ruangan"
+                                    search-placeholder="Cari ruangan..."
+                                />
                                 <div v-if="form.errors.room_id" class="text-xs text-red-500 mt-1">{{ form.errors.room_id }}</div>
                             </div>
                         </div>
@@ -635,7 +567,7 @@ const deleteUser = (user) => {
                             <button 
                                 type="submit"
                                 :disabled="form.processing"
-                                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl transition duration-150 disabled:opacity-50"
+                                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 disabled:opacity-50 shadow-sm"
                             >
                                 {{ form.processing ? __('pages.user_management.alerts.saving') : __('Save') }}
                             </button>

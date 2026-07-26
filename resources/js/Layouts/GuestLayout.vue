@@ -174,8 +174,10 @@ const __ = (key) => {
     <div class="min-h-screen md:h-screen grid grid-cols-1 md:grid-cols-2 bg-slate-50 dark:bg-slate-950 transition-colors duration-200 overflow-y-auto md:overflow-hidden">
         
         <!-- Left Column (Branding Hero, hidden on mobile) -->
-        <section class="hidden md:flex relative overflow-hidden bg-cover bg-center bg-no-repeat flex-col justify-between p-12 lg:p-16 text-white select-none h-full w-full"
-            style="background-image: linear-gradient(135deg, rgba(8, 51, 40, 0.92), rgba(4, 78, 56, 0.96)), url('/images/hospital-hero.jpg');">
+        <section class="hidden md:flex relative overflow-hidden bg-cover bg-center bg-no-repeat flex-col justify-between p-12 lg:p-16 text-white select-none h-full w-full transition-all duration-500"
+            :style="{ backgroundImage: isDark
+                ? 'linear-gradient(135deg, rgba(2, 15, 12, 0.97), rgba(3, 25, 18, 0.98)), url(\'/images/hospital-hero.jpg\')'
+                : 'linear-gradient(135deg, rgba(8, 51, 40, 0.92), rgba(4, 78, 56, 0.96)), url(\'/images/hospital-hero.jpg\')' }">
             <!-- Put your hospital landing image at public/images/hospital-hero.jpg -->
             
             <!-- Ambient Glow & Tech Dot Matrix Matrix Pattern (Aesthetic Ornaments) -->
@@ -295,7 +297,7 @@ const __ = (key) => {
                         class="rounded-xl p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 focus:outline-none transition duration-150"
                         :title="isDark ? __('global.dark_mode') : __('global.light_mode')"
                     >
-                        <Moon v-if="isDark" class="h-5 w-5 text-emerald-400" />
+                        <Moon v-if="isDark" class="h-5 w-5 text-white" />
                         <Sun v-else class="h-5 w-5 text-amber-500" />
                     </button>
 

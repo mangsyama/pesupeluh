@@ -1,6 +1,5 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
 import { Head, Link } from '@inertiajs/vue3';
@@ -12,6 +11,10 @@ defineProps({
     },
     status: {
         type: String,
+    },
+    user: {
+        type: Object,
+        default: null,
     },
 });
 </script>
@@ -29,6 +32,7 @@ defineProps({
                     <UpdateProfileInformationForm
                         :must-verify-email="mustVerifyEmail"
                         :status="status"
+                        :user="user"
                         class="w-full"
                     />
                 </div>
@@ -36,11 +40,6 @@ defineProps({
                 <!-- Update Password Form -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <UpdatePasswordForm class="w-full" />
-                </div>
-
-                <!-- Delete User Form -->
-                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <DeleteUserForm class="w-full" />
                 </div>
             </div>
         </div>
