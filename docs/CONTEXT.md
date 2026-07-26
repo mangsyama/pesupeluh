@@ -1,76 +1,70 @@
-# TECHNICAL CONTEXT & CODING RULES
+# TECHNICAL CONTEXT & CODING RULES — PESU PELUH
 
 ## 1. Environment & Tech Stack Specifications
 Aplikasi dibangun dengan tumpukan teknologi modern berikut:
-- **Backend Framework**: Laravel 13 (PHP ^8.3)
-- **Database Engine**: Microsoft SQL Server 2022 Express Edition (T-SQL)
-- **Database Driver**: SQLSRV / PDO_SQLSRV
-- **Frontend Framework**: Vue 3 (^3.4) + Inertia.js 2.0 (Inertia-Laravel ^2.0)
-- **Build Tool & Assets**: Vite 8 (^8.0) + PostCSS
-- **Styling Engine**: Vanilla CSS & Tailwind CSS (^3.2)
-- **Libraries & Plugins**:
-  - `sweetalert2` (^11.26) - Untuk popup konfirmasi dan notifikasi interaktif.
-  - `@lucide/vue` (^1.18) - Library ikon grafis Lucide.
-  - `@vladmandic/face-api` (^1.7) - Library lokal untuk Face Login/Recognition (biometrik wajah).
-  - `vite-plugin-pwa` (^1.3) - Plugin PWA (Progressive Web App) untuk kemampuan offline client.
-  - `barryvdh/laravel-dompdf` (^3.1) - Untuk cetak laporan PDF server-side.
-  - `maatwebsite/excel` (^3.1) - Untuk ekspor laporan tabular Excel/CSV.
-  - `laravel/reverb` (^1.10) - WebSocket server lokal untuk penyiaran event/notifikasi real-time.
-- **Architecture Style**: Monolith Hybrid (Inertia.js + Server-side rendering untuk web client, dan API-ready untuk mobile client).
+- **Backend Framework**: Laravel 11 (`^11.31`) (PHP ^8.3)
+- **Database Engines**: Microsoft SQL Server 2022 / MySQL / MariaDB (Hybrid PDO Driver)
+- **Frontend Framework**: Vue 3 (`^3.4`) + Inertia.js 2.0 (`@inertiajs/vue3 ^2.0`)
+- **Build Tool & Assets**: Vite 8 (`^8.1`) + PostCSS
+- **Styling Engine**: Tailwind CSS v3 dengan Custom Design System (Emerald & Dark Slate-900)
+- **Libraries & Key Services**:
+  - `@vladmandic/face-api` (`^1.7`) - Biometrik pengenalan wajah untuk Face Login.
+  - `wa-gateway` (Node.js Baileys Microservice) - Pengiriman notifikasi WhatsApp otomatis via port 3000.
+  - `laravel/reverb` (`^1.10`) - Server WebSocket lokal untuk notifikasi real-time via port 8080.
+  - `@lucide/vue` (`^1.18`) - Library ikon grafis Lucide.
+  - `vite-plugin-pwa` (`^1.3`) - Capability PWA (Progressive Web App).
+  - `sweetalert2` - Di-override secara global via helper `$swal` & `$toast` dengan modal glassmorphism `rounded-2xl`.
 
 ---
 
-## 2. Universal Coding Standards
-- **Language & Development**: Semua penamaan tabel, kolom, variabel, method, dan file wajib menggunakan **Bahasa Inggris standar profesional** dalam penulisan kodenya.
-- **Internationalization (i18n) / Multi-Language Standard**:
-  - Semua string teks yang dirender pada antarmuka pengguna (UI) **wajib menggunakan helper lokalisasi** `__(...)` atau `proxy.__('...')` baik di sisi Vue maupun Laravel, agar mendukung multi-bahasa secara dinamis (Bahasa Indonesia & Inggris).
-  - **Dilarang keras menulis hardcoded string** teks bahasa di dalam file komponen Vue atau file Controller PHP.
-  - Setiap kali menambahkan fitur baru atau mengubah antarmuka, developer **wajib menyelaraskan** file kamus bahasa pada:
-    - [id.json](file:///c:/project/pesupeluh/lang/id.json) (`lang/id.json`) untuk terjemahan Bahasa Indonesia.
-    - [en.json](file:///c:/project/pesupeluh/lang/en.json) (`lang/en.json`) untuk terjemahan Bahasa Inggris.
+## 2. Universal Coding & Multi-Language Standards
 - **Naming Convention**:
-  - Database: `lowercase_with_underscores` (snake_case) untuk nama tabel dan kolom. Nama tabel wajib berbentuk jamak (*plural*), contoh: `users`, `service_tickets`.
-  - PHP/Laravel: Mengikuti standar PSR-12. Menggunakan `camelCase` untuk variabel/method, dan `StudlyCaps` untuk nama Class/Controller/Model/Seeder/Factory.
+  - Database: `snake_case` jamak (*plural*), contoh: `users`, `service_tickets`, `supporting_units`.
+  - PHP/Laravel: PSR-12 standard, `camelCase` untuk method/variabel, `StudlyCaps` untuk Controller/Model/Class.
+- **Internationalization (i18n)**:
+  - Semua string antarmuka UI **wajib** dibungkus helper lokalisasi `__(...)` atau `proxy.__('...')`.
+  - Terjemahan bahasa dikelola terpusat pada file:
+    - [id.json](file:///c:/Project/pesupeluh/lang/id.json) (`lang/id.json`) untuk Bahasa Indonesia.
+    - [en.json](file:///c:/Project/pesupeluh/lang/en.json) (`lang/en.json`) untuk Bahasa Inggris.
 
 ---
 
-## 3. Database & Security Architecture Rules
-1. **Security - IDOR Prevention (Hybrid ID Pattern)**
-   - Secara internal (untuk relasi `JOIN`), gunakan `id (INT IDENTITY/Auto-increment)` sebagai *Primary Key* demi kecepatan performa indexing database.
-   - Secara eksternal (untuk Route URL, Parameter API, Request Body), **wajib** menggunakan `uuid (UNIQUEIDENTIFIER)` agar ID tidak dapat diprediksi/ditebak oleh pihak luar.
+## 3. UI/UX Design System Rules (Standar Tampilan Aplikasi)
+Semua komponen dan halaman baru wajib mengikuti aturan tema baku aplikasi:
 
-2. **Timezone Accuracy Rule**
-   - Untuk seluruh pencatatan log waktu (`created_at`, `updated_at`, `validated_at`, `responded_at`, `resolved_at`, `deleted_at`, dll), tipe data wajib menggunakan **`DATETIMEOFFSET`** pada SQL Server agar informasi jam terkunci akurat beserta offset zona waktu lokal (WITA +08:00), bukan sekadar string jam biasa.
-
-3. **Database Timestamps & Soft Delete Policy**
-   - **Tabel Referensi Statis** (`roles`, `divisions`, `supporting_units`, `unit_features`): Data diisi via seeder/migration oleh developer dan tidak dimodifikasi oleh user biasa. Tabel-tabel ini **tidak memerlukan** kolom `deleted_at` maupun timestamps (`created_at`/`updated_at`).
-   - **Tabel Master Dinamis** (`rooms`, `feature_categories`): Dikelola oleh admin via aplikasi. Tabel ini wajib memiliki `created_at`, `updated_at`, dan `deleted_at` untuk soft delete demi menjaga integritas data relasional masa lalu.
-   - **Tabel Transaksi Utama** (`users`, `service_tickets`): Wajib memiliki timestamps lengkap (`created_at`, `updated_at`, `deleted_at`).
-   - **Tabel Pivot/Log** (`ticket_assignments`, `ticket_attachments`): Hanya memerlukan satu timestamp pembuatan (`assigned_at`/`uploaded_at`).
+1. **Wadah Ikon Header / Card Header**:
+   - Class: `bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white`
+2. **Tombol Utama (Primary Buttons)**:
+   - Light Mode: `bg-emerald-600 hover:bg-emerald-500 text-white`
+   - Dark Mode: `dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold border-0 shadow-sm`
+3. **Form Input Focus Rings**:
+   - Class: `focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150`
+   - *Catatan*: Dilarang menggunakan ring outline hijau tebal (`focus:ring-2 focus:ring-emerald-500`).
+4. **Custom Select Dropdown ([SearchableSelect.vue](file:///c:/Project/pesupeluh/resources/js/Components/SearchableSelect.vue))**:
+   - Digunakan untuk seluruh dropdown pilihan di aplikasi.
+   - Properti `:absolute="false"` digunakan jika dropdown harus menggeser elemen di bawahnya secara merenggang (inline flow).
+   - Event listener pembacaan klik luar menggunakan fase **Capture** (`true`) agar dapat ditutup dari mana saja meskipun di dalam modal dengan `@click.stop`.
+5. **Badge Mode Gelap**:
+   - Class: `dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:border-white/10`
 
 ---
 
-## 4. Master Database Definition (T-SQL Script)
-*AI Agent coding dapat menggunakan skrip di bawah ini sebagai acuan skema migrasi SQL Server:*
+## 4. Master Database Definition (SQL Server Schema)
 
 ```sql
--- =========================================================================
--- UPDATE VERSION: STREAMLINED SUPPORTING UNITS & ISSUE CATEGORIES
--- =========================================================================
-
--- 1. Tabel Master: Supporting Units (Statis - Dengan Type & Slug)
+-- 1. Supporting Units (Statis - MEDIK / NON_MEDIK)
 CREATE TABLE supporting_units (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    type VARCHAR(20) DEFAULT 'NON_MEDIK' NOT NULL, -- MEDIK / NON_MEDIK (Sub-layanan RS)
+    type VARCHAR(20) DEFAULT 'NON_MEDIK' NOT NULL,
     name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) NOT NULL UNIQUE, -- Unique Identifier Slug (e.g. ipsrs, gizi, laundry, farmasi)
-    description NVARCHAR(MAX) NULL, -- Deskripsi Unit Penunjang
-    status VARCHAR(30) DEFAULT 'IN_DEVELOPMENT' NOT NULL, -- Status Operasional Modul: ACTIVE, IN_DEVELOPMENT, MAINTENANCE, INACTIVE
+    slug VARCHAR(100) NOT NULL UNIQUE,
+    description NVARCHAR(MAX) NULL,
+    status VARCHAR(30) DEFAULT 'IN_DEVELOPMENT' NOT NULL,
     CONSTRAINT CHK_supporting_unit_status CHECK (status IN ('ACTIVE', 'IN_DEVELOPMENT', 'MAINTENANCE', 'INACTIVE')),
     CONSTRAINT CHK_supporting_unit_type CHECK (type IN ('MEDIK', 'NON_MEDIK'))
 );
 
--- 2. Tabel Master: Issue Categories (Dinamis - Langsung Berelasi ke Supporting Unit)
+-- 2. Issue Categories (Dinamis per Supporting Unit)
 CREATE TABLE issue_categories (
     id INT IDENTITY(1,1) PRIMARY KEY,
     supporting_unit_id INT NOT NULL,
@@ -83,7 +77,7 @@ CREATE TABLE issue_categories (
         REFERENCES supporting_units(id) ON DELETE CASCADE
 );
 
--- 3. Tabel Master: Rooms (Dinamis)
+-- 3. Rooms (Dinamis)
 CREATE TABLE rooms (
     id INT IDENTITY(1,1) PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -93,54 +87,44 @@ CREATE TABLE rooms (
     deleted_at DATETIMEOFFSET NULL
 );
 
--- 4. Tabel Master: Roles (Statis)
+-- 4. Roles (Statis: ADMINISTRATOR, MANAGEMENT, UNIT_HEAD, TECHNICIAN, ROOM_HEAD, REPORTER)
 CREATE TABLE roles (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    name VARCHAR(50) NOT NULL -- ADMINISTRATOR, MANAGEMENT, UNIT_HEAD, TECHNICIAN, ROOM_HEAD, REPORTER
+    name VARCHAR(50) NOT NULL
 );
 
--- 5. Tabel Inti: Users - Diperbarui dengan NIP dan Foto Profil Pelamar/Pegawai
+-- 5. Users (Lengkap dengan NIP, Biometrik Face Descriptor, dan Pasfoto)
 CREATE TABLE users (
     id INT IDENTITY(1,1) PRIMARY KEY,
     uuid UNIQUEIDENTIFIER DEFAULT NEWID() NOT NULL UNIQUE,
     role_id INT NOT NULL,
     room_id INT NULL,
     supporting_unit_id INT NULL,
-    
-    -- Identitas Kepegawaian Rumah Sakit
-    nip VARCHAR(50) NOT NULL, -- Tambahan NIP Pegawai (Unique Key via filtered index)
+    nip VARCHAR(50) NOT NULL,
     name VARCHAR(150) NOT NULL,
-    email VARCHAR(100) NOT NULL, -- Unique Key via filtered index
+    email VARCHAR(100) NOT NULL,
     email_verified_at DATETIMEOFFSET NULL,
     password VARCHAR(255) NOT NULL,
-    
-    -- Autentikasi Modern & Validasi Berkas Admin
-    face_descriptor NVARCHAR(MAX) NULL, -- Data koordinat biometrik wajah (128-float array)
-    profile_photo_path VARCHAR(255) NULL, -- Tambahan path/URL pasfoto fisik untuk validasi manual oleh Admin
-    
+    face_descriptor NVARCHAR(MAX) NULL,
+    profile_photo_path VARCHAR(255) NULL,
     remember_token VARCHAR(100) NULL,
     phone_number VARCHAR(20) NULL,
-    is_active BIT DEFAULT 0 NOT NULL, -- Default 0 (Mati) sebelum divalidasi dan diaktifkan oleh Admin
-    approved_by INT NULL, -- FK ke users.id (Administrator)
+    is_active BIT DEFAULT 0 NOT NULL,
+    approved_by INT NULL,
     approved_at DATETIMEOFFSET NULL,
     created_at DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
     updated_at DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    deleted_at DATETIMEOFFSET NULL,
-    
-    CONSTRAINT FK_users_roles FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE NO ACTION,
-    CONSTRAINT FK_users_rooms FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL,
-    CONSTRAINT FK_users_supporting_units FOREIGN KEY (supporting_unit_id) REFERENCES supporting_units(id) ON DELETE SET NULL,
-    CONSTRAINT FK_users_approved_by FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE NO ACTION
+    deleted_at DATETIMEOFFSET NULL
 );
 
--- 6. Tabel Transaksi Utama: Service Tickets
+-- 6. Service Tickets (Transaksi Tiket Pelaporan)
 CREATE TABLE service_tickets (
     id INT IDENTITY(1,1) PRIMARY KEY,
     uuid UNIQUEIDENTIFIER DEFAULT NEWID() NOT NULL UNIQUE,
     ticket_number VARCHAR(50) NOT NULL UNIQUE,
     reporter_id INT NOT NULL,
     room_id INT NOT NULL,
-    category_id INT NOT NULL, -- Menunjuk ke issue_categories.id
+    category_id INT NOT NULL,
     problem_description NVARCHAR(MAX) NOT NULL,
     priority VARCHAR(20) NULL,
     validated_by INT NULL,
@@ -149,91 +133,23 @@ CREATE TABLE service_tickets (
     responded_at DATETIMEOFFSET NULL,
     resolved_at DATETIMEOFFSET NULL,
     pending_reason NVARCHAR(MAX) NULL,
-    paused_duration_seconds INT DEFAULT 0 NOT NULL, -- Durasi tiket ditangguhkan (detik)
-    last_paused_at DATETIMEOFFSET NULL, -- Waktu terakhir tiket ditangguhkan
+    paused_duration_seconds INT DEFAULT 0 NOT NULL,
+    last_paused_at DATETIMEOFFSET NULL,
     completion_notes NVARCHAR(MAX) NULL,
     created_at DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
     updated_at DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    deleted_at DATETIMEOFFSET NULL,
-    CONSTRAINT CHK_ticket_priority CHECK (priority IN ('URGENT', 'ROUTINE')),
-    CONSTRAINT CHK_ticket_status CHECK (status IN ('PENDING_VALIDATION', 'ASSIGNED', 'IN_PROGRESS', 'PENDING', 'COMPLETED', 'CANCEL')),
-    CONSTRAINT FK_service_tickets_users_reporter FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE NO ACTION,
-    CONSTRAINT FK_service_tickets_users_validator FOREIGN KEY (validated_by) REFERENCES users(id) ON DELETE NO ACTION,
-    CONSTRAINT FK_service_tickets_rooms FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE NO ACTION,
-    CONSTRAINT FK_service_tickets_issue_categories FOREIGN KEY (category_id) REFERENCES issue_categories(id) ON DELETE NO ACTION
+    deleted_at DATETIMEOFFSET NULL
 );
-
--- 9. Tabel Transaksi: Ticket Assignments
-CREATE TABLE ticket_assignments (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    ticket_id INT NOT NULL,
-    technician_id INT NOT NULL,
-    assigned_at DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    CONSTRAINT FK_ticket_assignments_service_tickets FOREIGN KEY (ticket_id) REFERENCES service_tickets(id) ON DELETE CASCADE,
-    CONSTRAINT FK_ticket_assignments_users FOREIGN KEY (technician_id) REFERENCES users(id) ON DELETE NO ACTION
-);
-
--- 10. Tabel Transaksi: Ticket Attachments
-CREATE TABLE ticket_attachments (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    ticket_id INT NOT NULL,
-    file_path VARCHAR(255) NOT NULL,
-    uploaded_by INT NOT NULL,
-    uploaded_at DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    CONSTRAINT FK_ticket_attachments_service_tickets FOREIGN KEY (ticket_id) REFERENCES service_tickets(id) ON DELETE CASCADE,
-    CONSTRAINT FK_ticket_attachments_users FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE NO ACTION
-);
-
--- Indexing Tambahan untuk Pencarian NIP Cepat
-CREATE INDEX idx_tickets_status_uuid ON service_tickets(status, uuid);
-CREATE INDEX idx_tickets_created_at ON service_tickets(created_at);
-CREATE INDEX idx_users_email_uuid ON users(email, uuid);
-CREATE INDEX idx_users_nip ON users(nip); -- Index baru untuk optimasi pencarian NIP saat login/validasi
-CREATE UNIQUE INDEX uq_users_nip ON users(nip) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX uq_users_email ON users(email) WHERE deleted_at IS NULL;
 ```
 
 ---
 
-## 5. Image & File Upload Compression Rules
-1. **Client-Side Image Compression**
-   - Untuk menghemat kapasitas penyimpanan server dan bandwidth pengguna, semua pengunggahan foto/gambar (termasuk unggah berkas manual maupun jepretan kamera pada registrasi/profil) **wajib dikompresi di sisi client (frontend)** sebelum dikirim ke server.
-   
-2. **Lokasi & Konfigurasi Kode**
-   - Seluruh logika kompresi dipusatkan di berkas utilitas: [imageCompressor.js](file:///c:/project/pesupeluh/resources/js/Utils/imageCompressor.js) (`resources/js/Utils/imageCompressor.js`).
-   - Modul lain wajib mengimpor dan menggunakan fungsi ini: `import { compressImage } from '@/Utils/imageCompressor';`.
-   
-3. **Spesifikasi Default Kompresi**
-   - Kualitas kompresi: **0.8 (80%)** dengan format `image/jpeg`.
-   - Batas resolusi maksimum: Lebar atau tinggi maksimal **1200px** dengan mempertahankan rasio aspek asli (aspect ratio).
-   - Format data kirim: Base64 Data URL (`data:image/jpeg;base64,...`) agar kompatibel dengan sistem penyimpanan database/file server.
+## 5. Client-Side Image Compression Rules
+- Seluruh pengunggahan gambar (foto profil, lampiran bukti fisik kerusakan) **wajib dikompresi di sisi client (frontend)** menggunakan utilitas [imageCompressor.js](file:///c:/Project/pesupeluh/resources/js/Utils/imageCompressor.js) (`resources/js/Utils/imageCompressor.js`).
+- Batas maksimal dimensi: **1200px** dengan kualitas JPEG **0.8 (80%)**.
 
 ---
 
-## 6. Real-time Event Broadcasting (Laravel Reverb) Rules
-1. **Pusat Integrasi Broadcast**:
-   - Seluruh event real-time (notifikasi pendaftaran baru, pembaruan tiket, dll) harus disalurkan melalui driver `reverb` yang terintegrasi di `config/broadcasting.php`.
-   - Driver eksternal seperti Pusher Cloud **tidak diperbolehkan** dan seluruh dependensi environment-nya harus bersih dari file konfigurasi.
-
-2. **Penggunaan Queue Driver**:
-   - Untuk performa non-blocking, semua Event/Notification broadcast wajib mengimplementasikan interface `ShouldQueue` dan menggunakan koneksi `database` queue.
-   - Di server lokal maupun production, queue worker (`php artisan queue:work`) dan server Reverb (`php artisan reverb:start`) wajib berjalan bersamaan di background.
-
-3. **Autentikasi Saluran Privat**:
-   - Saluran private channel menggunakan standar penamaan model `App.Models.User.{id}` untuk menyalurkan notifikasi personal ke masing-masing pengguna.
-   - Aturan otorisasi hak akses channel wajib didefinisikan secara ketat pada [channels.php](file:///c:/project/pesupeluh/routes/channels.php).
-   - Di sisi client (Vue), inisialisasi Echo di [app.js](file:///c:/project/pesupeluh/resources/js/app.js) hanya boleh memproses inisialisasi jika environment key Reverb (`VITE_REVERB_APP_KEY`) tersedia.
-
----
-
-## 7. Global Dialog & Alert Standard (SweetAlert2 Replacement)
-1. **Pemberhentian SweetAlert2**:
-   - Seluruh halaman web **dilarang keras** memicu antarmuka default dari SweetAlert2 untuk dialog alert (Success, Error, Warning) maupun konfirmasi aksi.
-   
-2. **Penggunaan Helper Global**:
-   - Semua pop-up pesan, toast, dan dialog konfirmasi wajib dipicu menggunakan helper global Vue:
-     - `this.$toast('pesan', 'type')` atau `proxy.$toast(...)` untuk toast pemberitahuan di pojok kanan atas.
-     - `this.$swal({ title: '...', text: '...', icon: '...' })` atau `proxy.$swal(...)` untuk dialog pop-up tengah layar.
-   
-3. **Mekanisme Otomatis**:
-   - Helper global `$swal` dan `$toast` telah di-override secara internal pada [app.js](file:///c:/project/pesupeluh/resources/js/app.js) untuk meneruskan data secara asinkronus ke modal kustom berdesain premium (glassmorphism & rounded-2xl) di [AuthenticatedLayout.vue](file:///c:/project/pesupeluh/resources/js/Layouts/AuthenticatedLayout.vue). Developer tidak perlu memodifikasi sintaksis pemanggilan $swal yang sudah ada di halaman masing-masing.
+## 6. Server Infrastructure & Nginx Production Tuning
+- **Docker Stack**: 5 Container Utama (`pesupeluh-nginx`, `pesupeluh-php`, `pesupeluh-redis`, `pesupeluh-reverb`, `pesupeluh-queue-worker`) + Microservice `pesupeluh-wa-gateway`.
+- **Nginx Hardening**: Gzip Level 6, Browser Caching 1 Tahun untuk `/build/assets/*`, FastCGI Buffering 64k, pemblokiran eksekusi `.php` di folder `/storage`, dan perizinan HTTP `OPTIONS` untuk CORS Preflight.

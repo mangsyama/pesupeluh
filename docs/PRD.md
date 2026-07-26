@@ -1,110 +1,80 @@
-# PRODUCT REQUIREMENT DOCUMENT (PRD)
+# PRODUCT REQUIREMENT DOCUMENT (PRD) — PESU PELUH
 
 ## 1. Document Control
 - **Product Name**: PESU PELUH (Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan)
-- **Phase**: Target Jangka Pendek (1 – 2 Bulan) - Modul Pelaporan IPSRS (Sistem Informasi Pemeliharaan Sarana Prasarana Rumah Sakit)
-- **Version**: 1.0.0
-- **Status**: Approved for Development
-- **Release Target Date**: August 2026
+- **Framework & Stack**: Laravel 11 + Vue 3 + Inertia.js 2.0 + Tailwind CSS v3
+- **Version**: 2.0.0 (Production-Ready)
+- **Status**: Live / Production Deployment
 
 ---
 
 ## 2. Product Vision & Goals
 - **Vision**: Menjadi platform *Service Desk* internal rumah sakit yang mengintegrasikan seluruh unit penunjang (Medik dan Non-Medik) lewat satu sentuhan aplikasi yang dinamis, berestetika premium, dan responsif.
-- **Core Goal**: Mendigitalisasi alur pelaporan kerusakan dan kendala fasilitas di area IPSRS, memangkas birokrasi penunjukan petugas, serta menyajikan metrik performa pelayanan secara akurat berbasis data real-time.
+- **Core Goal**: Mendigitalisasi alur pelaporan kerusakan dan kendala fasilitas di area IPSRS, CSSD, SIMRS, dan unit penunjang lainnya, memangkas birokrasi penunjukan petugas, serta menyajikan metrik performa pelayanan secara akurat berbasis data real-time.
 
 ---
 
-## 3. User Roles & Access Control (RBAC Logic)
-Sistem menggunakan pendekatan fungsional berbasis peran (*role*). Hak akses menu di aplikasi ditentukan oleh kombinasi peran dan lokasi unit kerja:
+## 3. Active User Roles & Access Control (RBAC)
+Sistem menggunakan pendekatan fungsional berbasis peran (*role*) dan penempatan unit kerja yang telah disederhanakan dan disesuaikan dengan fakta aplikasi:
 
 1. **ADMINISTRATOR (Super Admin)**
    - Memiliki hak akses mutlak (Full Access) ke seluruh sistem operasional dan pengaturan.
-   - Bertanggung jawab atas manajemen user (CRUD akun, reset password, face login re-register).
-   - Wajib melakukan validasi dan aktivasi akun pendaftaran user baru berdasarkan kesesuaian data NIP dan Foto Diri yang diunggah.
-   - Bertanggung jawab atas pengelolaan data master (Divisi, Unit, Kategori, Ruangan).
-   - Memiliki hak "Super Override" untuk mengedit atau memperbaiki data tiket laporan yang salah input di lapangan demi kebersihan data analitik.
+   - Manajemen user (CRUD akun, verifikasi pendaftaran baru, reset password, biometrik wajah).
+   - Pengelolaan data master layanan (Unit Penunjang, Kategori Masalah, Ruangan).
+   - Pengaturan hak akses halaman (*Page Permissions Modal*) per pengguna.
 
-2. **DIRECTOR (Direktur)**
-   - Memiliki hak akses Read-Only ke seluruh Dashboard Analytics lintas divisi (Medik & Non-Medik).
-   - Memantau performa makro rumah sakit, pencapaian SLA, dan laporan tahunan/bulanan.
+2. **MANAGEMENT (Pimpinan / Direksi / Kabid)**
+   - Memiliki hak akses Read-Only & Executive Dashboard Analytics.
+   - Memantau performa makro rumah sakit, pencapaian SLA, dan laporan volume aktivitas unit penunjang.
 
-3. **DIVISION_HEAD (Kabid - Kepala Bidang)**
-   - Memiliki hak akses Read-Only ke Dashboard Analytics khusus divisi yang berada di bawah pengawasannya (misal: Kabid Penunjang Non-Medik hanya mengawasi IPSRS, Gizi, Laundry, Kesling).
-
-4. **SECTION_HEAD (Kasi - Kepala Seksi)**
-   - Memiliki hak akses Read-Only ke Dashboard Analytics seksi penunjang spesifik yang dibawahi secara struktural.
-
-5. **UNIT_HEAD (Kepala IPSRS, Kepala Gizi, dll)**
+3. **UNIT_HEAD (Kepala Unit Penunjang - IPSRS, SIMRS, CSSD, dll)**
    - Memiliki kendali penuh atas antrean laporan masuk yang mengarah ke unitnya.
-   - Berhak melakukan validasi laporan, menentukan prioritas, dan melakukan disposisi petugas.
+   - Berhak melakukan validasi laporan, menentukan prioritas (`URGENT` / `ROUTINE`), dan disposisi teknisi.
 
-6. **TECHNICIAN (Teknisi / Eksekutor Lapangan)**
-   - Menerima disposisi tugas kerja di halaman aplikasinya.
-   - Berhak melakukan konfirmasi kedatangan (*Response Time*), mengisi log penundaan (*Pending*), dan menyelesaikan tiket (*Completed*).
+4. **TECHNICIAN (Teknisi / Eksekutor Lapangan)**
+   - Menerima disposisi tugas kerja di halaman teknisi.
+   - Mengonfirmasi waktu tanggap (*Response Time*), mengisi log penundaan (*Pending*), dan menyelesaikan tiket (*Completed*).
 
-7. **ROOM_HEAD (Kepala Ruangan ICU/IGD/Poliklinik/dll)**
-   - Menerima notifikasi otomatis (*Carbon Copy*) jika ada staf di ruangannya yang membuat laporan kendala fasilitas sebagai bentuk pertanggungjawaban area.
+5. **ROOM_HEAD (Kepala Ruangan ICU/IGD/Poliklinik/dll)**
+   - Menerima notifikasi otomatis (*Carbon Copy*) jika ada staf di ruangannya yang membuat laporan kendala fasilitas.
 
-8. **REPORTER (Staf Ruangan / User Umum)**
-   - Dapat membuat laporan kendala dari ruangan tempatnya bertugas kapan pun tanpa batasan waktu (24/7) untuk mencegah keterlambatan penanganan.
-
----
-
-## 4. Functional Requirements & Feature Tree
-Aplikasi wajib merender menu secara dinamis menggunakan pola hirarki data bertingkat dari database:
-`Divisions` (Medik / Non-Medik) -> `Supporting Units` (IPSRS, Gizi, Laundry, Kesling) -> `Unit Features` (Pelaporan, Kalibrasi, Usulan) -> `Feature Categories`.
-
-### Fitur Penguncian Modul & Fitur (Feature Flagging)
-Akses terhadap modul dan fitur di dalam aplikasi dikontrol secara dinamis pada dua tingkat:
-1. **Tingkat Unit Penunjang (Supporting Unit Level)**:
-   Berdasarkan status operasional masing-masing `Supporting Units`:
-   - **ACTIVE**: Fitur pelaporan terbuka penuh dan dapat diakses oleh seluruh user ruangan (Saat ini eksklusif untuk IPSRS).
-   - **IN_DEVELOPMENT**: Menu unit tetap muncul di aplikasi sebagai representasi hirarki, namun dalam kondisi terkunci (disabled) dengan tampilan visual premium bertuliskan "Dalam Pengembangan".
-   - **INACTIVE**: Menu unit disembunyikan sepenuhnya dari antarmuka user biasa.
-
-2. **Tingkat Fitur Unit (Unit Feature Level)**:
-   Di dalam unit yang aktif (seperti IPSRS), fitur-fitur individu dikelola secara dinamis:
-   - **Aktif**: Fitur seperti *Pelaporan* merender modul formulir pengaduan aktif secara utuh.
-   - **Dalam Pengembangan**: Fitur seperti *Kalibrasi* dan *Usulan* menampilkan partial berdesain premium bertuliskan "Dalam Pengembangan" untuk mengisolasi data transaksi masa depan.
-
-### Pola Desain Registri Komponen Dinamis (Dynamic Component Registry)
-Untuk menghindari pencocokan kode kondisional yang kaku (*hardcoded if-else*) dan mempersiapkan skalabilitas lintas unit (misalnya modul khusus Gizi atau Farmasi), antarmuka detail unit menggunakan pola registri dinamis pada komponen Vue:
-- Komponen formulir didaftarkan ke dalam objek pemetaan kunci-nilai.
-- Sistem secara otomatis mencocokkan nama fitur (atau kombinasi nama unit & fitur) untuk me-render komponen partial yang sesuai menggunakan tag `<component :is="...">` Vue secara dinamis.
+6. **REPORTER (Staf Ruangan / Pelapor Umum)**
+   - Membuat laporan kendala fasilitas dari ruangan tempatnya bertugas kapan pun tanpa batasan waktu (24/7).
 
 ---
 
-## 5. Core Ticketing Workflow (Alur Kerja Tiket)
-1. **Submission**: Reporter mengisi form pelaporan sesuai kategori kerusakan. Status awal otomatis: `PENDING_VALIDATION`. Notifikasi otomatis (CC) dikirim ke akun Kepala Ruangan asal.
-2. **Validation & Dispatch**: Kepala IPSRS memeriksa antrean tiket baru, menentukan prioritas (`URGENT` / `ROUTINE`), lalu mendisposisikan ke satu atau beberapa Teknisi yang keahliannya sesuai. Status berubah menjadi `ASSIGNED`.
-3. **On-Site Response**: Teknisi tiba di lokasi ruangan dan menekan tombol **"Response Time"** di aplikasi. Sistem mengunci waktu respon dan status berubah menjadi `IN_PROGRESS`.
-4. **Resolution**: Setelah proses penanganan di lapangan, teknisi mengubah status tiket menjadi salah satu dari opsi berikut:
-   - `COMPLETED`: Masalah selesai diperbaiki. Wajib unggah foto bukti hasil kerja dan mengisi catatan kesimpulan.
-   - `PENDING`: Perbaikan tertunda (misal: menunggu *sparepart* atau mati lampu). Wajib mengisi alasan penundaan secara tertulis.
-   - `CANCEL`: Laporan dibatalkan karena setelah dicek di lapangan ternyata tidak ada kerusakan fisik (salah lapor).
-5. **Reporting**: Seluruh riwayat perubahan status dan pencatatan waktu otomatis ditarik secara *real-time* ke dashboard manajemen.
+## 4. Core Features & Module Capabilities
+
+### A. Service Management (Manajemen Layanan)
+- **Kategori Masalah ([CategoryList.vue](file:///c:/Project/pesupeluh/resources/js/Pages/ServiceManagement/Partials/CategoryList.vue))**: Pengelolaan kategori masalah per unit penunjang.
+- **Daftar Ruangan ([RoomList.vue](file:///c:/Project/pesupeluh/resources/js/Pages/ServiceManagement/Partials/RoomList.vue))**: Pengelolaan nama dan lokasi lantai ruangan rumah sakit.
+- **Unit Penunjang ([SupportingUnitList.vue](file:///c:/Project/pesupeluh/resources/js/Pages/ServiceManagement/Partials/SupportingUnitList.vue))**: Pengelolaan unit Penunjang Medik (SIMRS, CSSD) & Non-Medik (IPSRS) beserta status operasional (`ACTIVE`, `IN_DEVELOPMENT`, `MAINTENANCE`, `INACTIVE`).
+
+### B. User Management & Approval Flow
+- **Pendaftaran & Verifikasi ([Detail.vue](file:///c:/Project/pesupeluh/resources/js/Pages/UserManagement/Approval/Detail.vue))**: Verifikasi pendaftar baru oleh Admin dengan penetapan Peran, Unit Penunjang, dan Ruangan.
+- **Pengaturan Akses Halaman ([Index.vue](file:///c:/Project/pesupeluh/resources/js/Pages/UserManagement/Index.vue))**: Modal kustom untuk mengatur perizinan modul (*page permissions*) per pengguna.
+
+### C. Biometric Face Login (`face-api`)
+- Autentikasi biometrik wajah berbasis `@vladmandic/face-api` untuk login cepat dan verifikasi identitas fisik pengguna.
+
+### D. WhatsApp Gateway Microservice
+- Integrasi otomatis dengan microservice Node.js Baileys (`wa-gateway` di port 3000) untuk pengiriman notifikasi WhatsApp instan ke pendaftar, teknisi, dan pelapor.
 
 ---
 
-## 6. Performance Metrics (SLA)
-Sistem harus mengkalkulasi metrik berikut secara otomatis untuk kebutuhan rekapitulasi:
-- **Response Time (Waktu Tanggap)**: Selisih waktu antara Kepala Unit melakukan disposisi (`validated_at`) hingga teknisi menekan tombol tiba di lokasi (`responded_at`).
-- **Resolution Time (Waktu Penyelesaian)**: Selisih waktu keseluruhan dari tiket pertama kali dibuat oleh reporter (`created_at`) hingga tiket dinyatakan ditutup/selesai (`resolved_at`).
-- Seluruh log waktu dihitung menggunakan format **`DATETIMEOFFSET`** untuk menjamin keakuratan hingga milidetik dan konsistensi zona waktu WITA (+08:00).
+## 5. Core Ticketing & SLA Workflow
+1. **Submission**: Reporter mengisi form pelaporan (`PENDING_VALIDATION`).
+2. **Validation & Dispatch**: Unit Head memeriksa laporan, menetapkan prioritas, dan mendisposisikan ke Teknisi (`ASSIGNED`). Notifikasi WhatsApp terkirim otomatis.
+3. **Response Time**: Teknisi mengonfirmasi kedatangan di lokasi (`IN_PROGRESS`).
+4. **Resolution**: Teknisi menyelesaikan tiket (`COMPLETED`), menunda (`PENDING`), atau membatalkan (`CANCEL`).
+5. **Analytics**: Metrik Response Time & Resolution Time dicatat otomatis dengan standar timestamp `DATETIMEOFFSET` (WITA +08:00).
 
 ---
 
-## 7. Non-Functional Requirements & Performance Constraints
-- **Media & Image Handling Optimization**:
-  - Setiap proses unggah berkas foto (baik berupa file gambar pendukung maupun pas foto profil pada modul registrasi) **wajib melalui proses kompresi otomatis di sisi klien (frontend)** sebelum dikirim ke server.
-  - Proses kompresi ini dikelola secara terpusat pada file utilitas: [imageCompressor.js](file:///c:/project/pesupeluh/resources/js/Utils/imageCompressor.js) (`resources/js/Utils/imageCompressor.js`).
-  - Ketentuan ini bertujuan untuk menghemat konsumsi bandwidth jaringan pengguna seluler serta efisiensi penyimpanan storage server tanpa mengurangi kualitas ketajaman foto secara signifikan (batas toleransi kompresi kualitas 80% dan dimensi maksimal 1200px).
-
-- **Real-Time Notification Capabilities (WebSocket)**:
-  - Aplikasi harus mengirimkan notifikasi penting (seperti registrasi user baru untuk Administrator, disposisi tiket untuk Teknisi, dan perubahan status tiket untuk Reporter) secara instan tanpa delay menggunakan server WebSocket lokal (Laravel Reverb).
-  - Penerimaan notifikasi real-time wajib memperbarui angka badge notifikasi unread dan state daftar notifikasi pada navigasi/sidebar secara real-time tanpa memaksa user melakukan reload halaman manual.
-
-- **Unified Custom Dialog & Alert System**:
-  - Semua kotak dialog informasi (sukses, error, peringatan) dan kotak konfirmasi aksi di seluruh aplikasi harus menggunakan **Custom Dialog Modal** kustom dengan tema glassmorphism dan membulat `rounded-2xl`.
-  - Integrasi ini di-override secara global agar otomatis menggantikan library SweetAlert2 tanpa memerlukan penulisan ulang sintaksis di setiap file Vue page, memastikan konsistensi antarmuka pengguna di seluruh aplikasi.
+## 6. Standardized UI Design System
+- **Color Palette**: Emerald-600 (`#059669`) untuk light mode dan Dark Slate-900 (`#0f172a`) + Slate-800 (`#1e293b`) untuk dark mode.
+- **Header Icon Containers**: `bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white`.
+- **Primary Buttons**: Light `bg-emerald-600 hover:bg-emerald-500`, Dark `dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold border-0 shadow-sm`.
+- **Inputs Focus Ring**: `focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150`.
+- **SearchableSelect Component**: Custom select dropdown ([SearchableSelect.vue](file:///c:/Project/pesupeluh/resources/js/Components/SearchableSelect.vue)) dengan dukungan pencarian, opsi inline expansion (`:absolute="false"`), dan capture-phase click outside handling.
+- **Global Glassmorphism Dialogs**: Override SweetAlert2 ($swal & $toast) menggunakan modal kustom berdesain premium.
