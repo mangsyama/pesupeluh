@@ -272,7 +272,7 @@ const menuGroups = computed(() => {
             title: 'System / Integrasi',
             items: [
                 { label: 'WhatsApp Gateway', routeName: 'admin.wa-gateway.index', icon: MessageSquareCode, permKey: 'admin.wa-gateway.index' },
-                { label: 'Generator QR Code', routeName: 'admin.qr-code.index', icon: QrCode, permKey: 'admin.wa-gateway.index' }
+                { label: 'Generator QR Code', routeName: 'admin.qr-code.index', icon: QrCode, permKey: 'admin.qr-code.index' }
             ]
         }
     ];

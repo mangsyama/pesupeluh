@@ -11,7 +11,7 @@ class QrGeneratorController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasPageAccess('admin.wa-gateway.index') && (int) $user->role_id !== 1) {
+        if (!$user->hasPageAccess('admin.qr-code.index') && (int) $user->role_id !== 1) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 

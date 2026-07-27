@@ -115,6 +115,7 @@ class UserManagementController extends Controller
                 'group' => 'Sistem',
                 'permissions' => [
                     ['key' => 'admin.wa-gateway.index', 'label' => 'WhatsApp Gateway'],
+                    ['key' => 'admin.qr-code.index', 'label' => 'Generator QR Code'],
                     ['key' => 'settings.index', 'label' => 'Pengaturan'],
                     ['key' => 'design-system.index', 'label' => 'Design System'],
                 ],

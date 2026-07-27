@@ -72,12 +72,21 @@ class User extends Authenticatable
             return $this->memoizedPermissions;
         }
 
-        // If user has personal override, use that
-        if (!empty($this->page_permissions) && is_array($this->page_permissions)) {
+        // 1. If user has custom override saved in DB, use that exact array
+        if ($this->page_permissions !== null && is_array($this->page_permissions)) {
             return $this->memoizedPermissions = $this->page_permissions;
         }
 
-        // Fall back to role defaults
+        // 2. Default Administrator role permissions if no override
+        if ((int) $this->role_id === 1) {
+            return $this->memoizedPermissions = [
+                'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index',
+                'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
+                'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index', 'design-system.index',
+            ];
+        }
+
+        // 3. Fall back to role defaults
         $role = $this->role ?? $this->load('role')->role;
         if ($role && is_array($role->page_permissions)) {
             return $this->memoizedPermissions = $role->page_permissions;

@@ -79,7 +79,7 @@ class CheckPageAccess
         'admin.wa-gateway.status' => 'admin.wa-gateway.index',
         'admin.wa-gateway.logout' => 'admin.wa-gateway.index',
         'admin.wa-gateway.test' => 'admin.wa-gateway.index',
-        'admin.qr-code.index' => 'admin.wa-gateway.index',
+        'admin.qr-code.index' => 'admin.qr-code.index',
 
         // Design System
         'design-system.index' => 'design-system.index',

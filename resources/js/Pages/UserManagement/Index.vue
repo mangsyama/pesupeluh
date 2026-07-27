@@ -328,10 +328,15 @@ const permissionProcessing = ref(false);
 
 const getRoleDefaultPermissions = (roleId) => {
     const role = props.roles.find(r => r.id === roleId);
+    let perms = [];
     if (role && role.page_permissions) {
-        return Array.isArray(role.page_permissions) ? role.page_permissions : JSON.parse(role.page_permissions);
+        perms = Array.isArray(role.page_permissions) ? role.page_permissions : JSON.parse(role.page_permissions);
     }
-    return [];
+    if (roleId === 1) {
+        if (!perms.includes('admin.qr-code.index')) perms.push('admin.qr-code.index');
+        if (!perms.includes('admin.wa-gateway.index')) perms.push('admin.wa-gateway.index');
+    }
+    return perms;
 };
 
 const openPermissionModal = (user) => {
