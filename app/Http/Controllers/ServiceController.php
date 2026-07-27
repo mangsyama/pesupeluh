@@ -96,12 +96,21 @@ class ServiceController extends Controller
         $ticket->load(['reporter', 'room', 'category.supportingUnit']);
         $supportingUnitId = $ticket->category?->supporting_unit_id;
 
-        if ($supportingUnitId) {
+        if ($supportingUnitId || $ticket->room_id) {
             $recipients = \App\Models\User::where('is_active', 1)
-                ->where(function ($query) use ($supportingUnitId) {
-                    $query->where(function ($q) use ($supportingUnitId) {
-                        $q->where('role_id', 5)->where('supporting_unit_id', $supportingUnitId);
-                    })->orWhere('role_id', 1); // Administrator
+                ->where('id', '!=', $ticket->reporter_id)
+                ->where(function ($query) use ($supportingUnitId, $ticket) {
+                    if ($supportingUnitId) {
+                        $query->where(function ($q) use ($supportingUnitId) {
+                            $q->where('role_id', 5)->where('supporting_unit_id', $supportingUnitId);
+                        });
+                    }
+                    $query->orWhere('role_id', 1); // Administrator
+                    if ($ticket->room_id) {
+                        $query->orWhere(function ($q) use ($ticket) {
+                            $q->where('role_id', 7)->where('room_id', $ticket->room_id); // Kepala Ruangan (as spectator)
+                        });
+                    }
                 })
                 ->get();
 

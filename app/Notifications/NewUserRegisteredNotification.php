@@ -5,14 +5,12 @@ namespace App\Notifications;
 use App\Channels\WaGatewayChannel;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Notifications\Messages\DatabaseMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Telegram\TelegramChannel;
 use NotificationChannels\Telegram\TelegramMessage;
 
-class NewUserRegisteredNotification extends Notification implements ShouldQueue
+class NewUserRegisteredNotification extends Notification
 {
     use Queueable;
 
@@ -24,13 +22,12 @@ class NewUserRegisteredNotification extends Notification implements ShouldQueue
     {
         $channels = ['database', 'broadcast'];
 
-        // Send to Telegram if bot token is configured and the user has a telegram_chat_id
         if (config('services.telegram.token') && $notifiable instanceof User && $notifiable->telegram_chat_id) {
             $channels[] = TelegramChannel::class;
         }
 
-        // Send to WhatsApp via WA Gateway (Local microservice or Fonnte API)
-        if ($notifiable instanceof User && $notifiable->phone_number) {
+        // WhatsApp ONLY for Admin (role_id === 1)
+        if ($notifiable instanceof User && (int) $notifiable->role_id === 1 && $notifiable->phone_number) {
             $channels[] = WaGatewayChannel::class;
         }
 
@@ -44,7 +41,7 @@ class NewUserRegisteredNotification extends Notification implements ShouldQueue
             'title' => 'Pendaftaran Baru',
             'message' => "Pengguna {$this->registrant->name} telah mendaftar dan menunggu verifikasi.",
             'user_id' => $this->registrant->id,
-            'route' => route('users.approvals.show', $this->registrant->uuid),
+            'route' => route('users.approvals'),
         ];
     }
 
@@ -55,34 +52,34 @@ class NewUserRegisteredNotification extends Notification implements ShouldQueue
             'title' => 'Pendaftaran Baru',
             'message' => "Pengguna {$this->registrant->name} telah mendaftar dan menunggu verifikasi.",
             'user_id' => $this->registrant->id,
-            'route' => route('users.approvals.show', $this->registrant->uuid),
+            'route' => route('users.approvals'),
         ]);
     }
 
     public function toTelegram($notifiable)
     {
         $chatId = $notifiable instanceof User ? $notifiable->telegram_chat_id : null;
-
-        if (!$chatId) {
-            return null;
-        }
+        if (!$chatId) return null;
 
         return TelegramMessage::create()
             ->to($chatId)
-            ->content("🔔 *Pendaftaran Pengguna Baru*\n\nPengguna *{$this->registrant->name}* telah mendaftar dan menunggu verifikasi.\n\n*NIP:* {$this->registrant->nip}\n*Email:* {$this->registrant->email}\n*Username:* {$this->registrant->username}")
-            ->button('Lihat Persetujuan', route('users.approvals.show', $this->registrant->uuid));
+            ->content("👤 *Pendaftaran User Baru*\n\nPengguna *{$this->registrant->name}* ({$this->registrant->email}) telah mendaftar dan membutuhkan verifikasi Anda.")
+            ->button('Verifikasi User', route('users.approvals'));
     }
 
     public function toWaGateway($notifiable): ?string
     {
-        $link = route('users.approvals.show', $this->registrant->uuid);
+        $link = route('users.approvals');
+        $nip = $this->registrant->nip ?? '-';
+        $phone = $this->registrant->phone_number ?? '-';
 
-        return "🔔 *Pendaftaran Pengguna Baru*\n\n"
-             . "Pengguna *{$this->registrant->name}* telah mendaftar dan menunggu verifikasi Anda.\n\n"
-             . "• *NIP:* " . ($this->registrant->nip ?: '-') . "\n"
+        return "👤 *Pendaftaran User Baru*\n\n"
+             . "Halo Admin, ada pendaftar baru yang membutuhkan verifikasi Anda:\n\n"
+             . "• *Nama:* {$this->registrant->name}\n"
              . "• *Email:* {$this->registrant->email}\n"
-             . "• *Username:* " . ($this->registrant->username ?: '-') . "\n\n"
-             . "Lihat & Proses Persetujuan:\n{$link}";
+             . "• *NIP:* {$nip}\n"
+             . "• *No. HP:* {$phone}\n\n"
+             . "Silakan lakukan verifikasi melalui sistem:\n{$link}";
     }
 
     public function toArray($notifiable): array
@@ -90,4 +87,3 @@ class NewUserRegisteredNotification extends Notification implements ShouldQueue
         return $this->toDatabase($notifiable);
     }
 }
-

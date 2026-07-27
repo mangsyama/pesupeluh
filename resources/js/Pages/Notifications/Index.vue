@@ -125,12 +125,12 @@ const goToPage = (url) => {
                             <div :class="[
                                 'h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5',
                                 notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
-                                notif.type === 'ticket' ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white' :
+                                notif.type === 'ticket' || notif.data?.type === 'ticket' || (typeof notif.type === 'string' && notif.type.includes('Ticket')) ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white' :
                                 notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
                                 notif.type === 'done' ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white' :
                                 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
                             ]">
-                                <Bell v-if="notif.type === 'ticket'" class="h-5 w-5" />
+                                <Bell v-if="notif.type === 'ticket' || notif.data?.type === 'ticket' || (typeof notif.type === 'string' && notif.type.includes('Ticket'))" class="h-5 w-5" />
                                 <Clock v-else-if="notif.type === 'progress'" class="h-5 w-5" />
                                 <CheckCircle2 v-else-if="notif.type === 'done'" class="h-5 w-5" />
                                 <User v-else class="h-5 w-5" />

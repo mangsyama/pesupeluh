@@ -12,7 +12,7 @@ use Illuminate\Notifications\Notification;
 use NotificationChannels\Telegram\TelegramChannel;
 use NotificationChannels\Telegram\TelegramMessage;
 
-class NewTicketReportedNotification extends Notification implements ShouldQueue
+class NewTicketReportedNotification extends Notification
 {
     use Queueable;
 
@@ -29,68 +29,92 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
             $channels[] = TelegramChannel::class;
         }
 
-        // Send to WhatsApp via WA Gateway (Local microservice or Fonnte API)
-        if ($notifiable instanceof User && $notifiable->phone_number) {
+        // WhatsApp ONLY for Kepala Unit (role_id === 5)
+        if ($notifiable instanceof User && (int) $notifiable->role_id === 5 && $notifiable->phone_number) {
             $channels[] = WaGatewayChannel::class;
         }
 
         return $channels;
     }
 
+    private function getNotificationDetails($notifiable): array
+    {
+        $roleId = (int) ($notifiable->role_id ?? 0);
+        $ticketNum = $this->ticket->ticket_number;
+        $roomName = $this->ticket->room?->name ?? 'Ruangan';
+        $reporterName = $this->ticket->reporter?->name ?? 'Staf';
+        $unitName = $this->ticket->category?->supportingUnit?->name ?? 'IPSRS';
+
+        if ($roleId === 7) { // Kepala Ruangan (Spectator)
+            return [
+                'title' => 'Laporan Diajukan Staf',
+                'message' => "Staf {$reporterName} di ruangan {$roomName} telah mengajukan laporan #{$ticketNum} ke unit {$unitName}.",
+                'route' => route('reports.show', ['ticket' => $this->ticket->uuid]),
+            ];
+        }
+
+        // Kepala Unit & Admin
+        return [
+            'title' => 'Laporan Baru Masuk',
+            'message' => "Laporan baru #{$ticketNum} telah dibuat dan membutuhkan validasi Anda.",
+            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+        ];
+    }
+
     public function toDatabase($notifiable): array
     {
+        $details = $this->getNotificationDetails($notifiable);
         return [
             'type' => 'ticket',
-            'title' => 'Laporan Baru Masuk',
-            'message' => "Laporan baru #{$this->ticket->ticket_number} telah dibuat dan membutuhkan validasi Anda.",
+            'title' => $details['title'],
+            'message' => $details['message'],
             'ticket_id' => $this->ticket->id,
-            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            'route' => $details['route'],
         ];
     }
 
     public function toBroadcast($notifiable): BroadcastMessage
     {
+        $details = $this->getNotificationDetails($notifiable);
         return new BroadcastMessage([
             'type' => 'ticket',
-            'title' => 'Laporan Baru Masuk',
-            'message' => "Laporan baru #{$this->ticket->ticket_number} telah dibuat dan membutuhkan validasi Anda.",
+            'title' => $details['title'],
+            'message' => $details['message'],
             'ticket_id' => $this->ticket->id,
-            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            'route' => $details['route'],
         ]);
     }
 
     public function toTelegram($notifiable)
     {
         $chatId = $notifiable instanceof User ? $notifiable->telegram_chat_id : null;
+        if (!$chatId) return null;
 
-        if (!$chatId) {
-            return null;
-        }
-
+        $details = $this->getNotificationDetails($notifiable);
         $reporterName = $this->ticket->reporter?->name ?? 'Reporter';
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
 
         return TelegramMessage::create()
             ->to($chatId)
-            ->content("⚠️ *Laporan Baru Masuk*\n\nTiket *#{$this->ticket->ticket_number}* membutuhkan validasi Anda.\n\n*Pelapor:* {$reporterName}\n*Ruangan:* {$roomName}\n*Kategori:* {$categoryName}\n*Deskripsi:* {$this->ticket->problem_description}")
-            ->button('Validasi & Tugaskan', route('reports-management.show', ['ticket' => $this->ticket->uuid]));
+            ->content("⚠️ *{$details['title']}*\n\n{$details['message']}\n\n*Pelapor:* {$reporterName}\n*Ruangan:* {$roomName}\n*Kategori:* {$categoryName}\n*Deskripsi:* {$this->ticket->problem_description}")
+            ->button('Lihat Tiket', $details['route']);
     }
 
     public function toWaGateway($notifiable): ?string
     {
+        $details = $this->getNotificationDetails($notifiable);
         $reporterName = $this->ticket->reporter?->name ?? 'Pelapor';
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
-        $link = route('reports-management.show', ['ticket' => $this->ticket->uuid]);
 
-        return "⚠️ *Laporan Baru Masuk*\n\n"
-             . "Tiket *#{$this->ticket->ticket_number}* membutuhkan validasi Anda.\n\n"
+        return "⚠️ *{$details['title']}*\n\n"
+             . "{$details['message']}\n\n"
              . "• *Pelapor:* {$reporterName}\n"
              . "• *Ruangan:* {$roomName}\n"
              . "• *Kategori:* {$categoryName}\n"
              . "• *Deskripsi:* {$this->ticket->problem_description}\n\n"
-             . "Validasi & Tugaskan:\n{$link}";
+             . "Lihat Tiket:\n{$details['route']}";
     }
 
     public function toArray($notifiable): array

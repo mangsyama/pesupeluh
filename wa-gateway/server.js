@@ -189,10 +189,27 @@ const handleSendMessage = async (req, res) => {
     }
 
     try {
+        // Simulate human typing presence to prevent WhatsApp anti-spam detection
+        try {
+            await sock.sendPresenceUpdate('composing', jid);
+        } catch (presenceErr) {
+            // Ignore presence errors if jid is not active
+        }
+
+        // Calculate dynamic human typing delay based on message length (1.2s - 2.5s)
+        const delayMs = Math.min(2500, Math.max(1200, Math.floor(message.length * 15)));
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+
+        try {
+            await sock.sendPresenceUpdate('paused', jid);
+        } catch (e) {
+            // Ignore
+        }
+
         const result = await sock.sendMessage(jid, { text: message });
         return res.json({
             status: true,
-            message: 'WhatsApp message sent successfully',
+            message: 'WhatsApp message sent successfully with typing simulation',
             target: jid,
             id: result.key?.id
         });

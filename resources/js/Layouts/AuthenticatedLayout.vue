@@ -408,7 +408,10 @@ const normalizeNotificationPayload = (notification) => {
     const title = notification.title ?? notification.data?.title ?? null;
     const message = notification.message ?? notification.data?.message ?? null;
     const route = notification.route ?? notification.data?.route ?? null;
-    const type = notification.type ?? notification.data?.type ?? 'user';
+    const rawType = notification.data?.type ?? notification.type ?? 'ticket';
+    const type = (rawType === 'ticket' || rawType === 'user' || rawType === 'progress' || rawType === 'done')
+        ? rawType
+        : (typeof rawType === 'string' && rawType.includes('Ticket') ? 'ticket' : 'user');
     const priority = notification.priority ?? notification.data?.priority ?? null;
 
     return {
@@ -1103,18 +1106,14 @@ const getGroupInitials = (title) => {
                     v-for="toast in toasts"
                     :key="toast.id"
                     @click="toast.route ? router.visit(toast.route) : null"
-                    :class="[
-                        'pointer-events-auto flex gap-3 p-4 rounded-2xl border shadow-lg cursor-pointer transition-all duration-200 hover:scale-[1.02]',
-                        toast.priority === 'URGENT' ? 'bg-rose-50/95 dark:bg-rose-950/90 border-rose-550/50 dark:border-rose-800/60 shadow-rose-500/10' : 'bg-white/95 dark:bg-slate-900/95 border-slate-100 dark:border-slate-800/80',
-                        toast.route ? 'hover:border-indigo-500/50 dark:hover:border-indigo-400/50' : ''
-                    ]"
+                    class="pointer-events-auto flex items-start gap-3.5 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:border-emerald-500/50 dark:hover:border-emerald-400/50"
                 >
                     <!-- Icon -->
                     <div :class="[
-                        'h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0',
-                        toast.priority === 'URGENT' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/25 animate-pulse' : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
+                        'h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5',
+                        toast.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500 border border-rose-200/50 dark:border-rose-900/50' : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white border border-emerald-100 dark:border-white/10'
                     ]">
-                        <Bell v-if="toast.type === 'ticket'" class="h-4.5 w-4.5" />
+                        <Bell v-if="toast.type === 'ticket' || (typeof toast.type === 'string' && toast.type.includes('Ticket'))" class="h-4.5 w-4.5" />
                         <Clock v-else-if="toast.type === 'progress'" class="h-4.5 w-4.5" />
                         <CheckCircle2 v-else-if="toast.type === 'done'" class="h-4.5 w-4.5" />
                         <User v-else class="h-4.5 w-4.5" />
@@ -1122,14 +1121,14 @@ const getGroupInitials = (title) => {
                     <!-- Content -->
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-1.5">
-                            <span v-if="toast.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-550 text-white flex-shrink-0">URGENT</span>
-                            <p :class="['text-xs font-extrabold leading-normal', toast.priority === 'URGENT' ? 'text-rose-950 dark:text-rose-100' : 'text-slate-900 dark:text-white']">{{ toast.title }}</p>
+                            <span v-if="toast.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-rose-500 text-white flex-shrink-0 animate-pulse">URGENT</span>
+                            <p class="text-xs font-bold text-slate-900 dark:text-white leading-normal truncate">{{ toast.title }}</p>
                         </div>
-                        <p :class="['text-[11px] leading-relaxed mt-1 line-clamp-3', toast.priority === 'URGENT' ? 'text-rose-900 dark:text-rose-250' : 'text-slate-500 dark:text-slate-400']">{{ toast.message }}</p>
+                        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed mt-1 line-clamp-3">{{ toast.message }}</p>
                     </div>
                     <!-- Close Button -->
-                    <button @click.stop="removeToast(toast.id)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 h-5 w-5 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition flex-shrink-0">
-                        <X class="h-3 w-3" />
+                    <button @click.stop="removeToast(toast.id)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 h-5 w-5 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition flex-shrink-0 mt-0.5">
+                        <X class="h-3.5 w-3.5" />
                     </button>
                 </div>
             </TransitionGroup>

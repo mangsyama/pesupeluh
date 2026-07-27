@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
+use App\Notifications\TicketAssignedNotification;
+use App\Notifications\TicketStatusUpdatedNotification;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+
 class TicketController extends Controller
 {
     /**
@@ -175,6 +180,8 @@ class TicketController extends Controller
             }
         }
 
+        $this->sendTicketStatusNotification($ticket, 'ASSIGNED');
+
         return redirect()->back()->with('success', 'Tiket pelaporan berhasil divalidasi dan ditugaskan.');
     }
 
@@ -210,6 +217,8 @@ class TicketController extends Controller
             'action' => 'ARRIVED',
             'notes' => 'Teknisi tiba di lokasi & mulai pengerjaan.',
         ]);
+
+        $this->sendTicketStatusNotification($ticket, 'ARRIVED');
 
         // Save arrival images
         $attachments = $request->input('attachments', []);
@@ -289,6 +298,8 @@ class TicketController extends Controller
                 'notes' => $notes ?: 'Pekerjaan dinyatakan selesai.',
             ]);
 
+            $this->sendTicketStatusNotification($ticket, 'COMPLETED', $notes);
+
             // Save resolution images
             $attachments = $request->input('attachments', []);
             if (is_array($attachments) && count($attachments) > 0) {
@@ -339,6 +350,8 @@ class TicketController extends Controller
                 'notes' => $notes,
             ]);
 
+            $this->sendTicketStatusNotification($ticket, 'PENDING', $notes);
+
             return redirect()->back()->with('success', 'Laporan berhasil ditangguhkan.');
         } elseif ($status === 'CANCEL') {
             $ticket->update([
@@ -361,6 +374,8 @@ class TicketController extends Controller
                 'action' => 'CANCEL',
                 'notes' => $notes ?: 'Laporan dibatalkan.',
             ]);
+
+            $this->sendTicketStatusNotification($ticket, 'CANCEL', $notes);
 
             return redirect()->back()->with('success', 'Laporan berhasil dibatalkan.');
         }
@@ -402,6 +417,42 @@ class TicketController extends Controller
             'notes' => 'Pekerjaan dilanjutkan kembali.',
         ]);
 
+        $this->sendTicketStatusNotification($ticket, 'RESUMED');
+
         return redirect()->back()->with('success', 'Pekerjaan dilanjutkan kembali.');
+    }
+
+    /**
+     * Send real-time status update notification via Reverb & database to Pelapor, Ka Ruangan, Ka Unit, and Admin.
+     */
+    protected function sendTicketStatusNotification(ServiceTicket $ticket, string $status, ?string $notes = null): void
+    {
+        $ticket->load(['reporter', 'room', 'category.supportingUnit']);
+        $supportingUnitId = $ticket->category?->supporting_unit_id;
+        $reporterId = $ticket->reporter_id;
+        $actorId = \Illuminate\Support\Facades\Auth::id();
+
+        $recipients = User::where('is_active', 1)
+            ->where('id', '!=', $actorId) // Don't send notification to the user who performed the action
+            ->where(function ($query) use ($status, $supportingUnitId, $reporterId) {
+                $query->where('id', $reporterId) // Pelapor
+                    ->orWhere('role_id', 1); // Administrator
+
+                // Ka Unit receives updates for status changes (Arrived, Pending, Resumed, Completed, Cancel)
+                if ($status !== 'ASSIGNED' && $supportingUnitId) {
+                    $query->orWhere(function ($q) use ($supportingUnitId) {
+                        $q->where('role_id', 5)->where('supporting_unit_id', $supportingUnitId); // Ka Unit
+                    });
+                }
+            })
+            ->get();
+
+        if ($recipients->isNotEmpty()) {
+            try {
+                Notification::send($recipients, new TicketStatusUpdatedNotification($ticket, $status, $notes));
+            } catch (\Throwable $e) {
+                Log::error('Gagal mengirim notifikasi status tiket: ' . $e->getMessage());
+            }
+        }
     }
 }
