@@ -405,7 +405,7 @@ const submitReport = () => {
                     <input ref="cameraInputRef" type="file" class="hidden" accept="image/*" capture="environment" @change="handleFileSelect" />
 
                     <!-- Previews Grid -->
-                    <div v-if="attachmentPreviews.length > 0" class="grid grid-cols-3 gap-2">
+                    <div v-if="attachmentPreviews.length > 0" class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                         <div 
                             v-for="(att, idx) in attachmentPreviews" 
                             :key="idx" 

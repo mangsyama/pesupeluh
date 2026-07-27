@@ -138,8 +138,12 @@ const reporterAttachments = computed(() => {
     return props.ticket?.attachments?.filter(att => att.uploaded_by == props.ticket?.reporter_id) || [];
 });
 
+const arrivalAttachments = computed(() => {
+    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id && att.file_path?.includes('ticket_arr_')) || [];
+});
+
 const completionAttachments = computed(() => {
-    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id) || [];
+    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id && !att.file_path?.includes('ticket_arr_')) || [];
 });
 
 const isVideo = (path) => {
@@ -350,16 +354,15 @@ const contextLabel = computed(() => {
 
                                 <!-- Reporter Attachments Media Grid -->
                                 <div class="space-y-3">
-                                    <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-550 tracking-wider flex items-center gap-1.5">
-                                        <ImageIcon class="h-3.5 w-3.5" />
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
                                         {{ __('pages.tickets.detail.attachments') }}
                                     </span>
                                     
-                                    <div v-if="reporterAttachments.length > 0" class="flex flex-wrap gap-3">
+                                    <div v-if="reporterAttachments.length > 0" class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
                                         <div 
                                             v-for="att in reporterAttachments" 
                                             :key="att.id" 
-                                            class="relative rounded-xl overflow-hidden border border-slate-150 dark:border-slate-800 h-20 w-20 sm:h-24 sm:w-24 aspect-square bg-slate-50 dark:bg-slate-950/55 group shadow-sm flex-shrink-0"
+                                            class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer bg-slate-50 dark:bg-slate-950/55 group shadow-sm"
                                         >
                                             <video 
                                                 v-if="isVideo(att.file_path)" 
@@ -369,9 +372,6 @@ const contextLabel = computed(() => {
                                             ></video>
                                             <div v-else class="w-full h-full relative cursor-pointer" @click="openLightbox(att.file_path)">
                                                 <img :src="att.file_path" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt="Reporter photo" />
-                                                <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition duration-150 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                                    <Search class="h-6 w-6 text-white" />
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -416,99 +416,9 @@ const contextLabel = computed(() => {
                             </div>
                         </div>
 
-                        <!-- Right Column: SLA Analytics & Progress Timelines -->
+                        <!-- Right Column: Progress Timelines -->
                         <div class="space-y-4">
                             
-                            <!-- SLA Metric Cards -->
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div>
-                                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                                        {{ __('pages.tickets.detail.sla_metrics') }}
-                                    </h3>
-                                    <div class="h-0.5 bg-slate-100 dark:bg-slate-800 mt-2"></div>
-                                </div>
-
-                                <div class="space-y-3 pt-1">
-                                    <!-- Response Time Card -->
-                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
-                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white shrink-0">
-                                            <Clock class="h-5 w-5" />
-                                        </div>
-                                        <div class="flex-1 min-w-0 space-y-0.5">
-                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
-                                                {{ __('pages.tickets.detail.response_time_sla') }}
-                                            </div>
-                                            <div class="text-[10px] font-medium leading-none">
-                                                <span v-if="ticket.responded_at" class="text-slate-500 dark:text-slate-400">
-                                                    {{ __('pages.tickets.detail.responded_status_sla') }}
-                                                </span>
-                                                <span v-else-if="ticket.validated_at" class="text-emerald-600 dark:text-white animate-pulse font-bold">
-                                                    {{ __('pages.tickets.detail.running_status_sla') }}
-                                                </span>
-                                                <span v-else class="text-slate-400 dark:text-slate-500">
-                                                    {{ __('pages.tickets.detail.awaiting_validate_sla') }}
-                                                </span>
-                                            </div>
-                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
-                                                {{ formatDuration(responseTimeSeconds) }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Paused Duration Card -->
-                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
-                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-100 dark:border-orange-900/50 text-orange-600 dark:text-orange-400 shrink-0">
-                                            <Pause class="h-5 w-5" />
-                                        </div>
-                                        <div class="flex-1 min-w-0 space-y-0.5">
-                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
-                                                {{ __('pages.tickets.detail.paused_duration') }}
-                                            </div>
-                                            <div class="text-[10px] font-medium leading-none">
-                                                <span v-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 animate-pulse font-bold">
-                                                    {{ __('pages.tickets.detail.active_paused_sla') }}
-                                                </span>
-                                                <span v-else class="text-slate-400 dark:text-slate-500">
-                                                    {{ __('pages.tickets.detail.total_pauses_sla') }}
-                                                </span>
-                                            </div>
-                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
-                                                {{ formatDuration(pausedDurationSeconds) }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Resolution Time Card -->
-                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
-                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white shrink-0">
-                                            <CheckCircle2 class="h-5 w-5" />
-                                        </div>
-                                        <div class="flex-1 min-w-0 space-y-0.5">
-                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
-                                                {{ __('pages.tickets.detail.resolution_time_sla') }}
-                                            </div>
-                                            <div class="text-[10px] font-medium leading-none">
-                                                <span v-if="ticket.resolved_at" class="text-slate-500 dark:text-slate-400">
-                                                    {{ __('pages.tickets.detail.resolved_status_sla') }}
-                                                </span>
-                                                <span v-else-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 font-bold">
-                                                    {{ __('pages.tickets.detail.paused_status_sla') }}
-                                                </span>
-                                                <span v-else-if="ticket.validated_at" class="text-emerald-600 dark:text-white animate-pulse font-bold">
-                                                    {{ __('pages.tickets.detail.running_status_sla') }}
-                                                </span>
-                                                <span v-else class="text-slate-400 dark:text-slate-500">
-                                                    {{ __('pages.tickets.detail.awaiting_dispatch_sla') }}
-                                                </span>
-                                            </div>
-                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
-                                                {{ formatDuration(resolutionTimeSeconds) }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Ticket Status Timeline Tracking -->
                             <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
                                 <div>
@@ -606,7 +516,18 @@ const contextLabel = computed(() => {
                                                         <p v-else class="text-[10px] text-slate-400 dark:text-slate-600">
                                                             {{ __('pages.tickets.detail.waiting_arrival_timeline') }}
                                                         </p>
-                                                        <div v-if="ticket.responded_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                                        <!-- Arrival Attachments Grid in Timeline -->
+                                                        <div v-if="ticket.responded_at && arrivalAttachments.length > 0" class="grid grid-cols-3 gap-1.5 mt-2">
+                                                            <div 
+                                                                v-for="att in arrivalAttachments" 
+                                                                :key="att.id" 
+                                                                class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer"
+                                                                @click="openLightbox(att.file_path)"
+                                                            >
+                                                                <img :src="att.file_path" class="w-full h-full object-cover" alt="Arrival photo proof" />
+                                                            </div>
+                                                        </div>
+                                                        <div v-if="ticket.responded_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1 pt-0.5">
                                                             <Clock class="h-3 w-3 shrink-0" />
                                                             <span>{{ formatDateTime(ticket.responded_at) }}</span>
                                                         </div>

@@ -179,12 +179,54 @@ class TicketController extends Controller
             return redirect()->back()->with('error', 'Status tiket tidak valid untuk aksi ini.');
         }
 
+        $validated = $request->validate([
+            'attachments' => 'required|array|min:1|max:5',
+            'attachments.*' => 'required|string',
+        ], [
+            'attachments.required' => 'Wajib mengunggah minimal 1 foto bukti kedatangan di lokasi.',
+            'attachments.min' => 'Wajib mengunggah minimal 1 foto bukti kedatangan di lokasi.',
+        ]);
+
         $ticket->update([
             'responded_at' => now(),
             'status' => 'IN_PROGRESS',
         ]);
 
-        return redirect()->back()->with('success', 'Waktu respon tercatat. Status tiket diubah menjadi Dikerjakan.');
+        // Save arrival images
+        $attachments = $request->input('attachments', []);
+        if (is_array($attachments) && count($attachments) > 0) {
+            Storage::disk('public')->makeDirectory('ticket_attachments');
+
+            foreach ($attachments as $dataUrl) {
+                if (!is_string($dataUrl) || !str_starts_with($dataUrl, 'data:')) continue;
+
+                $parts = explode(";base64,", $dataUrl);
+                if (count($parts) !== 2) continue;
+
+                $fileContent = base64_decode($parts[1]);
+                $mimeHeader = $parts[0];
+
+                $ext = 'jpeg';
+                if (str_contains($mimeHeader, 'image/')) {
+                    $ext = str_replace('data:image/', '', $mimeHeader) ?: 'jpeg';
+                } elseif (str_contains($mimeHeader, 'video/')) {
+                    $ext = str_replace('data:video/', '', $mimeHeader) ?: 'mp4';
+                }
+
+                $filename = 'ticket_arr_' . uniqid() . '.' . $ext;
+                Storage::disk('public')->put('ticket_attachments/' . $filename, $fileContent);
+                $filePath = '/storage/ticket_attachments/' . $filename;
+
+                TicketAttachment::create([
+                    'ticket_id' => $ticket->id,
+                    'file_path' => $filePath,
+                    'uploaded_by' => $request->user()->id,
+                    'uploaded_at' => now(),
+                ]);
+            }
+        }
+
+        return redirect()->back()->with('success', 'Bukti kedatangan berhasil disimpan. Waktu respon tercatat dan status tiket diubah menjadi Dikerjakan.');
     }
 
     /**

@@ -221,8 +221,12 @@ const reporterAttachments = computed(() => {
     return props.ticket?.attachments?.filter(att => att.uploaded_by == props.ticket?.reporter_id) || [];
 });
 
+const arrivalAttachments = computed(() => {
+    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id && att.file_path?.includes('ticket_arr_')) || [];
+});
+
 const completionAttachments = computed(() => {
-    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id) || [];
+    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id && !att.file_path?.includes('ticket_arr_')) || [];
 });
 
 const isVideo = (path) => {
@@ -423,11 +427,11 @@ const contextLabel = computed(() => {
                                         {{ __('pages.tickets.detail.attachments') }}
                                     </span>
                                     
-                                    <div v-if="reporterAttachments.length > 0" class="flex flex-wrap gap-3">
+                                    <div v-if="reporterAttachments.length > 0" class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
                                         <div 
                                             v-for="att in reporterAttachments" 
                                             :key="att.id" 
-                                            class="relative rounded-xl overflow-hidden border border-slate-150 dark:border-slate-800 h-20 w-20 sm:h-24 sm:w-24 aspect-square bg-slate-50 dark:bg-slate-950/55 group shadow-sm flex-shrink-0"
+                                            class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer bg-slate-50 dark:bg-slate-950/55 group shadow-sm"
                                         >
                                             <video 
                                                 v-if="isVideo(att.file_path)" 
@@ -437,9 +441,6 @@ const contextLabel = computed(() => {
                                             ></video>
                                             <div v-else class="w-full h-full relative cursor-pointer" @click="openLightbox(att.file_path)">
                                                 <img :src="att.file_path" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt="Reporter photo" />
-                                                <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition duration-150 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                                    <Search class="h-6 w-6 text-white" />
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -804,7 +805,18 @@ const contextLabel = computed(() => {
                                                         <p v-else class="text-[10px] text-slate-400 dark:text-slate-600">
                                                             {{ __('pages.tickets.detail.waiting_arrival_timeline') }}
                                                         </p>
-                                                        <div v-if="ticket.responded_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                                        <!-- Arrival Attachments Grid in Timeline -->
+                                                        <div v-if="ticket.responded_at && arrivalAttachments.length > 0" class="grid grid-cols-3 gap-1.5 mt-2">
+                                                            <div 
+                                                                v-for="att in arrivalAttachments" 
+                                                                :key="att.id" 
+                                                                class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer"
+                                                                @click="openLightbox(att.file_path)"
+                                                            >
+                                                                <img :src="att.file_path" class="w-full h-full object-cover" alt="Arrival photo proof" />
+                                                            </div>
+                                                        </div>
+                                                        <div v-if="ticket.responded_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1 pt-0.5">
                                                             <Clock class="h-3 w-3 shrink-0" />
                                                             <span>{{ formatDateTime(ticket.responded_at) }}</span>
                                                         </div>

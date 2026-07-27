@@ -10,7 +10,14 @@ import {
     ArrowUpRight,
     Settings,
     Clock,
-    CheckCircle2
+    CheckCircle2,
+    PlusCircle,
+    Wrench,
+    Stethoscope,
+    ShieldCheck,
+    Zap,
+    ArrowRight,
+    Sparkles
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
@@ -155,16 +162,16 @@ const categoriesBreakdown = computed(() => {
                 <div class="p-[1px] rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-800 dark:bg-none dark:bg-slate-800 shadow-sm">
                     <div class="overflow-hidden bg-gradient-to-r from-emerald-600 to-emerald-800 dark:from-slate-900 dark:to-slate-900 rounded-[15px] text-white p-6 sm:p-8 relative flex items-center justify-between gap-4 sm:gap-6">
                         <!-- Text Info -->
-                        <div class="relative z-10 flex-1 min-w-0">
+                        <div class="relative z-10 flex-1 min-w-0 pr-20 sm:pr-24">
                             <h3 class="text-2xl font-extrabold mb-1">PESU PELUH</h3>
                             <p class="text-emerald-100 dark:text-slate-300 text-sm font-medium leading-relaxed break-words">
                                 Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
                             </p>
                         </div>
 
-                        <!-- Right White Logo -->
-                        <div class="relative z-10 flex items-center justify-center h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0">
-                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity" />
+                        <!-- Right White Logo (Consistent mobile size across all screens) -->
+                        <div class="absolute right-6 sm:right-8 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center h-16 w-16 opacity-85 hover:opacity-100 transition-opacity pointer-events-none select-none">
+                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain brightness-0 invert" />
                         </div>
 
                         <!-- Decorative background patterns -->
@@ -172,6 +179,84 @@ const categoriesBreakdown = computed(() => {
                             <div class="absolute -right-28 -top-28 w-80 h-80 border-2 border-white rounded-[80px] rotate-[15deg]"></div>
                             <div class="absolute -right-40 -top-40 w-80 h-80 border-2 border-white rounded-[100px] rotate-[15deg]"></div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Quick Access Reporting Section -->
+                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-2.5">
+                                <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                    Akses Cepat
+                                </h3>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shadow-2xs">
+                                    <Zap class="h-3 w-3 text-amber-500 fill-amber-500" />
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                Pilih unit layanan penunjang untuk akses cepat ke layanan yang dibutuhkan
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <!-- Shortcut 1: IPSRS (Fasilitas & Sarpras) -->
+                        <Link 
+                            :href="route('services.units.show', 'ipsrs')"
+                            class="group p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition duration-200 flex items-start gap-3.5 relative overflow-hidden"
+                        >
+                            <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white flex items-center justify-center flex-shrink-0">
+                                <Wrench class="h-5 w-5" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition flex items-center justify-between">
+                                    <span>IPSRS (Fasilitas & Sarpras)</span>
+                                    <ArrowRight class="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                    Form Pelaporan Kendala Sarana Prasarana dan Fasilitas RS
+                                </p>
+                            </div>
+                        </Link>
+
+                        <!-- Shortcut 2: Layanan Penunjang Medik -->
+                        <Link 
+                            :href="route('services.medik')"
+                            class="group p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition duration-200 flex items-start gap-3.5 relative overflow-hidden"
+                        >
+                            <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white flex items-center justify-center flex-shrink-0">
+                                <Stethoscope class="h-5 w-5" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition flex items-center justify-between">
+                                    <span>Layanan Penunjang Medik</span>
+                                    <ArrowRight class="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                    Farmasi, Radiologi, Laboratorium, dan CSSD
+                                </p>
+                            </div>
+                        </Link>
+
+                        <!-- Shortcut 3: Layanan Penunjang Non-Medik -->
+                        <Link 
+                            :href="route('services.non-medik')"
+                            class="group p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800/50 transition duration-200 flex items-start gap-3.5 relative overflow-hidden"
+                        >
+                            <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white flex items-center justify-center flex-shrink-0">
+                                <ShieldCheck class="h-5 w-5" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition flex items-center justify-between">
+                                    <span>Layanan Penunjang Non-Medik</span>
+                                    <ArrowRight class="h-3.5 w-3.5 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+                                    Gizi, Laundry, Kesling, dan IPSRS
+                                </p>
+                            </div>
+                        </Link>
                     </div>
                 </div>
 

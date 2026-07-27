@@ -133,9 +133,66 @@ const formatDateTime = (dateStr) => {
     });
 };
 
-const respondTicket = () => {
+const arriveForm = useForm({
+    attachments: []
+});
+
+const arrivePreviews = ref([]);
+const arriveFileInput = ref(null);
+const arriveCameraInput = ref(null);
+const showArriveModal = ref(false);
+
+const openArriveModal = () => {
+    arriveForm.clearErrors();
+    arrivePreviews.value = [];
+    arriveForm.attachments = [];
+    showArriveModal.value = true;
+};
+
+const handleArriveFileSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    await processArriveFiles(files);
+    if (e.target) e.target.value = '';
+};
+
+const processArriveFiles = async (files) => {
+    const remaining = 5 - arrivePreviews.value.length;
+    const toProcess = files.slice(0, remaining);
+
+    for (const file of toProcess) {
+        if (!file.type.startsWith('image/')) continue;
+        
+        let dataUrl;
+        try {
+            dataUrl = await compressImage(file);
+        } catch {
+            dataUrl = await readFileAsDataURL(file);
+        }
+
+        arrivePreviews.value.push({
+            name: file.name,
+            size: file.size,
+            preview: dataUrl,
+            data: dataUrl
+        });
+    }
+    arriveForm.attachments = arrivePreviews.value.map(p => p.data);
+};
+
+const removeArriveAttachment = (idx) => {
+    arrivePreviews.value.splice(idx, 1);
+    arriveForm.attachments = arrivePreviews.value.map(p => p.data);
+};
+
+const submitArrive = () => {
     if (!props.ticket?.uuid) return;
-    router.post(route('tickets.respond', props.ticket.uuid));
+    arriveForm.post(route('tickets.respond', props.ticket.uuid), {
+        onSuccess: () => {
+            showArriveModal.value = false;
+            arriveForm.reset();
+            arrivePreviews.value = [];
+        }
+    });
 };
 
 const resolveForm = useForm({
@@ -251,8 +308,12 @@ const reporterAttachments = computed(() => {
     return props.ticket?.attachments?.filter(att => att.uploaded_by == props.ticket?.reporter_id) || [];
 });
 
+const arrivalAttachments = computed(() => {
+    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id && att.file_path?.includes('ticket_arr_')) || [];
+});
+
 const completionAttachments = computed(() => {
-    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id) || [];
+    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id && !att.file_path?.includes('ticket_arr_')) || [];
 });
 
 const isVideo = (path) => {
@@ -454,11 +515,11 @@ const contextLabel = computed(() => {
                                         {{ __('pages.tickets.detail.attachments') }}
                                     </span>
                                     
-                                    <div v-if="reporterAttachments.length > 0" class="flex flex-wrap gap-3">
+                                    <div v-if="reporterAttachments.length > 0" class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-2">
                                         <div 
                                             v-for="att in reporterAttachments" 
                                             :key="att.id" 
-                                            class="relative rounded-xl overflow-hidden border border-slate-150 dark:border-slate-800 h-20 w-20 sm:h-24 sm:w-24 aspect-square bg-slate-50 dark:bg-slate-950/55 group shadow-sm flex-shrink-0"
+                                            class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer bg-slate-50 dark:bg-slate-950/55 group shadow-sm"
                                         >
                                             <video 
                                                 v-if="isVideo(att.file_path)" 
@@ -468,9 +529,6 @@ const contextLabel = computed(() => {
                                             ></video>
                                             <div v-else class="w-full h-full relative cursor-pointer" @click="openLightbox(att.file_path)">
                                                 <img :src="att.file_path" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt="Reporter photo" />
-                                                <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition duration-150 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                                    <Search class="h-6 w-6 text-white" />
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -528,7 +586,7 @@ const contextLabel = computed(() => {
                                         {{ __('pages.tickets.detail.arrive_instruction') }}
                                     </p>
                                     <button
-                                        @click="respondTicket"
+                                        @click="openArriveModal"
                                         class="w-full h-11 text-xs font-bold rounded-xl text-white dark:text-slate-900 shadow-sm flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 transition duration-200"
                                     >
                                         <Clock class="h-4.5 w-4.5" />
@@ -784,7 +842,18 @@ const contextLabel = computed(() => {
                                                         <p v-else class="text-[10px] text-slate-400 dark:text-slate-600">
                                                             {{ __('pages.tickets.detail.waiting_arrival_timeline') }}
                                                         </p>
-                                                        <div v-if="ticket.responded_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                                        <!-- Arrival Attachments Grid in Timeline -->
+                                                        <div v-if="ticket.responded_at && arrivalAttachments.length > 0" class="grid grid-cols-3 gap-1.5 mt-2">
+                                                            <div 
+                                                                v-for="att in arrivalAttachments" 
+                                                                :key="att.id" 
+                                                                class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer"
+                                                                @click="openLightbox(att.file_path)"
+                                                            >
+                                                                <img :src="att.file_path" class="w-full h-full object-cover" alt="Arrival photo proof" />
+                                                            </div>
+                                                        </div>
+                                                        <div v-if="ticket.responded_at" class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1 pt-0.5">
                                                             <Clock class="h-3 w-3 shrink-0" />
                                                             <span>{{ formatDateTime(ticket.responded_at) }}</span>
                                                         </div>
@@ -853,6 +922,90 @@ const contextLabel = computed(() => {
     </div>
 
     <!-- Modals for Technician Execution -->
+
+    <!-- Modal 0: Arrive / Konfirmasi Kedatangan -->
+    <Modal :show="showArriveModal" @close="showArriveModal = false" max-width="lg">
+        <div class="p-6 space-y-4">
+            <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                    <Clock class="h-5 w-5" />
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+                        Konfirmasi Kedatangan di Lokasi
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Wajib unggah foto bukti bahwa Anda telah tiba di lokasi pekerjaan.
+                    </p>
+                </div>
+            </div>
+
+            <form @submit.prevent="submitArrive" class="space-y-4">
+                <!-- Proof Photo Attachments -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Foto Bukti Kedatangan <span class="text-red-500">*</span>
+                        </label>
+                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{{ arrivePreviews.length }}/5</span>
+                    </div>
+
+                    <input ref="arriveFileInput" type="file" accept="image/*" multiple class="hidden" @change="handleArriveFileSelect" />
+                    <input ref="arriveCameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="handleArriveFileSelect" />
+
+                    <div class="space-y-2">
+                        <!-- Drop Zone for Gallery -->
+                        <div
+                            @click="arriveFileInput?.click()"
+                            :class="[
+                                'border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center',
+                                arrivePreviews.length > 0 ? 'min-h-[80px]' : 'min-h-[100px]',
+                                'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/30 dark:bg-slate-950/20'
+                            ]"
+                        >
+                            <div class="h-9 w-9 rounded-full flex items-center justify-center mb-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 dark:text-emerald-400">
+                                <UploadCloud class="h-4.5 w-4.5" />
+                            </div>
+                            <p class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Klik untuk pilih dari Galeri</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG (max 5MB)</p>
+                        </div>
+
+                        <!-- Camera Button -->
+                        <button
+                            type="button"
+                            @click="arriveCameraInput?.click()"
+                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-xs font-semibold flex items-center justify-center gap-2 transition duration-150"
+                        >
+                            <Camera class="h-4 w-4" />
+                            Ambil Foto dari Kamera
+                        </button>
+                    </div>
+
+                    <div v-if="arriveForm.errors.attachments" class="text-[10px] text-red-500 font-semibold">{{ arriveForm.errors.attachments }}</div>
+
+                    <div v-if="arrivePreviews.length > 0" class="grid grid-cols-4 gap-2 pt-2">
+                        <div v-for="(item, idx) in arrivePreviews" :key="idx" class="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 group">
+                            <img :src="item.preview" class="w-full h-full object-cover" />
+                            <button
+                                type="button"
+                                @click="removeArriveAttachment(idx)"
+                                class="absolute top-1 right-1 h-5 w-5 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"
+                            >
+                                <X class="h-3 w-3" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <SecondaryButton type="button" @click="showArriveModal = false">{{ __('Batal') }}</SecondaryButton>
+                    <PrimaryButton type="submit" :disabled="arriveForm.processing || arrivePreviews.length === 0" class="!bg-emerald-600 hover:!bg-emerald-500">
+                        {{ arriveForm.processing ? __('Menyimpan...') : __('Konfirmasi Kedatangan') }}
+                    </PrimaryButton>
+                </div>
+            </form>
+        </div>
+    </Modal>
 
     <!-- Modal 1: Complete Work -->
     <Modal :show="showCompleteModal" @close="showCompleteModal = false" max-width="lg">
