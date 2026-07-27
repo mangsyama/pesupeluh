@@ -9,6 +9,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\ServiceManagementController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\WaGatewayController;
+use App\Http\Controllers\QrGeneratorController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -365,6 +366,9 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/wa-gateway/status', [WaGatewayController::class, 'status'])->name('admin.wa-gateway.status');
     Route::post('/wa-gateway/logout', [WaGatewayController::class, 'logout'])->name('admin.wa-gateway.logout');
     Route::post('/wa-gateway/test', [WaGatewayController::class, 'sendTest'])->name('admin.wa-gateway.test');
+
+    // QR Code Generator
+    Route::get('/qr-generator', [QrGeneratorController::class, 'index'])->name('admin.qr-code.index');
 
     // Layanan Manajemen
     Route::get('/service-management', function () {

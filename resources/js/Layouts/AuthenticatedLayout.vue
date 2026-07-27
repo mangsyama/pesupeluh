@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode } from '@lucide/vue';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode, QrCode } from '@lucide/vue';
 
 
 
@@ -271,7 +271,8 @@ const menuGroups = computed(() => {
         {
             title: 'System / Integrasi',
             items: [
-                { label: 'WhatsApp Gateway', routeName: 'admin.wa-gateway.index', icon: MessageSquareCode, permKey: 'admin.wa-gateway.index' }
+                { label: 'WhatsApp Gateway', routeName: 'admin.wa-gateway.index', icon: MessageSquareCode, permKey: 'admin.wa-gateway.index' },
+                { label: 'Generator QR Code', routeName: 'admin.qr-code.index', icon: QrCode, permKey: 'admin.wa-gateway.index' }
             ]
         }
     ];
