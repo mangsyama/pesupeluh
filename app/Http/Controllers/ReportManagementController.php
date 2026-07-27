@@ -150,6 +150,7 @@ class ReportManagementController extends Controller
                 'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
+                'histories.user:id,name',
             ])),
             'technicians' => Inertia::defer(function() use ($roleId, $user, $supportingUnitId) {
                 if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {

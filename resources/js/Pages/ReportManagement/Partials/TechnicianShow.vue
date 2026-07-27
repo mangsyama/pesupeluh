@@ -28,6 +28,25 @@ import {
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
+const showSlaInfoModal = ref(false);
+
+const pendingHistories = computed(() => {
+    const list = props.ticket?.histories ? props.ticket.histories.filter(h => h.action === 'PAUSED' || h.action === 'RESUMED' || h.status === 'PENDING') : [];
+    
+    if (props.ticket?.status === 'PENDING' && list.length === 0 && props.ticket?.pending_reason) {
+        list.push({
+            id: 'fallback-pending',
+            action: 'PAUSED',
+            status: 'PENDING',
+            notes: props.ticket.pending_reason,
+            created_at: props.ticket.last_paused_at || props.ticket.updated_at,
+            user: null,
+            duration_seconds: 0,
+        });
+    }
+    
+    return list;
+});
 
 const props = defineProps({
     ticket: {
@@ -57,13 +76,22 @@ onUnmounted(() => {
 const user = computed(() => usePage().props.auth.user);
 
 // Date Parsing
+const parseDateSafe = (dateStr) => {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    const str = String(dateStr).trim();
+    const normalized = str.includes(' ') && !str.includes('T') ? str.replace(' ', 'T') : str;
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? null : d;
+};
+
 const parsedDates = computed(() => {
     return {
-        created: props.ticket?.created_at ? new Date(props.ticket.created_at) : null,
-        validated: props.ticket?.validated_at ? new Date(props.ticket.validated_at) : null,
-        responded: props.ticket?.responded_at ? new Date(props.ticket.responded_at) : null,
-        resolved: props.ticket?.resolved_at ? new Date(props.ticket.resolved_at) : null,
-        lastPaused: props.ticket?.last_paused_at ? new Date(props.ticket.last_paused_at) : null,
+        created: parseDateSafe(props.ticket?.created_at),
+        validated: parseDateSafe(props.ticket?.validated_at),
+        responded: parseDateSafe(props.ticket?.responded_at),
+        resolved: parseDateSafe(props.ticket?.resolved_at),
+        lastPaused: parseDateSafe(props.ticket?.last_paused_at),
     };
 });
 
@@ -72,16 +100,16 @@ const responseTimeSeconds = computed(() => {
     const dates = parsedDates.value;
     if (!dates.validated) return null;
     if (dates.responded) {
-        return Math.max(0, Math.floor((dates.responded - dates.validated) / 1000));
+        return Math.max(0, Math.floor((dates.responded.getTime() - dates.validated.getTime()) / 1000));
     }
-    return Math.max(0, Math.floor((now.value - dates.validated) / 1000));
+    return Math.max(0, Math.floor((now.value.getTime() - dates.validated.getTime()) / 1000));
 });
 
 const pausedDurationSeconds = computed(() => {
     const dates = parsedDates.value;
-    let accumulated = props.ticket?.paused_duration_seconds || 0;
+    let accumulated = Number(props.ticket?.paused_duration_seconds || 0);
     if (props.ticket?.status === 'PENDING' && dates.lastPaused) {
-        const elapsedSincePause = Math.floor((now.value - dates.lastPaused) / 1000);
+        const elapsedSincePause = Math.floor((now.value.getTime() - dates.lastPaused.getTime()) / 1000);
         accumulated += Math.max(0, elapsedSincePause);
     }
     return accumulated;
@@ -89,35 +117,40 @@ const pausedDurationSeconds = computed(() => {
 
 const resolutionTimeSeconds = computed(() => {
     const dates = parsedDates.value;
-    if (!dates.validated) return null;
+    if (!dates.responded) return null;
     const pauseSecs = pausedDurationSeconds.value;
 
     if (dates.resolved) {
-        const total = Math.floor((dates.resolved - dates.validated) / 1000);
-        return Math.max(0, total - (props.ticket?.paused_duration_seconds || 0));
+        const total = Math.floor((dates.resolved.getTime() - dates.responded.getTime()) / 1000);
+        return Math.max(0, total - Number(props.ticket?.paused_duration_seconds || 0));
     }
     if (props.ticket?.status === 'PENDING' && dates.lastPaused) {
-        const total = Math.floor((dates.lastPaused - dates.validated) / 1000);
-        return Math.max(0, total - (props.ticket?.paused_duration_seconds || 0));
+        const total = Math.floor((dates.lastPaused.getTime() - dates.responded.getTime()) / 1000);
+        const prevPaused = Number(props.ticket?.paused_duration_seconds || 0);
+        return Math.max(0, total - prevPaused);
     }
-    const total = Math.floor((now.value - dates.validated) / 1000);
+    const total = Math.floor((now.value.getTime() - dates.responded.getTime()) / 1000);
     return Math.max(0, total - pauseSecs);
 });
 
 const formatDuration = (seconds) => {
     if (seconds === null || seconds === undefined || seconds < 0) return '00:00:00';
     
-    const d = Math.floor(seconds / 86400);
-    const h = Math.floor((seconds % 86400) / 3600);
+    const totalHours = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
+    const s = Math.floor(seconds % 60);
 
     const pad = (n) => String(n).padStart(2, '0');
+    const baseFormatted = `${pad(totalHours)}:${pad(m)}:${pad(s)}`;
 
-    if (d > 0) {
-        return `${d}d ${pad(h)}:${pad(m)}:${pad(s)}`;
+    const days = Math.floor(seconds / 86400);
+    if (days > 0) {
+        const remainingHours = Math.floor((seconds % 86400) / 3600);
+        const dayStr = remainingHours > 0 ? `${days} Hari ${remainingHours} Jam` : `${days} Hari`;
+        return `${baseFormatted} (${dayStr})`;
     }
-    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+    return baseFormatted;
 };
 
 const formatDateTime = (dateStr) => {
@@ -657,12 +690,20 @@ const contextLabel = computed(() => {
                             
                             <!-- SLA Metric Cards -->
                             <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div>
+                                <div class="flex items-center justify-between">
                                     <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
                                         {{ __('pages.tickets.detail.sla_metrics') }}
                                     </h3>
-                                    <div class="h-0.5 bg-slate-100 dark:bg-slate-800 mt-2"></div>
+                                    <button
+                                        type="button"
+                                        @click="showSlaInfoModal = true"
+                                        class="h-6 w-6 rounded-full bg-slate-100 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-emerald-950/60 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 flex items-center justify-center transition-colors cursor-pointer"
+                                        title="Informasi Penjelasan Metrik Waktu"
+                                    >
+                                        <Info class="h-3.5 w-3.5" />
+                                    </button>
                                 </div>
+                                <div class="h-0.5 bg-slate-100 dark:bg-slate-800 mt-2"></div>
 
                                 <div class="space-y-3 pt-1">
                                     <!-- Response Time Card -->
@@ -685,7 +726,7 @@ const contextLabel = computed(() => {
                                                     {{ __('pages.tickets.detail.awaiting_validate_sla') }}
                                                 </span>
                                             </div>
-                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
+                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
                                                 {{ formatDuration(responseTimeSeconds) }}
                                             </div>
                                         </div>
@@ -708,7 +749,7 @@ const contextLabel = computed(() => {
                                                     {{ __('pages.tickets.detail.total_pauses_sla') }}
                                                 </span>
                                             </div>
-                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
+                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
                                                 {{ formatDuration(pausedDurationSeconds) }}
                                             </div>
                                         </div>
@@ -730,14 +771,14 @@ const contextLabel = computed(() => {
                                                 <span v-else-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 font-bold">
                                                     {{ __('pages.tickets.detail.paused_status_sla') }}
                                                 </span>
-                                                <span v-else-if="ticket.validated_at" class="text-emerald-600 dark:text-white animate-pulse font-bold">
+                                                <span v-else-if="ticket.responded_at" class="text-emerald-600 dark:text-white animate-pulse font-bold">
                                                     {{ __('pages.tickets.detail.running_status_sla') }}
                                                 </span>
                                                 <span v-else class="text-slate-400 dark:text-slate-500">
                                                     {{ __('pages.tickets.detail.awaiting_dispatch_sla') }}
                                                 </span>
                                             </div>
-                                            <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-100 pt-0.5">
+                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
                                                 {{ formatDuration(resolutionTimeSeconds) }}
                                             </div>
                                         </div>
@@ -822,7 +863,7 @@ const contextLabel = computed(() => {
                                         <!-- Node 3: Arrived -->
                                         <li>
                                             <div class="relative pb-6">
-                                                <span :class="['absolute top-4 left-4 -ml-px h-full w-0.5', ticket.resolved_at || ticket.status === 'COMPLETED' || ticket.status === 'CANCEL' ? 'bg-emerald-500 dark:bg-white/20' : 'bg-slate-200 dark:bg-slate-800']" aria-hidden="true"></span>
+                                                <span :class="['absolute top-4 left-4 -ml-px h-full w-0.5', ticket.responded_at ? 'bg-emerald-500 dark:bg-white/20' : 'bg-slate-200 dark:bg-slate-800']" aria-hidden="true"></span>
                                                 <div class="relative flex space-x-3">
                                                     <div>
                                                         <span :class="[
@@ -861,6 +902,53 @@ const contextLabel = computed(() => {
                                                 </div>
                                             </div>
                                         </li>
+
+                                        <!-- Dynamic Pending & Pause History Logs -->
+                                        <template v-if="pendingHistories.length > 0">
+                                            <li v-for="hist in pendingHistories" :key="hist.id">
+                                                <div class="relative pb-6">
+                                                    <span :class="['absolute top-4 left-4 -ml-px h-full w-0.5', hist.action === 'PAUSED' || hist.status === 'PENDING' ? 'bg-orange-300 dark:bg-orange-900/60' : 'bg-emerald-300 dark:bg-emerald-900/60']" aria-hidden="true"></span>
+                                                    <div class="relative flex space-x-3">
+                                                        <div>
+                                                            <span v-if="hist.action === 'PAUSED' || hist.status === 'PENDING'" class="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center ring-8 ring-white dark:ring-slate-900 text-white">
+                                                                <Pause class="h-4 w-4" />
+                                                            </span>
+                                                            <span v-else-if="hist.action === 'RESUMED'" class="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center ring-8 ring-white dark:ring-slate-900 text-white">
+                                                                <Play class="h-4 w-4" />
+                                                            </span>
+                                                        </div>
+                                                        <div class="flex-1 min-w-0 pt-0.5 space-y-1.5">
+                                                            <div class="flex items-center justify-between gap-2">
+                                                                <p class="text-xs font-bold">
+                                                                    <span v-if="hist.action === 'PAUSED' || hist.status === 'PENDING'" class="text-orange-600 dark:text-orange-400">
+                                                                        Pekerjaan Ditangguhkan (Pending)
+                                                                    </span>
+                                                                    <span v-else-if="hist.action === 'RESUMED'" class="text-emerald-600 dark:text-emerald-400">
+                                                                        Pekerjaan Dilanjutkan Kembali
+                                                                    </span>
+                                                                </p>
+                                                                <span v-if="hist.duration_seconds > 0" class="text-[10px] font-semibold bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-900/50 shrink-0">
+                                                                    Tertunda: {{ formatDuration(hist.duration_seconds) }}
+                                                                </span>
+                                                            </div>
+
+                                                            <div v-if="hist.notes && (hist.action === 'PAUSED' || hist.status === 'PENDING')" class="p-2.5 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/40 text-[11px] text-orange-950 dark:text-orange-200">
+                                                                <div class="font-bold text-[10px] uppercase tracking-wider text-orange-700 dark:text-orange-400 mb-0.5">Alasan Penundaan:</div>
+                                                                <p class="leading-normal italic">"{{ hist.notes }}"</p>
+                                                            </div>
+
+                                                            <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                                Oleh: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ hist.user?.name || 'Petugas' }}</span>
+                                                            </p>
+                                                            <div class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                                                <Clock class="h-3 w-3 shrink-0" />
+                                                                <span>{{ formatDateTime(hist.created_at) }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </template>
 
                                         <!-- Node 4: Resolved -->
                                         <li>
@@ -1204,4 +1292,60 @@ const contextLabel = computed(() => {
             </button>
         </div>
     </div>
+    <!-- SLA Info Modal -->
+    <Teleport to="body">
+        <div v-if="showSlaInfoModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-spa-fade-in">
+            <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div class="flex items-center gap-2">
+                        <div class="h-7 w-7 rounded-lg bg-emerald-50 text-emerald-600 dark:bg-white/10 dark:text-white flex items-center justify-center">
+                            <Info class="h-4 w-4" />
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">
+                            Penjelasan Metrik Waktu Penanganan
+                        </h3>
+                    </div>
+                    <button type="button" @click="showSlaInfoModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
+                        <X class="h-5 w-5" />
+                    </button>
+                </div>
+                <div class="p-5 space-y-3.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/60 space-y-1">
+                        <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                            <Clock class="h-3.5 w-3.5 text-emerald-500" />
+                            <span>Waktu Respon</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                            Dihitung sejak laporan <strong>didisposisikan/divalidasi</strong> hingga teknisi pertama kali menekan <strong>"Saya sudah di lokasi"</strong>.
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/60 space-y-1">
+                        <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                            <Pause class="h-3.5 w-3.5 text-orange-500" />
+                            <span>Total Waktu Tertunda</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                            Akumulasi durasi saat pengerjaan tiket di-pause/pending (misal: menunggu ketersediaan suku cadang atau bahan).
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/60 space-y-1">
+                        <div class="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                            <CheckCircle2 class="h-3.5 w-3.5 text-emerald-500" />
+                            <span>Durasi Pengerjaan</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                            Durasi pengerjaan fisik murni (sejak teknisi tiba di lokasi hingga pekerjaan selesai), <strong>tidak termasuk waktu tertunda</strong>.
+                        </p>
+                    </div>
+                </div>
+                <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end">
+                    <button type="button" @click="showSlaInfoModal = false" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition cursor-pointer">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 </template>

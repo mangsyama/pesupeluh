@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ServiceTicket;
 use App\Models\TicketAssignment;
 use App\Models\TicketAttachment;
+use App\Models\TicketHistory;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -93,6 +94,7 @@ class TicketController extends Controller
                     'category.supportingUnit',
                     'assignments.technician:id,name,nip',
                     'attachments.user:id,name',
+                    'histories.user:id,name',
                 ])),
                 'personal' => true,
             ]);
@@ -106,6 +108,7 @@ class TicketController extends Controller
                 'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
+                'histories.user:id,name',
             ])),
             'technicians' => Inertia::defer(function() use ($roleId, $user, $supportingUnitId) {
                 if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {
@@ -152,6 +155,14 @@ class TicketController extends Controller
             ]);
         }
 
+        TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'status' => 'ASSIGNED',
+            'action' => 'ASSIGNED',
+            'notes' => 'Laporan divalidasi dan ditugaskan ke teknisi.',
+        ]);
+
         // Notify assigned technicians
         $ticket->load(['room', 'category']);
         $technicians = \App\Models\User::whereIn('id', $validated['technician_ids'])->get();
@@ -190,6 +201,14 @@ class TicketController extends Controller
         $ticket->update([
             'responded_at' => now(),
             'status' => 'IN_PROGRESS',
+        ]);
+
+        TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'status' => 'IN_PROGRESS',
+            'action' => 'ARRIVED',
+            'notes' => 'Teknisi tiba di lokasi & mulai pengerjaan.',
         ]);
 
         // Save arrival images
@@ -257,10 +276,18 @@ class TicketController extends Controller
 
             // Calculate pending duration if last_paused_at was active
             if ($ticket->last_paused_at) {
-                $pausedDiff = now()->diffInSeconds($ticket->last_paused_at);
+                $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
                 $ticket->increment('paused_duration_seconds', $pausedDiff);
                 $ticket->update(['last_paused_at' => null]);
             }
+
+            TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'status' => 'COMPLETED',
+                'action' => 'COMPLETED',
+                'notes' => $notes ?: 'Pekerjaan dinyatakan selesai.',
+            ]);
 
             // Save resolution images
             $attachments = $request->input('attachments', []);
@@ -304,6 +331,14 @@ class TicketController extends Controller
                 'last_paused_at' => now(),
             ]);
 
+            TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'status' => 'PENDING',
+                'action' => 'PAUSED',
+                'notes' => $notes,
+            ]);
+
             return redirect()->back()->with('success', 'Laporan berhasil ditangguhkan.');
         } elseif ($status === 'CANCEL') {
             $ticket->update([
@@ -314,10 +349,18 @@ class TicketController extends Controller
 
             // Clear any active pause
             if ($ticket->last_paused_at) {
-                $pausedDiff = now()->diffInSeconds($ticket->last_paused_at);
+                $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
                 $ticket->increment('paused_duration_seconds', $pausedDiff);
                 $ticket->update(['last_paused_at' => null]);
             }
+
+            TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'status' => 'CANCEL',
+                'action' => 'CANCEL',
+                'notes' => $notes ?: 'Laporan dibatalkan.',
+            ]);
 
             return redirect()->back()->with('success', 'Laporan berhasil dibatalkan.');
         }
@@ -340,13 +383,23 @@ class TicketController extends Controller
         // Calculate paused duration
         $pausedDiff = 0;
         if ($ticket->last_paused_at) {
-            $pausedDiff = now()->diffInSeconds($ticket->last_paused_at);
+            $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
         }
 
+        $currentPaused = (int) ($ticket->paused_duration_seconds ?? 0);
         $ticket->update([
             'status' => 'IN_PROGRESS',
             'last_paused_at' => null,
-            'paused_duration_seconds' => $ticket->paused_duration_seconds + $pausedDiff,
+            'paused_duration_seconds' => $currentPaused + $pausedDiff,
+        ]);
+
+        TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'status' => 'IN_PROGRESS',
+            'action' => 'RESUMED',
+            'duration_seconds' => $pausedDiff,
+            'notes' => 'Pekerjaan dilanjutkan kembali.',
         ]);
 
         return redirect()->back()->with('success', 'Pekerjaan dilanjutkan kembali.');

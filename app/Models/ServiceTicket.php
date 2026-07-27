@@ -84,6 +84,11 @@ class ServiceTicket extends Model
         return $this->hasMany(TicketAttachment::class, 'ticket_id');
     }
 
+    public function histories()
+    {
+        return $this->hasMany(TicketHistory::class, 'ticket_id')->orderBy('id', 'asc');
+    }
+
     /**
      * Accessor & Mutator for UUID to ensure it is always lowercase.
      */

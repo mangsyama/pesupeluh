@@ -50,6 +50,14 @@ class ServiceController extends Controller
             'status' => 'PENDING_VALIDATION',
         ]);
 
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'status' => 'PENDING_VALIDATION',
+            'action' => 'CREATED',
+            'notes' => 'Laporan berhasil dibuat dan dikirim oleh pelapor.',
+        ]);
+
         $attachments = $request->input('attachments', []);
         if (is_array($attachments) && count($attachments) > 0) {
             \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory('ticket_attachments');

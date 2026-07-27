@@ -174,6 +174,7 @@ class ReportController extends Controller
                 'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
+                'histories.user:id,name',
             ])),
             'personal' => true,
         ]);

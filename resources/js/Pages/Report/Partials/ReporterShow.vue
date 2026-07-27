@@ -15,10 +15,29 @@ import {
     XCircle,
     ImageIcon,
     UserCheck,
-    Pause
+    Pause,
+    Play
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
+
+const pendingHistories = computed(() => {
+    const list = props.ticket?.histories ? props.ticket.histories.filter(h => h.action === 'PAUSED' || h.action === 'RESUMED' || h.status === 'PENDING') : [];
+    
+    if (props.ticket?.status === 'PENDING' && list.length === 0 && props.ticket?.pending_reason) {
+        list.push({
+            id: 'fallback-pending',
+            action: 'PAUSED',
+            status: 'PENDING',
+            notes: props.ticket.pending_reason,
+            created_at: props.ticket.last_paused_at || props.ticket.updated_at,
+            user: null,
+            duration_seconds: 0,
+        });
+    }
+    
+    return list;
+});
 
 const props = defineProps({
     ticket: {
@@ -98,17 +117,21 @@ const resolutionTimeSeconds = computed(() => {
 const formatDuration = (seconds) => {
     if (seconds === null || seconds === undefined || seconds < 0) return '00:00:00';
     
-    const d = Math.floor(seconds / 86400);
-    const h = Math.floor((seconds % 86400) / 3600);
+    const totalHours = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
+    const s = Math.floor(seconds % 60);
 
     const pad = (n) => String(n).padStart(2, '0');
+    const baseFormatted = `${pad(totalHours)}:${pad(m)}:${pad(s)}`;
 
-    if (d > 0) {
-        return `${d}d ${pad(h)}:${pad(m)}:${pad(s)}`;
+    const days = Math.floor(seconds / 86400);
+    if (days > 0) {
+        const remainingHours = Math.floor((seconds % 86400) / 3600);
+        const dayStr = remainingHours > 0 ? `${days} Hari ${remainingHours} Jam` : `${days} Hari`;
+        return `${baseFormatted} (${dayStr})`;
     }
-    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+    return baseFormatted;
 };
 
 const formatDateTime = (dateStr) => {
@@ -496,7 +519,7 @@ const contextLabel = computed(() => {
                                         <!-- Node 3: Arrived -->
                                         <li>
                                             <div class="relative pb-6">
-                                                <span :class="['absolute top-4 left-4 -ml-px h-full w-0.5', ticket.resolved_at || ticket.status === 'COMPLETED' || ticket.status === 'CANCEL' ? 'bg-emerald-500 dark:bg-white/20' : 'bg-slate-200 dark:bg-slate-800']" aria-hidden="true"></span>
+                                                <span :class="['absolute top-4 left-4 -ml-px h-full w-0.5', ticket.responded_at ? 'bg-emerald-500 dark:bg-white/20' : 'bg-slate-200 dark:bg-slate-800']" aria-hidden="true"></span>
                                                 <div class="relative flex space-x-3">
                                                     <div>
                                                         <span :class="[
@@ -535,6 +558,53 @@ const contextLabel = computed(() => {
                                                 </div>
                                             </div>
                                         </li>
+
+                                         <!-- Dynamic Pending & Pause History Logs -->
+                                         <template v-if="pendingHistories.length > 0">
+                                             <li v-for="hist in pendingHistories" :key="hist.id">
+                                                 <div class="relative pb-6">
+                                                     <span :class="['absolute top-4 left-4 -ml-px h-full w-0.5', hist.action === 'PAUSED' || hist.status === 'PENDING' ? 'bg-orange-300 dark:bg-orange-900/60' : 'bg-emerald-300 dark:bg-emerald-900/60']" aria-hidden="true"></span>
+                                                     <div class="relative flex space-x-3">
+                                                         <div>
+                                                             <span v-if="hist.action === 'PAUSED' || hist.status === 'PENDING'" class="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center ring-8 ring-white dark:ring-slate-900 text-white">
+                                                                 <Pause class="h-4 w-4" />
+                                                             </span>
+                                                             <span v-else-if="hist.action === 'RESUMED'" class="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center ring-8 ring-white dark:ring-slate-900 text-white">
+                                                                 <Play class="h-4 w-4" />
+                                                             </span>
+                                                         </div>
+                                                         <div class="flex-1 min-w-0 pt-0.5 space-y-1.5">
+                                                             <div class="flex items-center justify-between gap-2">
+                                                                 <p class="text-xs font-bold">
+                                                                     <span v-if="hist.action === 'PAUSED' || hist.status === 'PENDING'" class="text-orange-600 dark:text-orange-400">
+                                                                         Pekerjaan Ditangguhkan (Pending)
+                                                                     </span>
+                                                                     <span v-else-if="hist.action === 'RESUMED'" class="text-emerald-600 dark:text-emerald-400">
+                                                                         Pekerjaan Dilanjutkan Kembali
+                                                                     </span>
+                                                                 </p>
+                                                                 <span v-if="hist.duration_seconds > 0" class="text-[10px] font-semibold bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-900/50 shrink-0">
+                                                                     Tertunda: {{ formatDuration(hist.duration_seconds) }}
+                                                                 </span>
+                                                             </div>
+
+                                                             <div v-if="hist.notes && (hist.action === 'PAUSED' || hist.status === 'PENDING')" class="p-2.5 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/40 text-[11px] text-orange-950 dark:text-orange-200">
+                                                                 <div class="font-bold text-[10px] uppercase tracking-wider text-orange-700 dark:text-orange-400 mb-0.5">Alasan Penundaan:</div>
+                                                                 <p class="leading-normal italic">"{{ hist.notes }}"</p>
+                                                             </div>
+
+                                                             <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                                 Oleh: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ hist.user?.name || 'Petugas' }}</span>
+                                                             </p>
+                                                             <div class="text-[10px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                                                 <Clock class="h-3 w-3 shrink-0" />
+                                                                 <span>{{ formatDateTime(hist.created_at) }}</span>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </li>
+                                         </template>
 
                                         <!-- Node 4: Resolved -->
                                         <li>
