@@ -29,5 +29,8 @@
         "qrcode": "^1.5.4",
         "sweetalert2": "^11.26.25",
         "vite-plugin-pwa": "^1.2.0"
+    },
+    "overrides": {
+        "brace-expansion": "^2.0.2"
     }
 }
