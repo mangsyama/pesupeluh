@@ -14,6 +14,7 @@ use Inertia\Inertia;
 
 use App\Notifications\TicketAssignedNotification;
 use App\Notifications\TicketStatusUpdatedNotification;
+use App\Services\SecureFileUpload;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -220,37 +221,19 @@ class TicketController extends Controller
 
         $this->sendTicketStatusNotification($ticket, 'ARRIVED');
 
-        // Save arrival images
+        // Save arrival images securely
         $attachments = $request->input('attachments', []);
         if (is_array($attachments) && count($attachments) > 0) {
-            Storage::disk('public')->makeDirectory('ticket_attachments');
-
             foreach ($attachments as $dataUrl) {
-                if (!is_string($dataUrl) || !str_starts_with($dataUrl, 'data:')) continue;
-
-                $parts = explode(";base64,", $dataUrl);
-                if (count($parts) !== 2) continue;
-
-                $fileContent = base64_decode($parts[1]);
-                $mimeHeader = $parts[0];
-
-                $ext = 'jpeg';
-                if (str_contains($mimeHeader, 'image/')) {
-                    $ext = str_replace('data:image/', '', $mimeHeader) ?: 'jpeg';
-                } elseif (str_contains($mimeHeader, 'video/')) {
-                    $ext = str_replace('data:video/', '', $mimeHeader) ?: 'mp4';
+                $filePath = SecureFileUpload::saveBase64($dataUrl, 'ticket_attachments', 'ticket_arr_');
+                if ($filePath) {
+                    TicketAttachment::create([
+                        'ticket_id' => $ticket->id,
+                        'file_path' => $filePath,
+                        'uploaded_by' => $request->user()->id,
+                        'uploaded_at' => now(),
+                    ]);
                 }
-
-                $filename = 'ticket_arr_' . uniqid() . '.' . $ext;
-                Storage::disk('public')->put('ticket_attachments/' . $filename, $fileContent);
-                $filePath = '/storage/ticket_attachments/' . $filename;
-
-                TicketAttachment::create([
-                    'ticket_id' => $ticket->id,
-                    'file_path' => $filePath,
-                    'uploaded_by' => $request->user()->id,
-                    'uploaded_at' => now(),
-                ]);
             }
         }
 
@@ -300,37 +283,19 @@ class TicketController extends Controller
 
             $this->sendTicketStatusNotification($ticket, 'COMPLETED', $notes);
 
-            // Save resolution images
+            // Save resolution images securely
             $attachments = $request->input('attachments', []);
             if (is_array($attachments) && count($attachments) > 0) {
-                Storage::disk('public')->makeDirectory('ticket_attachments');
-
                 foreach ($attachments as $dataUrl) {
-                    if (!is_string($dataUrl) || !str_starts_with($dataUrl, 'data:')) continue;
-
-                    $parts = explode(";base64,", $dataUrl);
-                    if (count($parts) !== 2) continue;
-
-                    $fileContent = base64_decode($parts[1]);
-                    $mimeHeader = $parts[0];
-
-                    $ext = 'bin';
-                    if (str_contains($mimeHeader, 'image/')) {
-                        $ext = str_replace('data:image/', '', $mimeHeader) ?: 'jpeg';
-                    } elseif (str_contains($mimeHeader, 'video/')) {
-                        $ext = str_replace('data:video/', '', $mimeHeader) ?: 'mp4';
+                    $filePath = SecureFileUpload::saveBase64($dataUrl, 'ticket_attachments', 'ticket_res_');
+                    if ($filePath) {
+                        TicketAttachment::create([
+                            'ticket_id' => $ticket->id,
+                            'file_path' => $filePath,
+                            'uploaded_by' => $request->user()->id,
+                            'uploaded_at' => now(),
+                        ]);
                     }
-
-                    $filename = 'ticket_res_' . uniqid() . '.' . $ext;
-                    Storage::disk('public')->put('ticket_attachments/' . $filename, $fileContent);
-                    $filePath = '/storage/ticket_attachments/' . $filename;
-
-                    TicketAttachment::create([
-                        'ticket_id' => $ticket->id,
-                        'file_path' => $filePath,
-                        'uploaded_by' => $request->user()->id,
-                        'uploaded_at' => now(),
-                    ]);
                 }
             }
 

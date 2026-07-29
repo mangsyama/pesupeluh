@@ -23,6 +23,13 @@ class CheckPageAccess
         'services.units.show' => 'services.index',
         'services.tickets.store' => 'services.index',
 
+        // Ticket Actions & Workflows
+        'tickets.show' => 'reports.history',
+        'tickets.assign' => 'reports-management.index',
+        'tickets.respond' => 'reports-management.index',
+        'tickets.resolve' => 'reports-management.index',
+        'tickets.resume' => 'reports-management.index',
+
         // Reports - History
         'reports.history' => 'reports.history',
         'reports.show' => 'reports.history',

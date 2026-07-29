@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\SecureFileUpload;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,30 +48,25 @@ class ProfileController extends Controller
             }
             $user->profile_photo_path = null;
         } elseif ($request->hasFile('profile_photo')) {
-            // Delete old photo if it exists
-            if ($user->profile_photo_path) {
-                $oldPath = str_replace('/storage/', '', $user->profile_photo_path);
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            // Store new photo safely
+            $newPath = SecureFileUpload::saveUploadedFile($request->file('profile_photo'), 'profile_photos', 'profile_');
+            if ($newPath) {
+                if ($user->profile_photo_path) {
+                    $oldPath = str_replace('/storage/', '', $user->profile_photo_path);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+                $user->profile_photo_path = $newPath;
             }
-            // Store new photo
-            $path = $request->file('profile_photo')->store('profile_photos', 'public');
-            $user->profile_photo_path = '/storage/' . $path;
         } elseif ($request->filled('profile_photo') && str_starts_with($request->profile_photo, 'data:image')) {
-            // Delete old photo if it exists
-            if ($user->profile_photo_path) {
-                $oldPath = str_replace('/storage/', '', $user->profile_photo_path);
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            // Store new base64 photo safely
+            $newPath = SecureFileUpload::saveBase64($request->profile_photo, 'profile_photos', 'profile_');
+            if ($newPath) {
+                if ($user->profile_photo_path) {
+                    $oldPath = str_replace('/storage/', '', $user->profile_photo_path);
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                }
+                $user->profile_photo_path = $newPath;
             }
-            $data = $request->profile_photo;
-            $image_parts = explode(";base64,", $data);
-            $image_type_aux = explode("image/", $image_parts[0]);
-            $image_type = $image_type_aux[1] ?? 'png';
-            $image_base64 = base64_decode($image_parts[1]);
-            $filename = 'profile_' . uniqid() . '.' . $image_type;
-            
-            \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory('profile_photos');
-            \Illuminate\Support\Facades\Storage::disk('public')->put('profile_photos/' . $filename, $image_base64);
-            $user->profile_photo_path = '/storage/profile_photos/' . $filename;
         }
 
         $user->save();

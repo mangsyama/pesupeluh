@@ -102,6 +102,13 @@ class UserManagementController extends Controller
                 ],
             ],
             [
+                'group' => 'Teknisi & Operasional',
+                'permissions' => [
+                    ['key' => 'technicians.position', 'label' => 'Posisi & Status Teknisi'],
+                    ['key' => 'service-management.working-hours', 'label' => 'Jam Operasional Unit'],
+                ],
+            ],
+            [
                 'group' => 'Master Data',
                 'permissions' => [
                     ['key' => 'service-management.rooms', 'label' => 'Manajemen Ruangan'],
@@ -293,6 +300,10 @@ class UserManagementController extends Controller
      */
     public function toggleActive(User $user)
     {
+        if ((int) $user->id === (int) Auth::id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat menonaktifkan akun Anda sendiri.');
+        }
+
         $user->update([
             'is_active' => !$user->is_active,
         ]);
@@ -305,6 +316,10 @@ class UserManagementController extends Controller
      */
     public function destroy(User $user)
     {
+        if ((int) $user->id === (int) Auth::id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
         $user->delete();
 
         $previousUrl = url()->previous();

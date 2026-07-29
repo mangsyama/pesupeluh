@@ -344,15 +344,16 @@ const __ = (key) => {
                     <!-- Icon -->
                     <div :class="[
                         'h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0',
+                        (toast.type === 'success' || toast.type === 'done') ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
                         toast.type === 'ticket' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-500' :
                         toast.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                        toast.type === 'done' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500' :
                         'bg-violet-50 dark:bg-violet-950/40 text-violet-500'
                     ]">
-                        <Bell v-if="toast.type === 'ticket'" class="h-4.5 w-4.5" />
+                        <CheckCircle2 v-if="toast.type === 'success' || toast.type === 'done'" class="h-4.5 w-4.5" />
+                        <Bell v-else-if="toast.type === 'ticket'" class="h-4.5 w-4.5" />
                         <Clock v-else-if="toast.type === 'progress'" class="h-4.5 w-4.5" />
-                        <CheckCircle2 v-else-if="toast.type === 'done'" class="h-4.5 w-4.5" />
-                        <User v-else class="h-4.5 w-4.5" />
+                        <User v-else-if="toast.type === 'user'" class="h-4.5 w-4.5" />
+                        <CheckCircle2 v-else class="h-4.5 w-4.5" />
                     </div>
                     <!-- Content -->
                     <div class="flex-1 min-w-0">

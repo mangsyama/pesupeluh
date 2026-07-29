@@ -39,14 +39,18 @@ class WaGatewayChannel
         }
 
         $url = config('services.wa_gateway.local_url', 'http://127.0.0.1:3000/send');
+        $secretKey = config('services.wa_gateway.secret_key');
 
         try {
-            $response = Http::timeout(10)
-                ->withoutVerifying()
-                ->post($url, [
-                    'target'  => $phone,
-                    'message' => $message,
-                ]);
+            $client = Http::timeout(10)->withoutVerifying();
+            if (!empty($secretKey)) {
+                $client = $client->withHeaders(['X-Api-Key' => $secretKey]);
+            }
+
+            $response = $client->post($url, [
+                'target'  => $phone,
+                'message' => $message,
+            ]);
 
             if ($response->failed()) {
                 Log::error('WA Gateway failed (' . $phone . '): ' . $response->body());

@@ -34,8 +34,14 @@ class WaGatewayController extends Controller
             'message' => 'Server WA Gateway belum berjalan di ' . $statusUrl
         ];
 
+        $secretKey = config('services.wa_gateway.secret_key');
+
         try {
-            $response = Http::timeout(4)->withoutVerifying()->get($statusUrl);
+            $client = Http::timeout(4)->withoutVerifying();
+            if (!empty($secretKey)) {
+                $client = $client->withHeaders(['X-Api-Key' => $secretKey]);
+            }
+            $response = $client->get($statusUrl);
             if ($response->successful()) {
                 $data = $response->json();
             }
@@ -55,8 +61,14 @@ class WaGatewayController extends Controller
         $baseUrl = config('services.wa_gateway.local_url', 'http://127.0.0.1:3000/send');
         $logoutUrl = str_replace('/send', '/logout', $baseUrl);
 
+        $secretKey = config('services.wa_gateway.secret_key');
+
         try {
-            $response = Http::timeout(5)->withoutVerifying()->post($logoutUrl);
+            $client = Http::timeout(5)->withoutVerifying();
+            if (!empty($secretKey)) {
+                $client = $client->withHeaders(['X-Api-Key' => $secretKey]);
+            }
+            $response = $client->post($logoutUrl);
             
             if ($request->wantsJson() && !$request->header('X-Inertia')) {
                 return response()->json($response->json());

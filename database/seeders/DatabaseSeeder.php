@@ -19,29 +19,30 @@ class DatabaseSeeder extends Seeder
             DB::table('roles')->insert([
                 ['name' => 'ADMINISTRATOR', 'page_permissions' => json_encode([
                     'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index',
+                    'technicians.position', 'service-management.working-hours',
                     'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
                     'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index', 'design-system.index',
                 ])],
                 ['name' => 'DIRECTOR', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'settings.index',
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'settings.index',
                 ])],
                 ['name' => 'DIVISION_HEAD', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'settings.index',
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'settings.index',
                 ])],
                 ['name' => 'SECTION_HEAD', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'settings.index',
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'settings.index',
                 ])],
                 ['name' => 'UNIT_HEAD', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'settings.index',
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'service-management.working-hours', 'settings.index',
                 ])],
                 ['name' => 'TECHNICIAN', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'settings.index',
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'technicians.position', 'settings.index',
                 ])],
                 ['name' => 'ROOM_HEAD', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'settings.index',
+                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'technicians.position', 'settings.index',
                 ])],
                 ['name' => 'REPORTER', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'settings.index',
+                    'dashboard', 'services.index', 'reports.history', 'technicians.position', 'settings.index',
                 ])],
             ]);
         }

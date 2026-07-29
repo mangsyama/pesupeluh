@@ -45,7 +45,7 @@ return new class extends Migration
 
         // Add check constraints for SQL Server
         if (DB::getDriverName() === 'sqlsrv') {
-            DB::statement("ALTER TABLE service_tickets ADD CONSTRAINT CHK_ticket_priority CHECK (priority IN ('URGENT', 'ROUTINE'))");
+            DB::statement("ALTER TABLE service_tickets ADD CONSTRAINT CHK_ticket_priority CHECK (priority IN ('EMERGENCY', 'URGENT', 'ROUTINE'))");
             DB::statement("ALTER TABLE service_tickets ADD CONSTRAINT CHK_ticket_status CHECK (status IN ('PENDING_VALIDATION', 'ASSIGNED', 'IN_PROGRESS', 'PENDING', 'COMPLETED', 'CANCEL'))");
         }
     }

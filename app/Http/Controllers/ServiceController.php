@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SupportingUnit;
 use App\Models\Room;
 use App\Models\ServiceTicket;
+use App\Services\SecureFileUpload;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -32,6 +33,7 @@ class ServiceController extends Controller
             'room_id' => 'required|exists:rooms,id',
             'category_id' => 'required|exists:issue_categories,id',
             'problem_description' => 'required|string|min:5',
+            'priority' => 'nullable|in:ROUTINE,URGENT,EMERGENCY',
             'attachments' => 'required|array|min:1|max:5',
             'attachments.*' => 'required|string',
         ], [
@@ -40,6 +42,48 @@ class ServiceController extends Controller
         ]);
 
         $ticketNumber = 'TK-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        $inputPriority = $validated['priority'] ?? 'ROUTINE';
+        $isEmergency = ($inputPriority === 'EMERGENCY');
+
+        // Check category & supporting unit
+        $category = \App\Models\IssueCategory::find($validated['category_id']);
+        $supportingUnitId = $category?->supporting_unit_id;
+
+        // Determine if currently off-hours using local timezone (Asia/Jakarta)
+        $isOffHours = false;
+        $tz = config('app.timezone', 'Asia/Jakarta');
+        $now = now()->setTimezone($tz);
+        $currentTime = $now->format('H:i:s');
+        $dayOfWeek = $now->dayOfWeekIso; // 1=Monday, 7=Sunday
+
+        if (!$isEmergency && $supportingUnitId) {
+            $workingHour = \App\Models\UnitWorkingHour::where('supporting_unit_id', $supportingUnitId)
+                ->where('day_of_week', $dayOfWeek)
+                ->first();
+
+            if ($workingHour) {
+                if (!$workingHour->is_active) {
+                    // Unit set as inactive/off on this day (Full Day Off-Hours)
+                    $isOffHours = true;
+                } else {
+                    // Clean time string to HH:MM:SS for robust string comparison with SQL Server format
+                    $startTime = substr((string) $workingHour->start_time, 0, 8);
+                    $endTime = substr((string) $workingHour->end_time, 0, 8);
+                    
+                    if ($currentTime < $startTime || $currentTime > $endTime) {
+                        $isOffHours = true;
+                    }
+                }
+            } else {
+                // Default operational rule: Monday-Friday 07:30 - 15:00
+                if ($dayOfWeek >= 6 || $currentTime < '07:30:00' || $currentTime > '15:00:00') {
+                    $isOffHours = true;
+                }
+            }
+        }
+
+        $initialStatus = ($isEmergency || $isOffHours) ? 'ASSIGNED' : 'PENDING_VALIDATION';
+        $finalPriority = $isEmergency ? 'EMERGENCY' : $inputPriority;
 
         $ticket = ServiceTicket::create([
             'ticket_number' => $ticketNumber,
@@ -47,68 +91,97 @@ class ServiceController extends Controller
             'room_id' => $validated['room_id'],
             'category_id' => $validated['category_id'],
             'problem_description' => $validated['problem_description'],
-            'status' => 'PENDING_VALIDATION',
+            'priority' => $finalPriority,
+            'status' => $initialStatus,
+            'validated_at' => ($isEmergency || $isOffHours) ? now() : null,
+            'validated_by' => $isEmergency ? $request->user()->id : null,
         ]);
 
         \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
-            'status' => 'PENDING_VALIDATION',
-            'action' => 'CREATED',
-            'notes' => 'Laporan berhasil dibuat dan dikirim oleh pelapor.',
+            'status' => $initialStatus,
+            'action' => $isEmergency ? 'EMERGENCY_CREATED' : ($isOffHours ? 'OFF_HOURS_CREATED' : 'CREATED'),
+            'notes' => $isEmergency 
+                ? '🚨 LAPORAN DARURAT (CODE RED): Dibuat oleh pelapor, sistem otomatis memotong alur disposisi.' 
+                : ($isOffHours 
+                    ? '🌙 LAPORAN DIBUAT DI LUAR JAM OPERASIONAL: Sistem mengaktifkan disposisi otomatis.' 
+                    : 'Laporan berhasil dibuat dan dikirim oleh pelapor.'),
         ]);
+
+        // Auto-assign technicians if Emergency or Off-Hours
+        if ($isEmergency || $isOffHours) {
+            $onDutyTechnicians = \App\Models\User::where('role_id', 6) // TECHNICIAN
+                ->where('supporting_unit_id', $supportingUnitId)
+                ->where('is_active', 1)
+                ->where('is_on_duty', 1)
+                ->get();
+
+            if ($onDutyTechnicians->isEmpty()) {
+                $onDutyTechnicians = \App\Models\User::where('role_id', 6)
+                    ->where('supporting_unit_id', $supportingUnitId)
+                    ->where('is_active', 1)
+                    ->get();
+            }
+
+            foreach ($onDutyTechnicians as $tech) {
+                \App\Models\TicketAssignment::create([
+                    'ticket_id' => $ticket->id,
+                    'technician_id' => $tech->id,
+                    'assigned_by' => $request->user()->id,
+                    'assigned_at' => now(),
+                ]);
+            }
+
+            \App\Models\TicketHistory::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'status' => 'ASSIGNED',
+                'action' => $isEmergency ? 'EMERGENCY_DISPATCH' : 'AUTO_DISPATCH',
+                'notes' => $isEmergency 
+                    ? 'Penanganan darurat! Tiket otomatis disebar ke seluruh teknisi piket.' 
+                    : 'Disposisi otomatis di luar jam kerja operasional unit penunjang.',
+            ]);
+        }
 
         $attachments = $request->input('attachments', []);
         if (is_array($attachments) && count($attachments) > 0) {
-            \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory('ticket_attachments');
-
             foreach ($attachments as $dataUrl) {
-                if (!is_string($dataUrl) || !str_starts_with($dataUrl, 'data:')) continue;
-
-                $parts = explode(";base64,", $dataUrl);
-                if (count($parts) !== 2) continue;
-
-                $fileContent = base64_decode($parts[1]);
-                $mimeHeader = $parts[0]; // e.g. "data:image/jpeg" or "data:video/mp4"
-
-                // Determine extension from mime
-                $ext = 'bin';
-                if (str_contains($mimeHeader, 'image/')) {
-                    $ext = str_replace('data:image/', '', $mimeHeader) ?: 'jpeg';
-                } elseif (str_contains($mimeHeader, 'video/')) {
-                    $ext = str_replace('data:video/', '', $mimeHeader) ?: 'mp4';
+                $filePath = SecureFileUpload::saveBase64($dataUrl, 'ticket_attachments', 'ticket_');
+                if ($filePath) {
+                    \App\Models\TicketAttachment::create([
+                        'ticket_id' => $ticket->id,
+                        'file_path' => $filePath,
+                        'uploaded_by' => $request->user()->id,
+                        'uploaded_at' => now(),
+                    ]);
                 }
-
-                $filename = 'ticket_' . uniqid() . '.' . $ext;
-                \Illuminate\Support\Facades\Storage::disk('public')->put('ticket_attachments/' . $filename, $fileContent);
-                $filePath = '/storage/ticket_attachments/' . $filename;
-
-                \App\Models\TicketAttachment::create([
-                    'ticket_id' => $ticket->id,
-                    'file_path' => $filePath,
-                    'uploaded_by' => $request->user()->id,
-                    'uploaded_at' => now(),
-                ]);
             }
         }
 
-        // Notify Unit Heads of the supporting unit managing this category and all active Administrators
+        // Notify Unit Heads & Technicians & Admins
         $ticket->load(['reporter', 'room', 'category.supportingUnit']);
-        $supportingUnitId = $ticket->category?->supporting_unit_id;
 
         if ($supportingUnitId || $ticket->room_id) {
             $recipients = \App\Models\User::where('is_active', 1)
                 ->where('id', '!=', $ticket->reporter_id)
-                ->where(function ($query) use ($supportingUnitId, $ticket) {
+                ->where(function ($query) use ($supportingUnitId, $ticket, $isEmergency, $isOffHours) {
                     if ($supportingUnitId) {
                         $query->where(function ($q) use ($supportingUnitId) {
                             $q->where('role_id', 5)->where('supporting_unit_id', $supportingUnitId);
                         });
+
+                        // If Emergency or Off-Hours, also notify Technicians directly!
+                        if ($isEmergency || $isOffHours) {
+                            $query->orWhere(function ($q) use ($supportingUnitId) {
+                                $q->where('role_id', 6)->where('supporting_unit_id', $supportingUnitId);
+                            });
+                        }
                     }
                     $query->orWhere('role_id', 1); // Administrator
                     if ($ticket->room_id) {
                         $query->orWhere(function ($q) use ($ticket) {
-                            $q->where('role_id', 7)->where('room_id', $ticket->room_id); // Kepala Ruangan (as spectator)
+                            $q->where('role_id', 7)->where('room_id', $ticket->room_id); // Kepala Ruangan
                         });
                     }
                 })
@@ -123,6 +196,12 @@ class ServiceController extends Controller
             }
         }
 
-        return redirect()->route('reports.history')->with('success', 'Tiket pelaporan baru berhasil dibuat.');
+        $successMsg = $isEmergency 
+            ? '🚨 Laporan DARURAT berhasil terkirim dan langsung diteruskan ke seluruh teknisi piket!' 
+            : ($isOffHours 
+                ? '🌙 Laporan berhasil terbuat di luar jam operasional & otomatis didisposisikan ke teknisi piket.' 
+                : 'Tiket pelaporan baru berhasil dibuat.');
+
+        return redirect()->route('reports.history')->with('success', $successMsg);
     }
 }

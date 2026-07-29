@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, getCurrentInstance } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import {
     Calendar,
@@ -168,9 +168,15 @@ const formatDateTime = (dateStr) => {
 };
 
 const assignForm = useForm({
-    priority: 'ROUTINE',
+    priority: props.ticket?.priority && props.ticket?.priority !== 'EMERGENCY' ? props.ticket.priority : 'ROUTINE',
     technician_ids: []
 });
+
+watch(() => props.ticket, (newTicket) => {
+    if (newTicket?.priority && newTicket?.priority !== 'EMERGENCY') {
+        assignForm.priority = newTicket.priority;
+    }
+}, { immediate: true });
 
 const submitAssign = () => {
     if (!props.ticket?.uuid) return;
@@ -282,11 +288,26 @@ const statusConfig = {
 const getStatus = (status) => statusConfig[status] ?? { label: status, badge: 'bg-slate-100 text-slate-600 border-slate-200' };
 
 const priorityConfig = {
-    URGENT:  { label: 'URGENT (Mendesak)', badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50' },
-    ROUTINE: { label: 'ROUTINE (Rutin)',   badge: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900/50' },
+    EMERGENCY: { label: 'EMERGENCY', badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
+    URGENT:    { label: 'URGENT',  badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' },
+    ROUTINE:   { label: 'ROUTINE',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
 };
 
-const getPriority = (priority) => priorityConfig[priority] ?? { label: '-', badge: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800' };
+const getPriority = (target) => {
+    if (!target) return { label: '-', badge: '', isPending: true };
+
+    const priority = typeof target === 'string' ? target : target.priority;
+    const status = typeof target === 'object' ? target.status : (props.ticket?.status || null);
+
+    if (status === 'PENDING_VALIDATION' && priority !== 'EMERGENCY') {
+        return { label: '-', badge: '', isPending: true };
+    }
+
+    return {
+        ...(priorityConfig[priority] ?? { label: '-', badge: '' }),
+        isPending: false
+    };
+};
 
 const contextLabel = computed(() => {
     if (props.personal) {
@@ -425,14 +446,15 @@ const contextLabel = computed(() => {
                                             </div>
                                         </div>
 
-                                        <div v-if="ticket.priority">
+                                        <div v-if="ticket">
                                             <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
                                                 Prioritas Tiket
                                             </div>
                                             <div class="mt-0.5">
-                                                <span :class="['px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase border', getPriority(ticket.priority).badge]">
-                                                    {{ getPriority(ticket.priority).label }}
+                                                <span v-if="!getPriority(ticket).isPending" :class="['px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase border', getPriority(ticket).badge]">
+                                                    {{ getPriority(ticket).label }}
                                                 </span>
+                                                <span v-else class="text-slate-400 font-bold text-xs">-</span>
                                             </div>
                                         </div>
 
@@ -550,7 +572,7 @@ const contextLabel = computed(() => {
                                                 class="rounded-xl p-3 flex items-center justify-between cursor-pointer select-none"
                                                 :class="[
                                                     assignForm.priority === 'URGENT'
-                                                        ? 'bg-rose-600 dark:bg-rose-600 text-white font-bold shadow-sm'
+                                                        ? 'bg-amber-500 dark:bg-amber-500 text-white font-bold shadow-sm'
                                                         : 'border border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900'
                                                 ]"
                                             >

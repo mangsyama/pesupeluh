@@ -44,11 +44,58 @@ class NewTicketReportedNotification extends Notification
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $reporterName = $this->ticket->reporter?->name ?? 'Staf';
         $unitName = $this->ticket->category?->supportingUnit?->name ?? 'IPSRS';
+        $isEmergency = ($this->ticket->priority === 'EMERGENCY') || (bool) ($this->ticket->is_emergency ?? false);
 
-        if ($roleId === 7) { // Kepala Ruangan (Spectator)
+        if ($isEmergency) {
+            if ($roleId === 6) { // Teknisi
+                return [
+                    'title' => '🚨 PENUGASAN DARURAT (EMERGENCY) INSTAN',
+                    'message' => "Laporan Darurat #{$ticketNum} di {$roomName} OTOMATIS DITUGASKAN KEPADA ANDA! Segera menuju ke lokasi!",
+                    'priority' => 'EMERGENCY',
+                    'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+                ];
+            }
+            if ($roleId === 5) { // Kepala Unit
+                return [
+                    'title' => '🚨 INFORMASI PENUGASAN DARURAT (AUTO-DISPATCH)',
+                    'message' => "Laporan Darurat #{$ticketNum} di {$roomName} telah OTOMATIS DIDISPOSISI ke Teknisi On-Duty.",
+                    'priority' => 'EMERGENCY',
+                    'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+                ];
+            }
+            if ($roleId === 7) { // Kepala Ruangan
+                return [
+                    'title' => '🚨 LAPORAN DARURAT DI RUANGAN ANDA',
+                    'message' => "Laporan Darurat #{$ticketNum} di {$roomName} telah diajukan staf dan LANGSUNG DIDISPOSISIKAN ke Teknisi.",
+                    'priority' => 'EMERGENCY',
+                    'route' => route('reports.show', ['ticket' => $this->ticket->uuid]),
+                ];
+            }
+            // Admin & default
+            return [
+                'title' => '🚨 LAPORAN DARURAT (EMERGENCY) MASUK',
+                'message' => "Laporan Darurat #{$ticketNum} di {$roomName} diajukan dan langsung diteruskan ke Teknisi.",
+                'priority' => 'EMERGENCY',
+                'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            ];
+        }
+
+        if ($roleId === 6) { // Teknisi Non-Emergency (Auto-dispatched on Off Hours)
+            $ticketPriority = strtoupper($this->ticket->priority ?? 'ROUTINE');
+            $isUrgent = ($ticketPriority === 'URGENT');
+            return [
+                'title' => $isUrgent ? '⚠️ PENUGASAN TIKET URGENT' : 'Tugas Baru Diterima (Disposisi Otomatis)',
+                'message' => "Anda menerima penugasan laporan #{$ticketNum} di {$roomName} (" . ($isUrgent ? 'Status URGENT' : 'Luar Jam Kerja') . ").",
+                'priority' => $isUrgent ? 'URGENT' : 'HIGH',
+                'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            ];
+        }
+
+        if ($roleId === 7) { // Kepala Ruangan
             return [
                 'title' => 'Laporan Diajukan Staf',
                 'message' => "Staf {$reporterName} di ruangan {$roomName} telah mengajukan laporan #{$ticketNum} ke unit {$unitName}.",
+                'priority' => 'NORMAL',
                 'route' => route('reports.show', ['ticket' => $this->ticket->uuid]),
             ];
         }
@@ -57,6 +104,7 @@ class NewTicketReportedNotification extends Notification
         return [
             'title' => 'Laporan Baru Masuk',
             'message' => "Laporan baru #{$ticketNum} telah dibuat dan membutuhkan validasi Anda.",
+            'priority' => 'NORMAL',
             'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
         ];
     }
@@ -68,6 +116,7 @@ class NewTicketReportedNotification extends Notification
             'type' => 'ticket',
             'title' => $details['title'],
             'message' => $details['message'],
+            'priority' => $details['priority'],
             'ticket_id' => $this->ticket->id,
             'route' => $details['route'],
         ];
@@ -80,6 +129,7 @@ class NewTicketReportedNotification extends Notification
             'type' => 'ticket',
             'title' => $details['title'],
             'message' => $details['message'],
+            'priority' => $details['priority'],
             'ticket_id' => $this->ticket->id,
             'route' => $details['route'],
         ]);

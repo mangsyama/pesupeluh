@@ -335,6 +335,12 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/services/units/{supportingUnit}', [\App\Http\Controllers\ServiceController::class, 'showUnit'])->name('services.units.show');
     Route::post('/services/tickets', [\App\Http\Controllers\ServiceController::class, 'storeTicket'])->name('services.tickets.store');
 
+    // Live Technician Position & Duty Status
+    Route::get('/technicians/position', [\App\Http\Controllers\TechnicianPositionController::class, 'index'])->name('technicians.position');
+    Route::get('/technicians/radar', [\App\Http\Controllers\TechnicianPositionController::class, 'index'])->name('technicians.radar');
+    Route::post('/technicians/status', [\App\Http\Controllers\TechnicianPositionController::class, 'updateStatus'])->name('technicians.update-status');
+    Route::post('/technicians/working-hours', [\App\Http\Controllers\TechnicianPositionController::class, 'updateWorkingHours'])->name('technicians.update-working-hours');
+
     // Ticket Workflows & Actions
     Route::get('/tickets/{ticket:uuid}', [\App\Http\Controllers\TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket:uuid}/assign', [\App\Http\Controllers\TicketController::class, 'assign'])->name('tickets.assign');
@@ -377,6 +383,7 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/services/rooms', [ServiceManagementController::class, 'indexRooms'])->name('service-management.rooms');
     Route::get('/services/categories', [ServiceManagementController::class, 'indexCategories'])->name('service-management.categories');
     Route::get('/services/supporting-units', [ServiceManagementController::class, 'indexSupportingUnits'])->name('service-management.supporting-units');
+    Route::get('/services/working-hours', [\App\Http\Controllers\TechnicianPositionController::class, 'indexWorkingHours'])->name('service-management.working-hours');
     
     Route::post('/service-management/rooms', [ServiceManagementController::class, 'storeRoom'])->name('service-management.rooms.store');
     Route::put('/service-management/rooms/{room}', [ServiceManagementController::class, 'updateRoom'])->name('service-management.rooms.update');
@@ -434,6 +441,9 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/design-system/cards', function () {
         return Inertia::render('DesignSystem/Cards');
     })->name('design-system.cards');
+
+    Route::get('/design-system/notifications', [\App\Http\Controllers\NotificationController::class, 'designSystemIndex'])->name('design-system.notifications');
+    Route::post('/design-system/notifications/trigger', [\App\Http\Controllers\NotificationController::class, 'triggerTestNotification'])->name('design-system.notifications.trigger');
 });
 
 Route::middleware('auth')->group(function () {
@@ -511,7 +521,7 @@ Route::post('/login-face', function (Request $request) {
         'success' => false,
         'message' => __('Face not recognized or not registered.'),
     ], 401);
-})->name('login.face');
+})->middleware('throttle:5,1')->name('login.face');
 
 Route::get('/models/{file}', function ($file) {
     $basePath = public_path('models');

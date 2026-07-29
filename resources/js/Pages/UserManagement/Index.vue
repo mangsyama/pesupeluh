@@ -332,6 +332,11 @@ const getRoleDefaultPermissions = (roleId) => {
     if (role && role.page_permissions) {
         perms = Array.isArray(role.page_permissions) ? role.page_permissions : JSON.parse(role.page_permissions);
     }
+    // Ensure default fallback items for role defaults
+    if (!perms.includes('technicians.position')) perms.push('technicians.position');
+    if ([1, 5].includes(roleId) && !perms.includes('service-management.working-hours')) {
+        perms.push('service-management.working-hours');
+    }
     if (roleId === 1) {
         if (!perms.includes('admin.qr-code.index')) perms.push('admin.qr-code.index');
         if (!perms.includes('admin.wa-gateway.index')) perms.push('admin.wa-gateway.index');

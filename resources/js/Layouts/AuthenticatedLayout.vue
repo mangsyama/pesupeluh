@@ -2,8 +2,9 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
+import NotificationItem from '@/Components/NotificationItem.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode, QrCode } from '@lucide/vue';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode, QrCode, Radio } from '@lucide/vue';
 
 
 
@@ -200,7 +201,7 @@ const isItemActive = (child) => {
 };
 
 const isRouteActive = (item) => {
-    if (route().current(item.routeName)) {
+    if (item.routeName && route().current(item.routeName)) {
         return true;
     }
     if (item.routeName === 'users.approvals' && route().current('users.approvals.show')) {
@@ -215,7 +216,7 @@ const isRouteActive = (item) => {
     if (item.routeName === 'settings.index' && route().current('profile.edit')) {
         return true;
     }
-    if (item.routeName === 'services.index' && route().current('services.*')) {
+    if (item.routeName === 'services.index' && (route().current('services.index') || route().current('services.medik') || route().current('services.non-medik') || route().current('services.units.show'))) {
         return true;
     }
     return false;
@@ -244,6 +245,13 @@ const menuGroups = computed(() => {
                 { label: 'menu.reporting_history', routeName: 'reports.history', icon: History, permKey: 'reports.history' },
                 { label: 'Manajemen Laporan', routeName: 'reports-management.index', icon: Wrench, permKey: 'reports-management.index' },
                 { label: 'menu.reports_export', routeName: 'reports.index', icon: FileBarChart2, permKey: 'reports.index' },
+            ]
+        },
+        {
+            title: 'Teknisi & Operasional',
+            items: [
+                { label: 'Posisi Teknisi', routeName: 'technicians.position', icon: MapPin, permKey: 'technicians.position' },
+                { label: 'Jam Operasional', routeName: 'service-management.working-hours', icon: Clock, permKey: 'service-management.working-hours' }
             ]
         },
         {
@@ -409,7 +417,7 @@ const normalizeNotificationPayload = (notification) => {
     const message = notification.message ?? notification.data?.message ?? null;
     const route = notification.route ?? notification.data?.route ?? null;
     const rawType = notification.data?.type ?? notification.type ?? 'ticket';
-    const type = (rawType === 'ticket' || rawType === 'user' || rawType === 'progress' || rawType === 'done')
+    const type = (rawType === 'ticket' || rawType === 'user' || rawType === 'progress' || rawType === 'done' || rawType === 'success' || rawType === 'error' || rawType === 'warning')
         ? rawType
         : (typeof rawType === 'string' && rawType.includes('Ticket') ? 'ticket' : 'user');
     const priority = notification.priority ?? notification.data?.priority ?? null;
@@ -787,39 +795,15 @@ const getGroupInitials = (title) => {
                                          <div v-if="unreadNotifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
                                              Tidak ada notifikasi baru
                                          </div>
-                                         <div 
-                                             v-else
-                                             v-for="notif in unreadNotifications" 
-                                             :key="notif.id"
-                                             @click="markAsRead(notif)"
-                                             :class="[
-                                                 'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                                 !notif.read_at ? 'bg-emerald-50/30 dark:bg-white/5' : ''
-                                             ]"
-                                         >
-                                             <!-- Icon -->
-                                             <div :class="[
-                                                 'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                                                 notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
-                                             ]">
-                                                 <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
-                                                 <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
-                                                 <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
-                                                 <User v-else class="h-4 w-4" />
-                                             </div>
-                                             <!-- Content -->
-                                             <div class="flex-1 min-w-0">
-                                                 <div class="flex items-start justify-between gap-2">
-                                                     <div class="flex items-center gap-1.5 min-w-0">
-                                                          <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                          <span v-if="notif.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500 text-white flex-shrink-0 animate-pulse">URGENT</span>
-                                                      </div>
-                                                     <span v-if="!notif.read_at" :class="['h-2 w-2 rounded-full flex-shrink-0 mt-1', notif.priority === 'URGENT' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500 dark:bg-white']"></span>
-                                                 </div>
-                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
-                                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
-                                             </div>
-                                         </div>
+                                         <template v-else>
+                                             <NotificationItem
+                                                 v-for="notif in unreadNotifications"
+                                                 :key="notif.id"
+                                                 :notification="notif"
+                                                 variant="dropdown"
+                                                 @click="markAsRead(notif)"
+                                             />
+                                         </template>
                                      </div>                                      
                                       <!-- Footer -->
                                       <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/50 dark:bg-slate-900/50">
@@ -1111,12 +1095,16 @@ const getGroupInitials = (title) => {
                     <!-- Icon -->
                     <div :class="[
                         'h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5',
-                        toast.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500 border border-rose-200/50 dark:border-rose-900/50' : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white border border-emerald-100 dark:border-white/10'
+                        toast.priority === 'URGENT' || toast.type === 'error' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500 border border-rose-200/50 dark:border-rose-900/50' :
+                        (toast.type === 'success' || toast.type === 'done') ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50' :
+                        'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white border border-slate-200/50 dark:border-white/10'
                     ]">
-                        <Bell v-if="toast.type === 'ticket' || (typeof toast.type === 'string' && toast.type.includes('Ticket'))" class="h-4.5 w-4.5" />
+                        <CheckCircle2 v-if="toast.type === 'success' || toast.type === 'done'" class="h-4.5 w-4.5" />
+                        <ShieldAlert v-else-if="toast.type === 'error'" class="h-4.5 w-4.5" />
+                        <Bell v-else-if="toast.type === 'ticket' || (typeof toast.type === 'string' && toast.type.includes('Ticket'))" class="h-4.5 w-4.5" />
                         <Clock v-else-if="toast.type === 'progress'" class="h-4.5 w-4.5" />
-                        <CheckCircle2 v-else-if="toast.type === 'done'" class="h-4.5 w-4.5" />
-                        <User v-else class="h-4.5 w-4.5" />
+                        <User v-else-if="toast.type === 'user'" class="h-4.5 w-4.5" />
+                        <CheckCircle2 v-else class="h-4.5 w-4.5" />
                     </div>
                     <!-- Content -->
                     <div class="flex-1 min-w-0">

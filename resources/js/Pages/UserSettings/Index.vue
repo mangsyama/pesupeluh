@@ -18,6 +18,7 @@ const designPages = [
     { label: 'menu.ds_modals', routeName: 'design-system.modals-alerts', icon: FileText, description: 'Koleksi modal popup transisi & notifikasi SweetAlert2.' },
     { label: 'menu.ds_tables', routeName: 'design-system.tables', icon: Database, description: 'Desain layout tabel data, pagination, & state data kosong.' },
     { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers, description: 'Koleksi layout kartu data statistik & visualisasi grid.' },
+    { label: 'Pengujian Notifikasi', routeName: 'design-system.notifications', icon: Bell, description: 'Simulasi notifikasi per role user ke Toast popup & Lonceng Dropdown Header.' },
 ];
 
 const notificationEnabled = ref(true);

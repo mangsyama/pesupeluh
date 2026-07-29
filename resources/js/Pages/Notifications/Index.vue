@@ -1,12 +1,10 @@
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import NotificationItem from '@/Components/NotificationItem.vue';
 import { 
     Bell, 
-    Clock, 
-    CheckCircle2, 
-    User, 
     ChevronLeft, 
     ChevronRight, 
     Inbox, 
@@ -105,70 +103,15 @@ const goToPage = (url) => {
                             <span class="text-xs text-slate-400 dark:text-slate-500 font-bold block">Tidak ada riwayat notifikasi</span>
                         </div>
 
-                        <div
-                            v-else
-                            v-for="notif in notificationsList"
-                            :key="'notif-page-' + notif.id"
-                            @click="handleNotificationClick(notif)"
-                            :class="[
-                                'flex gap-4 p-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition cursor-pointer relative rounded-xl my-1 first:mt-0 last:mb-0',
-                                !notif.read_at ? 'bg-emerald-50/20 dark:bg-slate-800/40' : ''
-                            ]"
-                        >
-                            <!-- Read indicator border -->
-                            <div 
-                                v-if="!notif.read_at"
-                                class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 dark:bg-white rounded-r"
+                        <template v-else>
+                            <NotificationItem
+                                v-for="notif in notificationsList"
+                                :key="'notif-page-' + notif.id"
+                                :notification="notif"
+                                variant="list"
+                                @click="handleNotificationClick(notif)"
                             />
-
-                            <!-- Icon column -->
-                            <div :class="[
-                                'h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5',
-                                notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' :
-                                notif.type === 'ticket' || notif.data?.type === 'ticket' || (typeof notif.type === 'string' && notif.type.includes('Ticket')) ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white' :
-                                notif.type === 'progress' ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500' :
-                                notif.type === 'done' ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white' :
-                                'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
-                            ]">
-                                <Bell v-if="notif.type === 'ticket' || notif.data?.type === 'ticket' || (typeof notif.type === 'string' && notif.type.includes('Ticket'))" class="h-5 w-5" />
-                                <Clock v-else-if="notif.type === 'progress'" class="h-5 w-5" />
-                                <CheckCircle2 v-else-if="notif.type === 'done'" class="h-5 w-5" />
-                                <User v-else class="h-5 w-5" />
-                            </div>
-
-                            <!-- Content -->
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div class="flex items-center gap-1.5 min-w-0">
-                                        <h3 :class="['text-xs sm:text-sm font-bold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">
-                                            {{ notif.title }}
-                                        </h3>
-                                        <span 
-                                            v-if="notif.priority === 'URGENT'" 
-                                            class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500 text-white flex-shrink-0 animate-pulse"
-                                        >
-                                            URGENT
-                                        </span>
-                                    </div>
-                                    <span 
-                                        v-if="!notif.read_at" 
-                                        class="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-white flex-shrink-0 mt-1"
-                                    />
-                                </div>
-                                
-                                <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                                    {{ notif.message }}
-                                </p>
-                                
-                                <div class="flex items-center gap-2 mt-2 text-[10px] text-slate-400 dark:text-slate-400 font-medium">
-                                    <span>{{ notif.time }}</span>
-                                    <span v-if="notif.created_at" class="opacity-50">&bull;</span>
-                                    <span v-if="notif.created_at">
-                                        {{ new Date(notif.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                        </template>
                     </div>
 
                     <!-- Footer / Action Area mimicking Settings Index box layout (only rendered if pagination is needed) -->

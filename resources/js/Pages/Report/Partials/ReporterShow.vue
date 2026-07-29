@@ -187,11 +187,23 @@ const statusConfig = {
 const getStatus = (status) => statusConfig[status] ?? { label: status, badge: 'bg-slate-100 text-slate-600 border-slate-200' };
 
 const priorityConfig = {
-    URGENT:  { label: 'URGENT (Mendesak)', badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50' },
-    ROUTINE: { label: 'ROUTINE (Rutin)',   badge: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-400 dark:border-indigo-900/50' },
+    EMERGENCY: { label: 'EMERGENCY', badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
+    URGENT:    { label: 'URGENT',  badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' },
+    ROUTINE:   { label: 'ROUTINE',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
 };
 
-const getPriority = (priority) => priorityConfig[priority] ?? { label: '-', badge: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800' };
+const getPriority = (target) => {
+    if (!target) return { label: '-', badge: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800' };
+
+    const priority = typeof target === 'string' ? target : target.priority;
+    const status = typeof target === 'object' ? target.status : (props.ticket?.status || null);
+
+    if (status === 'PENDING_VALIDATION' && priority !== 'EMERGENCY') {
+        return { label: '-', badge: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800' };
+    }
+
+    return priorityConfig[priority] ?? { label: '-', badge: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800' };
+};
 
 const contextLabel = computed(() => {
     if (props.personal) {
@@ -349,8 +361,8 @@ const contextLabel = computed(() => {
                                                 Prioritas Tiket
                                             </div>
                                             <div class="mt-0.5">
-                                                <span :class="['px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase border', getPriority(ticket.priority).badge]">
-                                                    {{ getPriority(ticket.priority).label }}
+                                                <span :class="['px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase border', getPriority(ticket).badge]">
+                                                    {{ getPriority(ticket).label }}
                                                 </span>
                                             </div>
                                         </div>

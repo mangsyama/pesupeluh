@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\NewUserRegisteredNotification;
+use App\Services\SecureFileUpload;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,19 +66,9 @@ class RegisteredUserController extends Controller
         $profilePhotoPath = null;
 
         if ($request->hasFile('profile_photo')) {
-            $path = $request->file('profile_photo')->store('profile_photos', 'public');
-            $profilePhotoPath = '/storage/' . $path;
+            $profilePhotoPath = SecureFileUpload::saveUploadedFile($request->file('profile_photo'), 'profile_photos', 'profile_');
         } elseif ($request->filled('profile_photo') && str_starts_with($request->profile_photo, 'data:image')) {
-            $data = $request->profile_photo;
-            $image_parts = explode(";base64,", $data);
-            $image_type_aux = explode("image/", $image_parts[0]);
-            $image_type = $image_type_aux[1] ?? 'png';
-            $image_base64 = base64_decode($image_parts[1]);
-            $filename = 'profile_' . uniqid() . '.' . $image_type;
-            
-            \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory('profile_photos');
-            \Illuminate\Support\Facades\Storage::disk('public')->put('profile_photos/' . $filename, $image_base64);
-            $profilePhotoPath = '/storage/profile_photos/' . $filename;
+            $profilePhotoPath = SecureFileUpload::saveBase64($request->profile_photo, 'profile_photos', 'profile_');
         }
 
         $reporterRole = \Illuminate\Support\Facades\DB::table('roles')->where('name', 'REPORTER')->first();

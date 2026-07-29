@@ -76,11 +76,27 @@ const statusConfig = {
 const getStatus = (status) => statusConfig[status] ?? { label: status, badge: 'bg-slate-100 text-slate-600 border border-slate-200' };
 
 const priorityConfig = {
-    URGENT:  { label: 'Urgent',  badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200/50 dark:border-rose-900/50' },
-    ROUTINE: { label: 'Routine', badge: 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200/50 dark:border-sky-900/50' },
+    EMERGENCY: { label: 'EMERGENCY', badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
+    URGENT:    { label: 'URGENT',  badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' },
+    ROUTINE:   { label: 'ROUTINE',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
 };
 
-const getPriority = (priority) => priorityConfig[priority] ?? { label: '-', badge: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800' };
+const getPriority = (target) => {
+    if (!target) return { label: '-', badge: '', isPending: true };
+
+    const priority = typeof target === 'string' ? target : target?.priority;
+    const status = typeof target === 'object' ? target?.status : null;
+
+    if (status === 'PENDING_VALIDATION' && priority !== 'EMERGENCY') {
+        return { label: '-', badge: '', isPending: true };
+    }
+
+    if (priority && priorityConfig[priority]) {
+        return { ...priorityConfig[priority], isPending: false };
+    }
+
+    return { label: '-', badge: '', isPending: true };
+};
 
 const goToPage = (url) => {
     if (url) router.visit(url, { preserveState: true });
@@ -209,12 +225,7 @@ const formatDate = (dateStr) => {
                                         v-else
                                         v-for="ticket in tickets.data" 
                                         :key="'ticket-' + ticket.id" 
-                                        :class="[
-                                            'transition duration-150',
-                                            ticket.priority === 'URGENT' 
-                                                ? 'bg-rose-50/40 hover:bg-rose-50/70 dark:bg-rose-950/20 dark:hover:bg-rose-950/30' 
-                                                : 'hover:bg-slate-50/30 dark:hover:bg-slate-800/10'
-                                        ]"
+                                        :class="['hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors duration-150']"
                                     >
                                         <!-- ID & Date -->
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -247,11 +258,11 @@ const formatDate = (dateStr) => {
                                         </td>
                                         <!-- Priority -->
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <span v-if="ticket.priority" :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getPriority(ticket.priority).badge]">
-                                                {{ getPriority(ticket.priority).label }}
-                                            </span>
-                                            <span v-else class="text-slate-400">-</span>
-                                        </td>
+                                             <span v-if="!getPriority(ticket).isPending" :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getPriority(ticket).badge]">
+                                                 {{ getPriority(ticket).label }}
+                                             </span>
+                                             <span v-else class="text-slate-400 font-bold text-xs">-</span>
+                                         </td>
                                         <!-- Status -->
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
                                             <span :class="['w-28 inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
@@ -323,12 +334,7 @@ const formatDate = (dateStr) => {
                                 <div
                                     v-for="ticket in tickets.data"
                                     :key="'mobile-ticket-' + ticket.id"
-                                    :class="[
-                                        'rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between',
-                                        ticket.priority === 'URGENT'
-                                            ? 'bg-rose-50/40 dark:bg-rose-950/20 border-2 border-rose-300 dark:border-rose-800'
-                                            : 'bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/65'
-                                    ]"
+                                    class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/65 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between"
                                 >
                                     <div class="space-y-3">
                                         <div class="flex justify-between items-start gap-2">
@@ -358,9 +364,10 @@ const formatDate = (dateStr) => {
                                         <span>Pelapor: <strong class="text-slate-700 dark:text-slate-300">{{ ticket.reporter?.name ?? '-' }}</strong></span>
                                         <div class="flex items-center gap-1.5">
                                             <span class="font-medium text-slate-500">Prioritas:</span>
-                                            <span :class="['px-1.5 py-0.2 rounded text-[8px] font-bold', getPriority(ticket.priority).badge]">
-                                                {{ getPriority(ticket.priority).label }}
+                                            <span v-if="!getPriority(ticket).isPending" :class="['px-1.5 py-0.2 rounded text-[8px] font-bold', getPriority(ticket).badge]">
+                                                {{ getPriority(ticket).label }}
                                             </span>
+                                            <span v-else class="text-slate-400 font-bold text-xs">-</span>
                                         </div>
                                     </div>
                                 </div>

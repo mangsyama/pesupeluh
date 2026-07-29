@@ -326,12 +326,16 @@ const triggerScanLoop = async () => {
         
         // Draw real-time face bounding box and landmarks on overlay canvas
         if (canvas.value && video.value) {
-            const dims = faceapi.matchDimensions(canvas.value, video.value, true);
+            const displaySize = {
+                width: video.value.clientWidth || video.value.offsetWidth || 320,
+                height: video.value.clientHeight || video.value.offsetHeight || 320
+            };
+            faceapi.matchDimensions(canvas.value, displaySize);
             const ctx = canvas.value.getContext('2d');
             ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
             
             if (detection) {
-                const resizedDetection = faceapi.resizeResults(detection, dims);
+                const resizedDetection = faceapi.resizeResults(detection, displaySize);
                 faceapi.draw.drawDetections(canvas.value, resizedDetection);
                 faceapi.draw.drawFaceLandmarks(canvas.value, resizedDetection);
             }
@@ -388,11 +392,15 @@ const stopCamera = () => {
 };
 
 const closeFaceModal = () => {
+    if (detectionLoop) {
+        clearTimeout(detectionLoop);
+        detectionLoop = null;
+    }
+    stopCamera();
     isFaceModalOpen.value = false;
     scanStatus.value = 'idle';
     errorMessage.value = '';
     isFaceDetected.value = false;
-    stopCamera();
 };
 
 const submit = () => {
@@ -509,7 +517,7 @@ onBeforeUnmount(() => {
             <!-- Searchable Unit Penunjang Dropdown -->
             <div class="space-y-1 relative" ref="unitDropdownRef">
                 <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">
-                    Unit Penunjang
+                    Unit Penunjang (Opsional)
                 </label>
                 <button 
                     type="button"
@@ -569,7 +577,7 @@ onBeforeUnmount(() => {
             <!-- Searchable Ruangan / Lokasi Dropdown -->
             <div class="space-y-1 relative" ref="roomDropdownRef">
                 <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">
-                    Ruangan / Lokasi
+                    Ruangan / Lokasi (Opsional)
                 </label>
                 <button 
                     type="button"
@@ -850,12 +858,12 @@ onBeforeUnmount(() => {
             </button>
 
             <!-- Camera stream area (Circle) -->
-            <div class="relative w-80 h-80 sm:w-[26rem] sm:h-[26rem] md:w-[30rem] md:h-[30rem] rounded-full overflow-hidden border-4 border-slate-200 dark:border-slate-200 shadow-sm flex items-center justify-center bg-black mx-auto">
+            <div class="relative w-72 h-72 sm:w-[24rem] sm:h-[24rem] md:w-[26rem] md:h-[26rem] aspect-square rounded-full overflow-hidden border-4 border-slate-200 dark:border-slate-200 shadow-sm flex items-center justify-center bg-black mx-auto shrink-0">
                 <!-- Video tag -->
                 <video 
                     ref="video" 
                     v-show="scanStatus !== 'loading'"
-                    class="absolute inset-0 w-full h-full object-cover scale-x-[-1]" 
+                    class="absolute inset-0 w-full h-full object-cover scale-x-[-1] rounded-full" 
                     playsinline
                     muted
                 ></video>

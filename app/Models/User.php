@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'face_descriptor', 'role_id', 'room_id', 'supporting_unit_id', 'phone_number', 'telegram_chat_id', 'is_active', 'nip', 'username', 'profile_photo_path', 'approved_by', 'approved_at', 'page_permissions'])]
+#[Fillable(['name', 'email', 'password', 'face_descriptor', 'role_id', 'room_id', 'supporting_unit_id', 'phone_number', 'telegram_chat_id', 'is_active', 'nip', 'username', 'profile_photo_path', 'approved_by', 'approved_at', 'page_permissions', 'is_on_duty', 'duty_status', 'specialties', 'current_location'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -41,8 +41,10 @@ class User extends Authenticatable
             'password' => 'hashed',
             'face_descriptor' => 'array',
             'page_permissions' => 'array',
+            'specialties' => 'array',
             'approved_at' => 'datetime',
             'is_active' => 'boolean',
+            'is_on_duty' => 'boolean',
             'role_id' => 'integer',
             'room_id' => 'integer',
             'supporting_unit_id' => 'integer',
@@ -81,6 +83,7 @@ class User extends Authenticatable
         if ((int) $this->role_id === 1) {
             return $this->memoizedPermissions = [
                 'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index',
+                'technicians.position', 'service-management.working-hours',
                 'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
                 'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index', 'design-system.index',
             ];
@@ -106,6 +109,11 @@ class User extends Authenticatable
     public function supportingUnit()
     {
         return $this->belongsTo(SupportingUnit::class);
+    }
+
+    public function assignments()
+    {
+        return $this->hasMany(TicketAssignment::class, 'technician_id');
     }
 
     public function approver()

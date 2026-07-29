@@ -30,6 +30,10 @@ return new class extends Migration
             $table->string('phone_number', 20)->nullable();
             $table->string('telegram_chat_id', 50)->nullable();
             $table->boolean('is_active')->default(false);
+            $table->boolean('is_on_duty')->default(true);
+            $table->string('duty_status', 20)->default('READY'); // READY, BUSY, OFF
+            $table->text('specialties')->nullable(); // JSON string e.g. ["LISTRIK", "AC", "KEBAKARAN"]
+            $table->string('current_location', 150)->nullable();
             $table->text('page_permissions')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('no action');
             $table->dateTimeTz('approved_at')->nullable();

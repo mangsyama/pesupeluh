@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { Palette, Play, Type, FileText, Database, Layers, ArrowRight } from '@lucide/vue';
+import { Palette, Play, Type, FileText, Database, Layers, ArrowRight, Bell } from '@lucide/vue';
 
 const colorGroups = [
   {
@@ -66,6 +66,7 @@ const subpages = [
   { name: 'Modal & SweetAlert', routeName: 'design-system.modals-alerts', desc: 'Demo modal popup aneka ukuran dengan transisi halus dan pemicu Alert.', icon: FileText, color: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400' },
   { name: 'Tabel & Halaman', routeName: 'design-system.tables', desc: 'Layout standard table, pagination terintegrasi, dan card data kosong.', icon: Database, color: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400' },
   { name: 'Desain Kartu', routeName: 'design-system.cards', desc: 'Layout card penampil status angka, detail grid informasi, dan layout panel filter.', icon: Layers, color: 'bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400' },
+  { name: 'Pengujian Notifikasi', routeName: 'design-system.notifications', desc: 'Simulasi notifikasi per role user ke Toast popup & Lonceng Dropdown Header.', icon: Bell, color: 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400' },
 ];
 </script>
 

@@ -83,11 +83,27 @@ const statusConfig = {
 const getStatus = (status) => statusConfig[status] ?? { label: status, badge: 'bg-slate-100 text-slate-600 border border-slate-200' };
 
 const priorityConfig = {
-    URGENT:  { label: 'Urgent',  badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200/50 dark:border-rose-900/50' },
-    ROUTINE: { label: 'Routine', badge: 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200/50 dark:border-sky-900/50' },
+    EMERGENCY: { label: 'EMERGENCY', badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
+    URGENT:    { label: 'URGENT',  badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' },
+    ROUTINE:   { label: 'ROUTINE',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
 };
 
-const getPriority = (priority) => priorityConfig[priority] ?? { label: '-', badge: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800' };
+const getPriority = (target) => {
+    if (!target) return { label: '-', badge: '', isPending: true };
+
+    const priority = typeof target === 'string' ? target : target?.priority;
+    const status = typeof target === 'object' ? target?.status : null;
+
+    if (status === 'PENDING_VALIDATION' && priority !== 'EMERGENCY') {
+        return { label: '-', badge: '', isPending: true };
+    }
+
+    if (priority && priorityConfig[priority]) {
+        return { ...priorityConfig[priority], isPending: false };
+    }
+
+    return { label: '-', badge: '', isPending: true };
+};
 
 const goToPage = (url) => {
     if (url) router.visit(url, { preserveState: true });

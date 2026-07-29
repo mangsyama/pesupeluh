@@ -15,7 +15,12 @@ import {
     Building2,
     ChevronDown,
     Search,
-    Check
+    Check,
+    Flame,
+    Siren,
+    AlertTriangle,
+    Clock,
+    Zap
 } from '@lucide/vue';
 
 const props = defineProps({
@@ -63,6 +68,7 @@ const form = useForm({
     room_id: '',
     category_id: '',
     problem_description: '',
+    priority: 'ROUTINE',
     attachments: []
 });
 
@@ -374,6 +380,92 @@ const submitReport = () => {
                         />
                     </div>
                     <div v-if="form.errors.room_id" class="text-[10px] text-red-500 font-semibold">{{ form.errors.room_id }}</div>
+                </div>
+
+                <!-- Tingkat Urgensi / Emergency Selector -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        {{ __('Tingkat Urgensi Pelaporan') }} <span class="text-red-400">*</span>
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <!-- ROUTINE -->
+                        <button
+                            type="button"
+                            @click="form.priority = 'ROUTINE'"
+                            :class="[
+                                'p-3.5 rounded-xl border transition-all duration-150 text-left select-none relative flex items-center justify-between gap-2 focus:outline-none outline-none shadow-none',
+                                form.priority === 'ROUTINE'
+                                    ? 'border-emerald-600 bg-emerald-600 text-white font-extrabold'
+                                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+                            ]"
+                        >
+                            <div class="space-y-0.5 min-w-0">
+                                <div :class="['text-xs font-black uppercase tracking-wide truncate', form.priority === 'ROUTINE' ? 'text-white' : 'text-slate-800 dark:text-slate-200']">
+                                    ROUTINE (STANDAR)
+                                </div>
+                                <div :class="['text-[10px] font-medium truncate', form.priority === 'ROUTINE' ? 'text-emerald-100' : 'text-slate-500 dark:text-slate-400']">
+                                    penanganan normal
+                                </div>
+                            </div>
+                            <Clock :class="['h-5 w-5 shrink-0 transition-colors', form.priority === 'ROUTINE' ? 'text-white' : 'text-emerald-600 dark:text-emerald-400']" />
+                        </button>
+
+                        <!-- URGENT -->
+                        <button
+                            type="button"
+                            @click="form.priority = 'URGENT'"
+                            :class="[
+                                'p-3.5 rounded-xl border transition-all duration-150 text-left select-none relative flex items-center justify-between gap-2 focus:outline-none outline-none shadow-none',
+                                form.priority === 'URGENT'
+                                    ? 'border-amber-500 bg-amber-500 text-white font-extrabold'
+                                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-900/50'
+                            ]"
+                        >
+                            <div class="space-y-0.5 min-w-0">
+                                <div :class="['text-xs font-black uppercase tracking-wide truncate', form.priority === 'URGENT' ? 'text-white' : 'text-slate-800 dark:text-slate-200']">
+                                    URGENT (MENDESAK)
+                                </div>
+                                <div :class="['text-[10px] font-medium truncate', form.priority === 'URGENT' ? 'text-amber-100' : 'text-slate-500 dark:text-slate-400']">
+                                    Prioritas penanganan cepat
+                                </div>
+                            </div>
+                            <Zap :class="['h-5 w-5 shrink-0 transition-colors', form.priority === 'URGENT' ? 'text-white' : 'text-amber-500 dark:text-amber-400']" />
+                        </button>
+
+                        <!-- EMERGENCY -->
+                        <button
+                            type="button"
+                            @click="form.priority = 'EMERGENCY'"
+                            :class="[
+                                'p-3.5 rounded-xl border transition-all duration-150 text-left select-none relative flex items-center justify-between gap-2 focus:outline-none outline-none shadow-none',
+                                form.priority === 'EMERGENCY'
+                                    ? 'border-red-600 bg-red-600 text-white font-black'
+                                    : 'border-red-200 dark:border-red-900/40 bg-red-50/30 text-slate-600 dark:text-slate-400 hover:border-red-400'
+                            ]"
+                        >
+                            <div class="space-y-0.5 min-w-0">
+                                <div :class="['text-xs font-black uppercase tracking-wide truncate', form.priority === 'EMERGENCY' ? 'text-white' : 'text-red-600 dark:text-red-400']">
+                                    EMERGENCY (DARURAT)
+                                </div>
+                                <div :class="['text-[10px] font-medium truncate', form.priority === 'EMERGENCY' ? 'text-red-100' : 'text-slate-500 dark:text-slate-400']">
+                                    Bypass disposisi langsung
+                                </div>
+                            </div>
+                            <Siren :class="['h-5 w-5 shrink-0 transition-colors', form.priority === 'EMERGENCY' ? 'text-white' : 'text-red-600 dark:text-red-400']" />
+                        </button>
+                    </div>
+
+                    <!-- Emergency Warning Box -->
+                    <div 
+                        v-if="form.priority === 'EMERGENCY'" 
+                        class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs flex gap-3 items-start animate-fade-in"
+                    >
+                        <Siren class="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                        <div class="leading-relaxed">
+                            <strong class="font-extrabold block text-red-600 dark:text-red-400 uppercase tracking-wide">Mode Darurat (Code Red / Fire Bypass)</strong>
+                            Laporan ini akan <strong>otomatis didisposisikan</strong> langsung ke seluruh teknisi piket & tim K3RS tanpa menunggu approval Ka. Unit. Gunakan hanya untuk kondisi darurat nyata!
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Problem Description -->
