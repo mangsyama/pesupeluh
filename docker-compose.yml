@@ -83,6 +83,25 @@ services:
       - php
       - redis
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php8.3-sqlsrv/Dockerfile
+    container_name: pesupeluh-scheduler
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    volumes:
+      - ./storage:/var/www/pesupeluh/storage
+      - ./bootstrap/cache:/var/www/pesupeluh/bootstrap/cache
+      - ./database:/var/www/pesupeluh/database
+      - ./.env:/var/www/pesupeluh/.env
+      - ./vendor:/var/www/pesupeluh/vendor
+    command: php artisan schedule:work
+    depends_on:
+      - php
+      - redis
+
   wa-gateway:
     build:
       context: ./wa-gateway
@@ -93,3 +112,4 @@ services:
       - "127.0.0.1:3000:3000"
     volumes:
       - ./wa-gateway/auth_sessions:/app/auth_sessions
+

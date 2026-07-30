@@ -1,8 +1,8 @@
 <script setup>
-import { ref, computed, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { Edit2, Trash2, X } from '@lucide/vue';
+import { Edit2, Trash2, X, ChevronLeft, ChevronRight } from '@lucide/vue';
 
 const props = defineProps({
     categories: {
@@ -42,6 +42,29 @@ const filteredCategories = computed(() => {
         (cat.description && cat.description.toLowerCase().includes(query)) || 
         (cat.supporting_unit && cat.supporting_unit.name.toLowerCase().includes(query))
     );
+});
+
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+const totalCount = computed(() => filteredCategories.value.length);
+const lastPage = computed(() => Math.ceil(totalCount.value / itemsPerPage.value) || 1);
+const fromCount = computed(() => totalCount.value === 0 ? 0 : (currentPage.value - 1) * itemsPerPage.value + 1);
+const toCount = computed(() => Math.min(currentPage.value * itemsPerPage.value, totalCount.value));
+
+const paginatedCategories = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage.value;
+    return filteredCategories.value.slice(start, start + itemsPerPage.value);
+});
+
+const hasPrev = computed(() => currentPage.value > 1);
+const hasNext = computed(() => currentPage.value < lastPage.value);
+
+const goToPrev = () => { if (currentPage.value > 1) currentPage.value--; };
+const goToNext = () => { if (currentPage.value < lastPage.value) currentPage.value++; };
+
+watch(() => props.searchQuery, () => {
+    currentPage.value = 1;
 });
 
 const isUnitDropdownOpen = ref(false);
@@ -165,7 +188,7 @@ defineExpose({
                     </tr>
                     <tr 
                         v-else
-                        v-for="cat in filteredCategories" 
+                        v-for="cat in paginatedCategories" 
                         :key="cat.id"
                         class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
                     >
@@ -200,6 +223,34 @@ defineExpose({
                     </tr>
                 </tbody>
             </table>
+
+            <!-- Pagination -->
+            <div v-if="lastPage > 1" class="px-6 py-4 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex items-center gap-2"></div>
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {{ fromCount }}–{{ toCount }} dari {{ totalCount }}
+                    </span>
+                    <div class="flex items-center gap-1">
+                        <button
+                            @click="goToPrev"
+                            :disabled="!hasPrev"
+                            class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
+                            aria-label="Halaman sebelumnya"
+                        >
+                            <ChevronLeft class="h-4 w-4" />
+                        </button>
+                        <button
+                            @click="goToNext"
+                            :disabled="!hasNext"
+                            class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
+                            aria-label="Halaman berikutnya"
+                        >
+                            <ChevronRight class="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- CATEGORY MODAL -->

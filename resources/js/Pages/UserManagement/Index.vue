@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, getCurrentInstance } from 'vue';
+import { ref, computed, watch, getCurrentInstance } from 'vue';
 import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw } from '@lucide/vue';
+import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw, ChevronLeft, ChevronRight } from '@lucide/vue';
 
 const props = defineProps({
     users: {
@@ -98,6 +98,29 @@ const filteredUsers = computed(() => {
 
         return name.includes(q) || email.includes(q) || nip.includes(q);
     });
+});
+
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+const totalCount = computed(() => filteredUsers.value.length);
+const lastPage = computed(() => Math.ceil(totalCount.value / itemsPerPage.value) || 1);
+const fromCount = computed(() => totalCount.value === 0 ? 0 : (currentPage.value - 1) * itemsPerPage.value + 1);
+const toCount = computed(() => Math.min(currentPage.value * itemsPerPage.value, totalCount.value));
+
+const paginatedUsers = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage.value;
+    return filteredUsers.value.slice(start, start + itemsPerPage.value);
+});
+
+const hasPrev = computed(() => currentPage.value > 1);
+const hasNext = computed(() => currentPage.value < lastPage.value);
+
+const goToPrev = () => { if (currentPage.value > 1) currentPage.value--; };
+const goToNext = () => { if (currentPage.value < lastPage.value) currentPage.value++; };
+
+watch([searchQuery, currentTab], () => {
+    currentPage.value = 1;
 });
 
 const getStatusBadge = (isActive) => {
@@ -477,84 +500,111 @@ const savePermissions = () => {
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
                                 <tr v-if="filteredUsers.length === 0">
-                                            <td colspan="7" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
-                                                {{ __('pages.user_management.table.empty_role').replace('{role}', __('pages.user_management.user_list_title')) }}
-                                            </td>
-                                        </tr>
-                                        <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
-                                            <td class="px-6 py-4">
-                                                <div class="flex items-center gap-3">
-                                                    <div class="h-9 w-9 shrink-0 aspect-square rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
-                                                        <img v-if="user.profile_photo_path" :src="user.profile_photo_path" class="h-full w-full object-cover" />
-                                                        <User v-else class="h-4.5 w-4.5" />
-                                                    </div>
-                                                    <div>
-                                                        <div class="font-semibold text-slate-950 dark:text-white">{{ user.name }}</div>
-                                                        <div class="text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 text-center text-xs font-bold text-slate-600 dark:text-slate-400">
-                                                {{ user.role?.name ? __('roles.' + user.role.name) : '-' }}
-                                            </td>
-                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">{{ user.nip || '-' }}</td>
-                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
-                                                <div>{{ user.phone_number || '-' }}</div>
-                                                <div v-if="user.telegram_chat_id" class="text-[10px] text-violet-650 dark:text-violet-400 font-semibold flex items-center gap-0.5 mt-0.5" title="Telegram Chat ID terkonfigurasi">
-                                                    <span>ID: {{ user.telegram_chat_id }}</span>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
-                                                <div v-if="user.supporting_unit" class="font-semibold text-slate-700 dark:text-slate-300">{{ user.supporting_unit.name }}</div>
-                                                <div v-if="user.room" class="text-[11px] text-slate-500 dark:text-slate-400">{{ user.room.name }}</div>
-                                                <span v-if="!user.supporting_unit && !user.room" class="text-slate-400 dark:text-slate-600">-</span>
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold', getStatusBadge(user.is_active)]">
-                                                    {{ user.is_active ? __('global.verified') : __('global.suspended') }}
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 text-center text-xs text-slate-500 dark:text-slate-400">
-                                                <div class="flex items-center justify-center gap-1.5">
-                                                    <button
-                                                        @click="openPermissionModal(user)"
-                                                        class="p-2 rounded-md bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-400 dark:hover:bg-violet-900/60 border border-violet-200/50 dark:border-violet-900/40 transition duration-150"
-                                                        title="Atur Akses Halaman"
-                                                    >
-                                                        <KeyRound class="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button
-                                                        @click="editUser(user)"
-                                                        class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
-                                                        :title="__('Edit')"
-                                                    >
-                                                        <Edit2 class="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button
-                                                        @click="toggleStatus(user)"
-                                                        :class="[
-                                                            'p-2 rounded-md border transition duration-150',
-                                                            user.is_active
-                                                                ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/40'
-                                                                : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-900/40'
-                                                        ]"
-                                                        :title="user.is_active ? __('pages.user_management.suspend_account') : __('pages.user_management.activate_account')"
-                                                    >
-                                                        <UserX v-if="user.is_active" class="h-3.5 w-3.5" />
-                                                        <UserCheck v-else class="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button
-                                                        @click="deleteUser(user)"
-                                                        class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
-                                                        :title="__('pages.user_management.alerts.yes_revoke')"
-                                                    >
-                                                        <Trash2 class="h-3.5 w-3.5" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
+                                    <td colspan="7" class="px-6 py-16 text-center text-slate-400 dark:text-slate-500">
+                                        {{ __('pages.user_management.table.empty_role').replace('{role}', __('pages.user_management.user_list_title')) }}
+                                    </td>
+                                </tr>
+                                <tr v-for="user in paginatedUsers" :key="user.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-9 w-9 shrink-0 aspect-square rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                                                <img v-if="user.profile_photo_path" :src="user.profile_photo_path" class="h-full w-full object-cover" />
+                                                <User v-else class="h-4.5 w-4.5" />
+                                            </div>
+                                            <div>
+                                                <div class="font-semibold text-slate-950 dark:text-white">{{ user.name }}</div>
+                                                <div class="text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-xs font-bold text-slate-600 dark:text-slate-400">
+                                        {{ user.role?.name ? __('roles.' + user.role.name) : '-' }}
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">{{ user.nip || '-' }}</td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
+                                        <div>{{ user.phone_number || '-' }}</div>
+                                        <div v-if="user.telegram_chat_id" class="text-[10px] text-violet-650 dark:text-violet-400 font-semibold flex items-center gap-0.5 mt-0.5" title="Telegram Chat ID terkonfigurasi">
+                                            <span>ID: {{ user.telegram_chat_id }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
+                                        <div v-if="user.supporting_unit" class="font-semibold text-slate-700 dark:text-slate-300">{{ user.supporting_unit.name }}</div>
+                                        <div v-if="user.room" class="text-[11px] text-slate-500 dark:text-slate-400">{{ user.room.name }}</div>
+                                        <span v-if="!user.supporting_unit && !user.room" class="text-slate-400 dark:text-slate-600">-</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold', getStatusBadge(user.is_active)]">
+                                            {{ user.is_active ? __('global.verified') : __('global.suspended') }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <button
+                                                @click="openPermissionModal(user)"
+                                                class="p-2 rounded-md bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-400 dark:hover:bg-violet-900/60 border border-violet-200/50 dark:border-violet-900/40 transition duration-150"
+                                                title="Atur Akses Halaman"
+                                            >
+                                                <KeyRound class="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                                @click="editUser(user)"
+                                                class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
+                                                :title="__('Edit')"
+                                            >
+                                                <Edit2 class="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                                @click="toggleStatus(user)"
+                                                :class="[
+                                                    'p-2 rounded-md border transition duration-150',
+                                                    user.is_active
+                                                        ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/40'
+                                                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-900/40'
+                                                ]"
+                                                :title="user.is_active ? __('pages.user_management.suspend_account') : __('pages.user_management.activate_account')"
+                                            >
+                                                <UserX v-if="user.is_active" class="h-3.5 w-3.5" />
+                                                <UserCheck v-else class="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                                @click="deleteUser(user)"
+                                                class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
+                                                :title="__('pages.user_management.alerts.yes_revoke')"
+                                            >
+                                                <Trash2 class="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
                         </table>
+                    </div>
+                    <!-- Pagination -->
+                    <div v-if="lastPage > 1" class="px-6 py-4 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div class="flex items-center gap-2"></div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
+                                {{ fromCount }}–{{ toCount }} dari {{ totalCount }}
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button
+                                    @click="goToPrev"
+                                    :disabled="!hasPrev"
+                                    class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
+                                    aria-label="Halaman sebelumnya"
+                                >
+                                    <ChevronLeft class="h-4 w-4" />
+                                </button>
+                                <button
+                                    @click="goToNext"
+                                    :disabled="!hasNext"
+                                    class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
+                                    aria-label="Halaman berikutnya"
+                                >
+                                    <ChevronRight class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

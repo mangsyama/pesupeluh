@@ -98,6 +98,31 @@ const getPriority = (target) => {
     return { label: '-', badge: '', isPending: true };
 };
 
+const totalCount = computed(() => props.tickets?.total ?? props.tickets?.meta?.total ?? 0);
+const fromCount = computed(() => props.tickets?.from ?? props.tickets?.meta?.from ?? 0);
+const toCount = computed(() => props.tickets?.to ?? props.tickets?.meta?.to ?? 0);
+const lastPage = computed(() => props.tickets?.last_page ?? props.tickets?.meta?.last_page ?? 1);
+
+const prevPageUrl = computed(() => {
+    if (props.tickets?.prev_page_url) return props.tickets.prev_page_url;
+    if (props.tickets?.links?.prev) return props.tickets.links.prev;
+    if (Array.isArray(props.tickets?.links) && props.tickets.links.length > 0) {
+        const prevLink = props.tickets.links[0];
+        return prevLink && prevLink.url ? prevLink.url : null;
+    }
+    return null;
+});
+
+const nextPageUrl = computed(() => {
+    if (props.tickets?.next_page_url) return props.tickets.next_page_url;
+    if (props.tickets?.links?.next) return props.tickets.links.next;
+    if (Array.isArray(props.tickets?.links) && props.tickets.links.length > 0) {
+        const nextLink = props.tickets.links[props.tickets.links.length - 1];
+        return nextLink && nextLink.url ? nextLink.url : null;
+    }
+    return null;
+});
+
 const goToPage = (url) => {
     if (url) router.visit(url, { preserveState: true });
 };
@@ -374,35 +399,37 @@ const formatDate = (dateStr) => {
                                             <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                         </Link>
                                     </div>
-                                </div>
+                                 </div>
                             </template>
                         </div>
-        </div>
 
-        <!-- Pagination -->
-        <div v-if="tickets.meta && tickets.meta.last_page > 1" class="flex items-center justify-between mt-4">
-            <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
-                Menampilkan {{ tickets.meta.from ?? 0 }} – {{ tickets.meta.to ?? 0 }} dari {{ tickets.meta.total ?? 0 }} tiket
-            </div>
-            <div class="flex items-center gap-1">
-                <button
-                    @click="goToPage(tickets.links?.prev)"
-                    :disabled="!tickets.links?.prev"
-                    class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
-                >
-                    <ChevronLeft class="h-4 w-4" />
-                </button>
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 px-3">
-                    {{ tickets.meta.current_page }} / {{ tickets.meta.last_page }}
+        <!-- Pagination (Notifications Index Style - Only visible when > 1 page) -->
+        <div v-if="lastPage > 1" class="px-6 py-4 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center gap-2"></div>
+            <div class="flex items-center gap-3">
+                <span class="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {{ fromCount }}–{{ toCount }} dari {{ totalCount }}
                 </span>
-                <button
-                    @click="goToPage(tickets.links?.next)"
-                    :disabled="!tickets.links?.next"
-                    class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
-                >
-                    <ChevronRight class="h-4 w-4" />
-                </button>
+                <div class="flex items-center gap-1">
+                    <button
+                        @click="goToPage(prevPageUrl)"
+                        :disabled="!prevPageUrl"
+                        class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
+                        aria-label="Halaman sebelumnya"
+                    >
+                        <ChevronLeft class="h-4 w-4" />
+                    </button>
+                    <button
+                        @click="goToPage(nextPageUrl)"
+                        :disabled="!nextPageUrl"
+                        class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
+                        aria-label="Halaman berikutnya"
+                    >
+                        <ChevronRight class="h-4 w-4" />
+                    </button>
+                </div>
             </div>
+        </div>
         </div>
     </div>
 </template>

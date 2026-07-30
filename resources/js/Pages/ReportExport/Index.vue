@@ -2,7 +2,7 @@
 import { ref, computed, watch, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, Link } from '@inertiajs/vue3';
-import { FileText, Download, BarChart3, CheckCircle2, Clock, FileBarChart2, Filter, RotateCcw, Building, MapPin, UserCheck, Eye, ExternalLink, ClipboardList, ChevronDown, Check, Search, Calendar } from '@lucide/vue';
+import { FileText, Download, BarChart3, CheckCircle2, Clock, FileBarChart2, Filter, RotateCcw, Building, MapPin, UserCheck, Eye, ExternalLink, ClipboardList, ChevronDown, ChevronLeft, ChevronRight, Check, Search, Calendar } from '@lucide/vue';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 import { Indonesian } from 'flatpickr/dist/l10n/id.js';
@@ -283,6 +283,37 @@ const exportPdf = () => {
 const exportCsv = () => {
     proxy.$toast(proxy.__('pages.reports.center.export_toast').replace('{format}', 'CSV'), 'success');
     window.location.href = route('reports.export.csv', formFilters.value);
+};
+
+const totalCount = computed(() => props.tickets?.total ?? props.tickets?.meta?.total ?? 0);
+const fromCount = computed(() => props.tickets?.from ?? props.tickets?.meta?.from ?? 0);
+const toCount = computed(() => props.tickets?.to ?? props.tickets?.meta?.to ?? 0);
+const lastPage = computed(() => props.tickets?.last_page ?? props.tickets?.meta?.last_page ?? 1);
+
+const prevPageUrl = computed(() => {
+    if (props.tickets?.prev_page_url) return props.tickets.prev_page_url;
+    if (props.tickets?.links?.prev) return props.tickets.links.prev;
+    if (Array.isArray(props.tickets?.links) && props.tickets.links.length > 0) {
+        const prevLink = props.tickets.links[0];
+        return prevLink && prevLink.url ? prevLink.url : null;
+    }
+    return null;
+});
+
+const nextPageUrl = computed(() => {
+    if (props.tickets?.next_page_url) return props.tickets.next_page_url;
+    if (props.tickets?.links?.next) return props.tickets.links.next;
+    if (Array.isArray(props.tickets?.links) && props.tickets.links.length > 0) {
+        const nextLink = props.tickets.links[props.tickets.links.length - 1];
+        return nextLink && nextLink.url ? nextLink.url : null;
+    }
+    return null;
+});
+
+const goToPage = (url) => {
+    if (url) {
+        router.visit(url, { preserveScroll: true, preserveState: true, data: formFilters.value });
+    }
 };
 
 onMounted(() => {
@@ -827,29 +858,37 @@ watch(() => props.filters, (newVal) => {
                         </table>
                     </div>
 
-                    <!-- Pagination Links -->
+                    <!-- Pagination (Notifications Index Style - Only visible when > 1 page) -->
                     <div 
-                        v-if="tickets.links && tickets.links.length > 3" 
-                        class="p-6 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-center gap-1"
+                        v-if="lastPage > 1" 
+                        class="px-6 py-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
                     >
-                        <Component 
-                            :is="link.url ? Link : 'span'"
-                            v-for="(link, idx) in tickets.links" 
-                            :key="idx" 
-                            :href="link.url"
-                            :data="formFilters"
-                            preserve-state
-                            preserve-scroll
-                            class="h-8 min-w-[32px] px-2.5 rounded-lg text-xs font-bold flex items-center justify-center transition"
-                            :class="[
-                                link.active 
-                                    ? 'bg-emerald-600 dark:bg-white text-white dark:text-slate-900' 
-                                    : link.url 
-                                        ? 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800' 
-                                        : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-                            ]"
-                            v-html="link.label"
-                        />
+                        <div class="flex items-center gap-2"></div>
+
+                        <div class="flex items-center gap-3">
+                            <span class="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
+                                {{ fromCount }}–{{ toCount }} dari {{ totalCount }}
+                            </span>
+                            
+                            <div class="flex items-center gap-1">
+                                <button
+                                    @click="goToPage(prevPageUrl)"
+                                    :disabled="!prevPageUrl"
+                                    class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
+                                    aria-label="Halaman sebelumnya"
+                                >
+                                    <ChevronLeft class="h-4 w-4" />
+                                </button>
+                                <button
+                                    @click="goToPage(nextPageUrl)"
+                                    :disabled="!nextPageUrl"
+                                    class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
+                                    aria-label="Halaman berikutnya"
+                                >
+                                    <ChevronRight class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

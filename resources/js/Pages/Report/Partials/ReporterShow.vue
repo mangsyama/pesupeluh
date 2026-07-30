@@ -423,7 +423,7 @@ const contextLabel = computed(() => {
                                         </span>
                                         <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
                                             <UserCheck class="h-4 w-4 text-slate-400 flex-shrink-0" />
-                                            <span class="text-xs font-semibold">{{ ticket.validator?.name }}</span>
+                                            <span class="text-xs font-semibold">{{ ticket.validator?.name || 'Sistem (Disposisi Otomatis)' }}</span>
                                             <span class="text-[10px] text-slate-400 dark:text-slate-555">({{ formatDateTime(ticket.validated_at) }})</span>
                                         </div>
                                     </div>
@@ -510,7 +510,7 @@ const contextLabel = computed(() => {
                                                             {{ __('pages.tickets.detail.assigned_status') }}
                                                         </p>
                                                         <p v-if="ticket.validated_at" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                                                            {{ __('pages.tickets.detail.validator_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ ticket.validator?.name }}</span>
+                                                            {{ __('pages.tickets.detail.validator_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ ticket.validator?.name || 'Sistem (Disposisi Otomatis)' }}</span>
                                                             <br />
                                                             {{ __('pages.tickets.detail.technician_label_timeline') }}: <span class="font-semibold text-slate-700 dark:text-slate-300">
                                                                 {{ ticket.assignments?.map(a => a.technician?.name).join(', ') }}

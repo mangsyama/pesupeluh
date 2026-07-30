@@ -37,24 +37,22 @@ class TicketAssignedNotification extends Notification
 
     public function toDatabase($notifiable): array
     {
+        $isEmergency = ($this->ticket->priority === 'EMERGENCY');
         return [
-            'type' => 'ticket',
-            'title' => 'Tugas Baru Diterima',
-            'message' => "Anda telah ditugaskan untuk menangani laporan #{$this->ticket->ticket_number}.",
+            'type'      => 'ticket',
+            'priority'  => $isEmergency ? 'EMERGENCY' : 'HIGH',
+            'title'     => $isEmergency ? '🚨 PENUGASAN DARURAT (EMERGENCY) INSTAN' : 'Tugas Baru Diterima',
+            'message'   => $isEmergency 
+                ? "Laporan Darurat #{$this->ticket->ticket_number} OTOMATIS DITUGASKAN KEPADA ANDA! Segera luncur ke lokasi!"
+                : "Anda telah ditugaskan untuk menangani laporan #{$this->ticket->ticket_number}.",
             'ticket_id' => $this->ticket->id,
-            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            'route'     => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
         ];
     }
 
     public function toBroadcast($notifiable): BroadcastMessage
     {
-        return new BroadcastMessage([
-            'type' => 'ticket',
-            'title' => 'Tugas Baru Diterima',
-            'message' => "Anda telah ditugaskan untuk menangani laporan #{$this->ticket->ticket_number}.",
-            'ticket_id' => $this->ticket->id,
-            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
-        ]);
+        return new BroadcastMessage($this->toDatabase($notifiable));
     }
 
     public function toTelegram($notifiable)
@@ -64,10 +62,15 @@ class TicketAssignedNotification extends Notification
 
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
+        $isEmergency = ($this->ticket->priority === 'EMERGENCY');
+
+        $header = $isEmergency 
+            ? "🚨 *PENUGASAN DARURAT (CODE RED)*" 
+            : "🛠️ *Tugas Baru Diterima*";
 
         return TelegramMessage::create()
             ->to($chatId)
-            ->content("🛠️ *Tugas Baru Diterima*\n\nAnda telah ditugaskan menangani tiket *#{$this->ticket->ticket_number}*.\n\n*Ruangan:* {$roomName}\n*Kategori:* {$categoryName}\n*Deskripsi:* {$this->ticket->problem_description}")
+            ->content("{$header}\n\nAnda telah ditugaskan menangani tiket *#{$this->ticket->ticket_number}*.\n\n*Ruangan:* {$roomName}\n*Kategori:* {$categoryName}\n*Deskripsi:* {$this->ticket->problem_description}")
             ->button('Lihat Pengerjaan Tiket', route('reports-management.show', ['ticket' => $this->ticket->uuid]));
     }
 
@@ -76,11 +79,22 @@ class TicketAssignedNotification extends Notification
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
         $link = route('reports-management.show', ['ticket' => $this->ticket->uuid]);
+        $isEmergency = ($this->ticket->priority === 'EMERGENCY');
+
+        if ($isEmergency) {
+            return "🚨 *PENUGASAN DARURAT (EMERGENCY / CODE RED)*\n\n"
+                 . "Laporan Darurat *#{$this->ticket->ticket_number}* telah dibuat!\n\n"
+                 . "• *Ruangan:* {$roomName}\n"
+                 . "• *Kategori:* {$categoryName}\n"
+                 . "• *Deskripsi Kendala:* {$this->ticket->problem_description}\n\n"
+                 . "⚠️ *SELURUH TEKNISI PIKET LANGSUNG DITUGASKAN. SEGERA MENUJU LOKASI!*\n\n"
+                 . "Lihat Tiket:\n{$link}";
+        }
 
         $priorityText = match($this->ticket->priority) {
             'URGENT' => '🚨 *URGENT (Mendesak)*',
-            'HIGH' => '⚡ *TINGGI (Segera)*',
-            default => '📋 *BIASA (Normal)*',
+            'HIGH'   => '⚡ *TINGGI (Segera)*',
+            default  => '📋 *BIASA (Normal)*',
         };
 
         return "🛠️ *Tugas Baru Diterima*\n\n"
@@ -91,6 +105,7 @@ class TicketAssignedNotification extends Notification
              . "• *Deskripsi Kendala:* {$this->ticket->problem_description}\n\n"
              . "Lihat & Kerjakan Tiket:\n{$link}";
     }
+
 
     public function toArray($notifiable): array
     {

@@ -49,38 +49,9 @@ class ServiceController extends Controller
         $category = \App\Models\IssueCategory::find($validated['category_id']);
         $supportingUnitId = $category?->supporting_unit_id;
 
-        // Determine if currently off-hours using local timezone (Asia/Jakarta)
-        $isOffHours = false;
-        $tz = config('app.timezone', 'Asia/Jakarta');
-        $now = now()->setTimezone($tz);
-        $currentTime = $now->format('H:i:s');
-        $dayOfWeek = $now->dayOfWeekIso; // 1=Monday, 7=Sunday
+        // Determine if currently off-hours using UnitWorkingHourService
+        $isOffHours = !$isEmergency && \App\Services\UnitWorkingHourService::isOffHours($supportingUnitId);
 
-        if (!$isEmergency && $supportingUnitId) {
-            $workingHour = \App\Models\UnitWorkingHour::where('supporting_unit_id', $supportingUnitId)
-                ->where('day_of_week', $dayOfWeek)
-                ->first();
-
-            if ($workingHour) {
-                if (!$workingHour->is_active) {
-                    // Unit set as inactive/off on this day (Full Day Off-Hours)
-                    $isOffHours = true;
-                } else {
-                    // Clean time string to HH:MM:SS for robust string comparison with SQL Server format
-                    $startTime = substr((string) $workingHour->start_time, 0, 8);
-                    $endTime = substr((string) $workingHour->end_time, 0, 8);
-                    
-                    if ($currentTime < $startTime || $currentTime > $endTime) {
-                        $isOffHours = true;
-                    }
-                }
-            } else {
-                // Default operational rule: Monday-Friday 07:30 - 15:00
-                if ($dayOfWeek >= 6 || $currentTime < '07:30:00' || $currentTime > '15:00:00') {
-                    $isOffHours = true;
-                }
-            }
-        }
 
         $initialStatus = ($isEmergency || $isOffHours) ? 'ASSIGNED' : 'PENDING_VALIDATION';
         $finalPriority = $isEmergency ? 'EMERGENCY' : $inputPriority;
@@ -142,7 +113,18 @@ class ServiceController extends Controller
                     ? 'Penanganan darurat! Tiket otomatis disebar ke seluruh teknisi piket.' 
                     : 'Disposisi otomatis di luar jam kerja operasional unit penunjang.',
             ]);
+
+            // Immediately send WA & App notification to assigned technicians for Emergency / Off-Hours
+            if ($onDutyTechnicians->isNotEmpty()) {
+                try {
+                    $ticket->load(['room', 'category']);
+                    \Illuminate\Support\Facades\Notification::send($onDutyTechnicians, new \App\Notifications\TicketAssignedNotification($ticket));
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Gagal mengirim WA penugasan ke teknisi piket: ' . $e->getMessage());
+                }
+            }
         }
+
 
         $attachments = $request->input('attachments', []);
         if (is_array($attachments) && count($attachments) > 0) {
