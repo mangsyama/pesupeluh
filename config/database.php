@@ -112,7 +112,6 @@ return [
             'prefix_indexes' => true,
             'encrypt' => env('DB_ENCRYPT', 'false'),
             'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'true'),
-            'date_format' => 'Y-m-d H:i:s.v P',
         ],
 
     ],

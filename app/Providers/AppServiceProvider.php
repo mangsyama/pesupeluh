@@ -23,9 +23,9 @@ class AppServiceProvider extends ServiceProvider
     {
         date_default_timezone_set(config('app.timezone', 'Asia/Makassar'));
 
-        // Pastikan Carbon saat serialisasi JSON membawa offset WITA
         Carbon::serializeUsing(function (\DateTimeInterface $date) {
-            return Carbon::instance($date)->setTimezone(config('app.timezone', 'Asia/Makassar'))->format('Y-m-d\TH:i:sP');
+            $tz = config('app.timezone', 'Asia/Makassar');
+            return Carbon::createFromFormat('Y-m-d H:i:s', $date->format('Y-m-d H:i:s'), $tz)->format('Y-m-d\TH:i:sP');
         });
 
         Vite::prefetch(concurrency: 3);
