@@ -99,4 +99,13 @@ class ServiceTicket extends Model
             set: fn (?string $value) => $value ? strtolower($value) : null,
         );
     }
+
+    /**
+     * Prepare a date for array / JSON serialization.
+     */
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        $tz = config('app.timezone', 'Asia/Makassar');
+        return \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i:s', $date->format('Y-m-d H:i:s'), $tz)->format('Y-m-d\TH:i:sP');
+    }
 }

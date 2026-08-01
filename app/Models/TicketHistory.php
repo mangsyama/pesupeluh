@@ -34,4 +34,13 @@ class TicketHistory extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    /**
+     * Prepare a date for array / JSON serialization.
+     */
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        $tz = config('app.timezone', 'Asia/Makassar');
+        return \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i:s', $date->format('Y-m-d H:i:s'), $tz)->format('Y-m-d\TH:i:sP');
+    }
 }
