@@ -98,11 +98,12 @@ const parsedDates = computed(() => {
 // SLA Timers Calculations (in Seconds)
 const responseTimeSeconds = computed(() => {
     const dates = parsedDates.value;
-    if (!dates.validated) return null;
+    const startTime = dates.validated || dates.created;
+    if (!startTime) return null;
     if (dates.responded) {
-        return Math.max(0, Math.floor((dates.responded.getTime() - dates.validated.getTime()) / 1000));
+        return Math.max(0, Math.floor((dates.responded.getTime() - startTime.getTime()) / 1000));
     }
-    return Math.max(0, Math.floor((now.value.getTime() - dates.validated.getTime()) / 1000));
+    return Math.max(0, Math.floor((now.value.getTime() - startTime.getTime()) / 1000));
 });
 
 const pausedDurationSeconds = computed(() => {

@@ -44,6 +44,27 @@ RUN set -eux; \
 
 COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
+# Configure PHP timezone, upload limits, and performance settings
+RUN { \
+        echo 'date.timezone = Asia/Makassar'; \
+        echo 'post_max_size = 20M'; \
+        echo 'upload_max_filesize = 20M'; \
+        echo 'memory_limit = 256M'; \
+        echo 'max_execution_time = 120'; \
+        echo 'max_input_time = 120'; \
+    } > /usr/local/etc/php/conf.d/uploads.ini
+
+# Configure PHP-FPM pool for production concurrency
+RUN { \
+        echo '[www]'; \
+        echo 'pm = dynamic'; \
+        echo 'pm.max_children = 20'; \
+        echo 'pm.start_servers = 5'; \
+        echo 'pm.min_spare_servers = 3'; \
+        echo 'pm.max_spare_servers = 10'; \
+        echo 'pm.max_requests = 500'; \
+    } > /usr/local/etc/php-fpm.d/zz-production.conf
+
 # Install Node.js and npm for Vite assets
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \

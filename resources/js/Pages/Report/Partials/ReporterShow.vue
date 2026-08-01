@@ -67,31 +67,41 @@ onUnmounted(() => {
 const user = computed(() => usePage().props.auth.user);
 
 // Date Parsing
+const parseDateSafe = (dateStr) => {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    const str = String(dateStr).trim();
+    const normalized = str.includes(' ') && !str.includes('T') ? str.replace(' ', 'T') : str;
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? null : d;
+};
+
 const parsedDates = computed(() => {
     return {
-        created: props.ticket?.created_at ? new Date(props.ticket.created_at) : null,
-        validated: props.ticket?.validated_at ? new Date(props.ticket.validated_at) : null,
-        responded: props.ticket?.responded_at ? new Date(props.ticket.responded_at) : null,
-        resolved: props.ticket?.resolved_at ? new Date(props.ticket.resolved_at) : null,
-        lastPaused: props.ticket?.last_paused_at ? new Date(props.ticket.last_paused_at) : null,
+        created: parseDateSafe(props.ticket?.created_at),
+        validated: parseDateSafe(props.ticket?.validated_at),
+        responded: parseDateSafe(props.ticket?.responded_at),
+        resolved: parseDateSafe(props.ticket?.resolved_at),
+        lastPaused: parseDateSafe(props.ticket?.last_paused_at),
     };
 });
 
 // SLA Timers Calculations (in Seconds)
 const responseTimeSeconds = computed(() => {
     const dates = parsedDates.value;
-    if (!dates.validated) return null;
+    const startTime = dates.validated || dates.created;
+    if (!startTime) return null;
     if (dates.responded) {
-        return Math.max(0, Math.floor((dates.responded - dates.validated) / 1000));
+        return Math.max(0, Math.floor((dates.responded.getTime() - startTime.getTime()) / 1000));
     }
-    return Math.max(0, Math.floor((now.value - dates.validated) / 1000));
+    return Math.max(0, Math.floor((now.value.getTime() - startTime.getTime()) / 1000));
 });
 
 const pausedDurationSeconds = computed(() => {
     const dates = parsedDates.value;
-    let accumulated = props.ticket?.paused_duration_seconds || 0;
+    let accumulated = Number(props.ticket?.paused_duration_seconds || 0);
     if (props.ticket?.status === 'PENDING' && dates.lastPaused) {
-        const elapsedSincePause = Math.floor((now.value - dates.lastPaused) / 1000);
+        const elapsedSincePause = Math.floor((now.value.getTime() - dates.lastPaused.getTime()) / 1000);
         accumulated += Math.max(0, elapsedSincePause);
     }
     return accumulated;
@@ -99,18 +109,19 @@ const pausedDurationSeconds = computed(() => {
 
 const resolutionTimeSeconds = computed(() => {
     const dates = parsedDates.value;
-    if (!dates.validated) return null;
+    const startTime = dates.validated || dates.created;
+    if (!startTime) return null;
     const pauseSecs = pausedDurationSeconds.value;
 
     if (dates.resolved) {
-        const total = Math.floor((dates.resolved - dates.validated) / 1000);
-        return Math.max(0, total - (props.ticket?.paused_duration_seconds || 0));
+        const total = Math.floor((dates.resolved.getTime() - startTime.getTime()) / 1000);
+        return Math.max(0, total - Number(props.ticket?.paused_duration_seconds || 0));
     }
     if (props.ticket?.status === 'PENDING' && dates.lastPaused) {
-        const total = Math.floor((dates.lastPaused - dates.validated) / 1000);
-        return Math.max(0, total - (props.ticket?.paused_duration_seconds || 0));
+        const total = Math.floor((dates.lastPaused.getTime() - startTime.getTime()) / 1000);
+        return Math.max(0, total - Number(props.ticket?.paused_duration_seconds || 0));
     }
-    const total = Math.floor((now.value - dates.validated) / 1000);
+    const total = Math.floor((now.value.getTime() - startTime.getTime()) / 1000);
     return Math.max(0, total - pauseSecs);
 });
 

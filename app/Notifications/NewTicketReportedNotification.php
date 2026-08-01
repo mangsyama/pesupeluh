@@ -12,7 +12,7 @@ use Illuminate\Notifications\Notification;
 use NotificationChannels\Telegram\TelegramChannel;
 use NotificationChannels\Telegram\TelegramMessage;
 
-class NewTicketReportedNotification extends Notification
+class NewTicketReportedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

@@ -42,7 +42,7 @@ class WaGatewayChannel
         $secretKey = config('services.wa_gateway.secret_key');
 
         try {
-            $client = Http::timeout(10)->withoutVerifying();
+            $client = Http::timeout(3)->withoutVerifying();
             if (!empty($secretKey)) {
                 $client = $client->withHeaders(['X-Api-Key' => $secretKey]);
             }

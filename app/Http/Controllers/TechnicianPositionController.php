@@ -24,7 +24,7 @@ class TechnicianPositionController extends Controller
             ->with(['assignments' => function ($query) {
                 $query->whereHas('ticket', function ($q) {
                     $q->where('status', 'IN_PROGRESS');
-                })->with(['ticket:id,uuid,ticket_number,title,status,room_id,location_detail', 'ticket.room:id,name']);
+                })->with(['ticket:id,uuid,ticket_number,problem_description,status,room_id', 'ticket.room:id,name']);
             }])
             ->withCount([
                 'assignments as active_tickets_count' => function ($query) {
@@ -49,8 +49,7 @@ class TechnicianPositionController extends Controller
             $autoLocation = null;
             if ($activeTicket) {
                 $roomName = $activeTicket->room ? $activeTicket->room->name : null;
-                $locDetail = $activeTicket->location_detail;
-                $locParts = array_filter([$roomName, $locDetail]);
+                $locParts = array_filter([$roomName]);
                 $autoLocation = !empty($locParts) ? implode(' - ', $locParts) : 'Lokasi Penugasan';
             } else {
                 $autoLocation = $t->current_location ?: 'Area Pos Standby';
@@ -71,7 +70,7 @@ class TechnicianPositionController extends Controller
                 'active_ticket' => $activeTicket ? [
                     'uuid' => $activeTicket->uuid,
                     'ticket_number' => $activeTicket->ticket_number,
-                    'title' => $activeTicket->title,
+                    'title' => $activeTicket->problem_description,
                     'status' => $activeTicket->status,
                     'room_name' => $activeTicket->room ? $activeTicket->room->name : null,
                 ] : null,
