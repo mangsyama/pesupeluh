@@ -24,9 +24,7 @@ class AppServiceProvider extends ServiceProvider
         date_default_timezone_set(config('app.timezone', 'Asia/Makassar'));
 
         Carbon::serializeUsing(function (\DateTimeInterface $date) {
-            return Carbon::instance($date)
-                ->setTimezone(config('app.timezone', 'Asia/Makassar'))
-                ->format('Y-m-d\TH:i:sP');
+            return Carbon::instance($date)->format('Y-m-d\TH:i:s');
         });
 
         Vite::prefetch(concurrency: 3);
