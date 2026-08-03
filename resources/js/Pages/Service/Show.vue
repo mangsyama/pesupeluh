@@ -102,11 +102,9 @@ const selectFeature = (id) => {
 
     <AuthenticatedLayout>
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
-            <div class="w-full space-y-4">
-                
-                <div class="w-full space-y-4">
-                    <!-- Premium Header -->
-                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="w-full space-y-0 sm:space-y-4">
+                <!-- Premium Header -->
+                <div class="hidden sm:flex bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
                             <div 
                                 :class="[
@@ -205,8 +203,6 @@ const selectFeature = (id) => {
 
                     </div>
                 </div>
-
-            </div>
         </div>
     </AuthenticatedLayout>
 </template>

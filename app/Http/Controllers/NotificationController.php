@@ -59,6 +59,7 @@ class NotificationController extends Controller
 
         return \Inertia\Inertia::render('Notifications/Index', [
             'notifications' => $notifications,
+            'allNotifications' => $notifications,
         ]);
     }
 

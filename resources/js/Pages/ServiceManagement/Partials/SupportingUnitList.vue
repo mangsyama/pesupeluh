@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, getCurrentInstance, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { Edit2, Trash2, X, Stethoscope, ShieldCheck } from '@lucide/vue';
@@ -19,6 +19,55 @@ const { proxy } = getCurrentInstance();
 
 const showUnitModal = ref(false);
 const isEditingUnit = ref(false);
+
+const handleEscapeKeyUnit = (e) => {
+    if (e.key === 'Escape' && showUnitModal.value) {
+        showUnitModal.value = false;
+    }
+};
+
+const handlePopStateUnit = () => {
+    if (showUnitModal.value) {
+        showUnitModal.value = false;
+    }
+};
+
+let pushHistoryFlagUnit = false;
+
+watch(showUnitModal, (newVal) => {
+    if (newVal) {
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleEscapeKeyUnit);
+        window.addEventListener('popstate', handlePopStateUnit);
+        try {
+            window.history.pushState({ modalOpen: true }, '');
+            pushHistoryFlagUnit = true;
+        } catch (e) {
+            // ignore
+        }
+    } else {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleEscapeKeyUnit);
+        window.removeEventListener('popstate', handlePopStateUnit);
+
+        if (pushHistoryFlagUnit && window.history.state && window.history.state.modalOpen) {
+            pushHistoryFlagUnit = false;
+            try {
+                window.history.back();
+            } catch (e) {
+                // ignore
+            }
+        } else {
+            pushHistoryFlagUnit = false;
+        }
+    }
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleEscapeKeyUnit);
+    window.removeEventListener('popstate', handlePopStateUnit);
+    document.body.style.overflow = '';
+});
 
 const unitForm = useForm({
     id: null,
@@ -345,75 +394,79 @@ defineExpose({
 
         <!-- SUPPORTING UNIT MODAL -->
         <Teleport to="body">
-            <div v-if="showUnitModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
-                        <h3 class="text-base font-bold text-slate-900 dark:text-white">
-                            {{ isEditingUnit ? 'Edit Unit Penunjang' : 'Tambah Unit Penunjang' }}
+            <div v-if="showUnitModal" @click.self="showUnitModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-950/40 backdrop-blur-sm">
+                <div class="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md bg-white dark:bg-slate-900 border-0 rounded-none sm:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col">
+                    <!-- Header Modal Warna Hijau -->
+                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 bg-emerald-600 dark:bg-emerald-700 text-white rounded-none sm:rounded-t-2xl shrink-0 shadow-sm">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <span>{{ isEditingUnit ? 'Edit Unit Penunjang' : 'Tambah Unit Penunjang' }}</span>
                         </h3>
-                        <button type="button" @click="showUnitModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
+                        <button type="button" @click="showUnitModal = false" class="p-1.5 text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors" aria-label="Tutup modal">
                             <X class="h-5 w-5" />
                         </button>
                     </div>
-                    <form @submit.prevent="submitUnitForm" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Kelompok Layanan</label>
-                            <SearchableSelect
-                                v-model="unitForm.type"
-                                :options="typeOptions"
-                                :searchable="false"
-                                value-key="value"
-                                label-key="label"
-                                placeholder="Pilih Kelompok Layanan..."
-                            />
+                    <form @submit.prevent="submitUnitForm" class="flex flex-col flex-1 overflow-hidden min-h-0">
+                        <div class="p-5 sm:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Kelompok Layanan</label>
+                                <SearchableSelect
+                                    v-model="unitForm.type"
+                                    :options="typeOptions"
+                                    :searchable="false"
+                                    value-key="value"
+                                    label-key="label"
+                                    placeholder="Pilih Kelompok Layanan..."
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nama Unit Penunjang</label>
+                                <input 
+                                    v-model="unitForm.name"
+                                    @input="autoGenerateSlug"
+                                    type="text" 
+                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
+                                    placeholder="Contoh: IPSRS"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Slug URL / Identifier</label>
+                                <input 
+                                    v-model="unitForm.slug"
+                                    type="text" 
+                                    class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
+                                    placeholder="ipsrs"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Deskripsi Singkat</label>
+                                <textarea 
+                                    v-model="unitForm.description"
+                                    rows="3" 
+                                    class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
+                                    placeholder="Jelaskan peran unit penunjang ini..."
+                                ></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Status Ketersediaan</label>
+                                <SearchableSelect
+                                    v-model="unitForm.status"
+                                    :options="statusOptions"
+                                    :searchable="false"
+                                    value-key="value"
+                                    label-key="label"
+                                    placeholder="Pilih Status Ketersediaan..."
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Nama Unit Penunjang</label>
-                            <input 
-                                v-model="unitForm.name"
-                                @input="autoGenerateSlug"
-                                type="text" 
-                                class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
-                                placeholder="Contoh: IPSRS"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Slug URL / Identifier</label>
-                            <input 
-                                v-model="unitForm.slug"
-                                type="text" 
-                                class="w-full h-10 px-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
-                                placeholder="ipsrs"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Deskripsi Singkat</label>
-                            <textarea 
-                                v-model="unitForm.description"
-                                rows="3" 
-                                class="w-full p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
-                                placeholder="Jelaskan peran unit penunjang ini..."
-                            ></textarea>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Status Ketersediaan</label>
-                            <SearchableSelect
-                                v-model="unitForm.status"
-                                :options="statusOptions"
-                                :searchable="false"
-                                value-key="value"
-                                label-key="label"
-                                placeholder="Pilih Status Ketersediaan..."
-                            />
-                        </div>
-
-                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
+                        <!-- Fixed Bottom Footer (pinned at bottom) -->
+                        <div class="flex justify-end gap-3 px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50 flex-shrink-0">
                             <button type="button" @click="showUnitModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150">{{ __('global.cancel') }}</button>
                             <button type="submit" :disabled="unitForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 border-0 shadow-sm disabled:opacity-50">Simpan Unit</button>
                         </div>

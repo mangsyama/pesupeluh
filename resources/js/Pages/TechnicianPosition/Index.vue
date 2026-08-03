@@ -97,10 +97,10 @@ const toggleDutyStatus = (isOnDuty) => {
 
     <AuthenticatedLayout>
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
-            <div class="w-full space-y-4">
+            <div class="w-full">
                 
-                <!-- Header Panel (IDENTICAL TO USERMANAGEMENT & WORKINGHOURS) -->
-                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+                <!-- Header Panel (Hidden on mobile) -->
+                <div class="hidden sm:flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <MapPin class="h-6 w-6" />
@@ -117,7 +117,7 @@ const toggleDutyStatus = (isOnDuty) => {
                 </div>
 
                 <!-- Prominent Technician Attendance Control Banner (ONLY visible for TECHNICIANS: role_id 10) -->
-                <div v-if="currentUser?.role_id === 10" class="bg-emerald-600 text-white p-6 rounded-2xl shadow-sm">
+                <div v-if="currentUser?.role_id === 10" class="bg-emerald-600 text-white p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div class="space-y-1.5 max-w-xl">
                             <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-md bg-emerald-700/60 text-xs font-bold text-emerald-100">
@@ -168,7 +168,7 @@ const toggleDutyStatus = (isOnDuty) => {
                 </div>
 
                 <!-- Stats Overview Grid (4 Columns) - HIDDEN FOR TECHNICIANS (role_id 10) -->
-                <div v-if="currentUser?.role_id !== 10" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div v-if="currentUser?.role_id !== 10" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <!-- Total Teknisi -->
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">
@@ -215,7 +215,7 @@ const toggleDutyStatus = (isOnDuty) => {
                 </div>
 
                 <!-- Technician Cards Grid -->
-                <div v-if="technicians.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                <div v-if="technicians.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-4">
                     <div
                         v-for="tech in technicians"
                         :key="tech.id"

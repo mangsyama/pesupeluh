@@ -15,11 +15,19 @@ import {
 const props = defineProps({
     allNotifications: {
         type: Object,
-        default: () => ({ data: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, prev_page_url: null, next_page_url: null }),
+        default: null,
+    },
+    notifications: {
+        type: Object,
+        default: null,
     }
 });
 
-const notificationsList = computed(() => props.allNotifications?.data ?? []);
+const paginationData = computed(() => {
+    return props.allNotifications || props.notifications || { data: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, prev_page_url: null, next_page_url: null };
+});
+
+const notificationsList = computed(() => paginationData.value?.data ?? []);
 const unreadCount = computed(() => notificationsList.value.filter(n => !n.read_at).length);
 
 const handleNotificationClick = (notif) => {
@@ -115,7 +123,7 @@ const goToPage = (url) => {
                     </div>
 
                     <!-- Footer / Action Area mimicking Settings Index box layout (only rendered if pagination is needed) -->
-                    <div v-if="allNotifications.last_page > 1" class="px-2 py-4 border-t border-slate-100 dark:border-slate-800/60 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div v-if="paginationData.last_page > 1" class="px-2 py-4 border-t border-slate-100 dark:border-slate-800/60 mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div class="flex items-center gap-2">
                             <!-- Left space left intentionally blank -->
                         </div>
@@ -123,21 +131,21 @@ const goToPage = (url) => {
                         <!-- Pagination -->
                         <div class="flex items-center gap-3">
                             <span class="text-[10px] sm:text-xs font-medium text-slate-500 dark:text-slate-400">
-                                {{ allNotifications.from }}–{{ allNotifications.to }} dari {{ allNotifications.total }}
+                                {{ paginationData.from }}–{{ paginationData.to }} dari {{ paginationData.total }}
                             </span>
                             
                             <div class="flex items-center gap-1">
                                 <button
-                                    @click="goToPage(allNotifications.prev_page_url)"
-                                    :disabled="!allNotifications.prev_page_url"
+                                    @click="goToPage(paginationData.prev_page_url)"
+                                    :disabled="!paginationData.prev_page_url"
                                     class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
                                     aria-label="Halaman sebelumnya"
                                 >
                                     <ChevronLeft class="h-4 w-4" />
                                 </button>
                                 <button
-                                    @click="goToPage(allNotifications.next_page_url)"
-                                    :disabled="!allNotifications.next_page_url"
+                                    @click="goToPage(paginationData.next_page_url)"
+                                    :disabled="!paginationData.next_page_url"
                                     class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150"
                                     aria-label="Halaman berikutnya"
                                 >

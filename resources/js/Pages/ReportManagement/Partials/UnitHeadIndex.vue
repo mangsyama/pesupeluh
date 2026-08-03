@@ -383,45 +383,51 @@ const formatDate = (dateStr) => {
                                 <div
                                     v-for="ticket in tickets.data"
                                     :key="'mobile-ticket-' + ticket.id"
-                                     class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 transition-all duration-150"
+                                    class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 transition-all duration-150"
                                 >
                                     <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="font-extrabold text-xs text-slate-900 dark:text-white">#{{ ticket.ticket_number }}</span>
-                                            <span v-if="!getPriority(ticket).isPending" :class="['px-1.5 py-0.5 rounded text-[8px] font-bold', getPriority(ticket).badge]">
-                                                {{ getPriority(ticket).label }}
-                                            </span>
-                                            <span v-else class="text-slate-400 font-bold text-xs">-</span>
-                                        </div>
-                                        <span :class="['px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
+                                        <span class="font-extrabold text-xs text-slate-900 dark:text-white">#{{ ticket.ticket_number }}</span>
+                                        <span :class="['px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
                                             {{ getStatus(ticket.status).label }}
                                         </span>
                                     </div>
-
-                                    <h4 class="font-bold text-slate-900 dark:text-white text-xs">
-                                        {{ ticket.category?.name ?? '-' }}
-                                    </h4>
 
                                     <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                         {{ ticket.problem_description }}
                                     </p>
 
-                                    <div class="text-[10px] text-slate-400 space-y-1 bg-slate-50 dark:bg-slate-950/30 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/40">
-                                        <div class="flex justify-between">
-                                            <span class="font-semibold">Pelapor:</span>
-                                            <span>{{ ticket.reporter?.name ?? '-' }}</span>
+                                    <div class="text-[11px] space-y-1.5 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Pelapor:</span>
+                                            <span class="font-bold text-slate-800 dark:text-slate-200">
+                                                {{ ticket.reporter?.name ?? '-' }}
+                                                <span v-if="ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name" class="text-slate-400 font-normal text-[10px]">
+                                                    ({{ ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name }})
+                                                </span>
+                                            </span>
                                         </div>
-                                        <div class="flex justify-between">
-                                            <span class="font-semibold">Ruangan:</span>
-                                            <span>{{ ticket.room?.name ?? '-' }}</span>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Kategori:</span>
+                                            <span class="font-bold text-emerald-700 dark:text-emerald-400">{{ ticket.category?.name ?? '-' }}</span>
                                         </div>
-                                        <div class="flex justify-between">
-                                            <span class="font-semibold">Tanggal:</span>
-                                            <span>{{ formatDate(ticket.created_at) }}</span>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Ruangan:</span>
+                                            <span class="font-semibold text-slate-800 dark:text-slate-200">{{ ticket.room?.name ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Prioritas:</span>
+                                            <span v-if="!getPriority(ticket).isPending" :class="['px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border', getPriority(ticket).badge]">
+                                                {{ getPriority(ticket).label }}
+                                            </span>
+                                            <span v-else class="text-slate-400 font-bold text-xs">-</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Tanggal:</span>
+                                            <span class="font-medium text-slate-700 dark:text-slate-300">{{ formatDate(ticket.created_at) }}</span>
                                         </div>
                                     </div>
 
-                                    <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/50">
+                                    <div class="flex items-center gap-2 pt-0">
                                         <Link
                                             :href="route('reports-management.show', ticket.uuid)"
                                             :class="[
@@ -444,7 +450,7 @@ const formatDate = (dateStr) => {
                                             <Trash2 class="h-4 w-4" />
                                         </button>
                                     </div>
-                                 </div>
+                                </div>
                             </template>
                         </div>
 

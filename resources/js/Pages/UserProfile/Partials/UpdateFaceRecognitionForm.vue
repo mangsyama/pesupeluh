@@ -183,7 +183,8 @@ const deleteFaceScan = () => {
     proxy.$swal({
         title: 'Hapus Rekam Wajah?',
         text: 'Anda tidak dapat lagi menggunakan Login Wajah sampai Anda melakukan rekam wajah kembali.',
-        icon: 'warning',
+        icon: 'error',
+        iconColor: '#ef4444',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#64748b',
@@ -206,28 +207,30 @@ const deleteFaceScan = () => {
     <section class="space-y-6">
         <div>
             <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                Data Rekam Wajah (Biometrik Login)
+                Data Rekam Wajah
             </h3>
             <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Kelola sampel wajah biometrik untuk login instan tanpa mengetik kata sandi.</p>
         </div>
 
-        <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
+        <div class="pt-1">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="flex items-start sm:items-center gap-3.5">
                     <div class="h-12 w-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/40 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
                         <ScanFace class="h-6 w-6" />
                     </div>
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <h4 class="text-xs font-bold text-slate-800 dark:text-white uppercase">Status Biometrik Wajah</h4>
-                            <span v-if="hasFaceScan" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40">
-                                <CheckCircle2 class="h-3 w-3" /> Terdaftar
-                            </span>
-                            <span v-else class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40">
-                                <AlertCircle class="h-3 w-3" /> Belum Terdaftar
-                            </span>
+                    <div class="space-y-1 min-w-0">
+                        <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-white uppercase shrink-0">Status Biometrik Wajah</h4>
+                            <div>
+                                <span v-if="hasFaceScan" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40 shrink-0 whitespace-nowrap">
+                                    <CheckCircle2 class="h-3 w-3" /> Terdaftar
+                                </span>
+                                <span v-else class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/40 shrink-0 whitespace-nowrap">
+                                    <AlertCircle class="h-3 w-3" /> Belum Terdaftar
+                                </span>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        <p class="hidden sm:block text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                             {{ hasFaceScan 
                                 ? 'Sampel wajah Anda sudah terdaftar dan siap digunakan untuk Login Wajah.' 
                                 : 'Anda belum melakukan pendaftaran sampel wajah biometrik.' }}

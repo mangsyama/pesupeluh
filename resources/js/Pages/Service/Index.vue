@@ -119,7 +119,7 @@ const getUnitIcon = (name, slug, type) => {
             <div class="w-full">
                 
                 <!-- Premium Header Panel -->
-                <div v-if="activeSection === null" class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
+                <div v-if="activeSection === null" class="hidden sm:flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <Activity class="h-6 w-6" />

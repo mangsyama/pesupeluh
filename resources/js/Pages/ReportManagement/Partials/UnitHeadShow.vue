@@ -39,24 +39,7 @@ const showSlaInfoModal = ref(false);
 const user = computed(() => usePage().props.auth.user);
 const isAdmin = computed(() => Number(user.value?.role_id) === 1);
 
-const confirmDelete = () => {
-    if (!props.ticket?.uuid) return;
-    proxy.$swal({
-        title: proxy.__('Apakah Anda yakin?'),
-        text: `Laporan #${props.ticket.ticket_number} akan dihapus dari antrean!`,
-        icon: 'error',
-        iconColor: '#ef4444',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Ya, Hapus Laporan',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            router.delete(route('reports-management.destroy', props.ticket.uuid));
-        }
-    });
-};
+
 
 const pendingHistories = computed(() => {
     const list = props.ticket?.histories ? props.ticket.histories.filter(h => h.action === 'PAUSED' || h.action === 'RESUMED' || h.status === 'PENDING') : [];
@@ -187,14 +170,14 @@ const formatDuration = (seconds) => {
 const formatDateTime = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
-    return d.toLocaleString('id-ID', {
+    const datePart = d.toLocaleDateString('id-ID', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
     });
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${datePart}, ${hours}:${minutes} WITA`;
 };
 
 const assignForm = useForm({
@@ -409,16 +392,6 @@ const contextLabel = computed(() => {
                         </p>
                     </div>
                 </div>
-                <div v-if="isAdmin" class="flex items-center gap-2">
-                    <button
-                        type="button"
-                        @click="confirmDelete"
-                        class="px-4 py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs"
-                    >
-                        <Trash2 class="h-4 w-4" />
-                        <span>Hapus Laporan</span>
-                    </button>
-                </div>
             </div>
 
                     <!-- Main Section Layout Grid -->
@@ -461,7 +434,7 @@ const contextLabel = computed(() => {
                                                 {{ __('pages.tickets.detail.room_location') }}
                                             </div>
                                             <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
-                                                {{ ticket.room?.name || '-' }} <span v-if="formatRoomDetails(ticket.room)" class="text-xs text-slate-400 dark:text-slate-500 font-normal">({{ formatRoomDetails(ticket.room) }})</span>
+                                                {{ ticket.room?.name || '-' }} <span v-if="formatRoomDetails(ticket.room)" class="text-slate-400 dark:text-slate-500">({{ formatRoomDetails(ticket.room) }})</span>
                                             </div>
                                         </div>
 

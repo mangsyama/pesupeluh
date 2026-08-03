@@ -92,7 +92,7 @@ const handleLangChange = (selected) => {
                         </div>
                         <span>{{ __('pages.settings.profile_section') }}</span>
                     </h3>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-1">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div class="min-w-0 flex-1">
                             <label class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ __('pages.settings.account_info') }}</label>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">{{ __('pages.settings.edit_profile_desc') }}</p>
@@ -100,7 +100,7 @@ const handleLangChange = (selected) => {
                         <Link 
                             :href="route('profile.edit')"
                             prefetch
-                            class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-xs rounded-xl transition duration-150 flex-shrink-0 whitespace-nowrap self-start sm:self-center shadow-sm"
+                            class="inline-flex items-center justify-center gap-2 h-10 px-5 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-xs rounded-xl transition duration-150 flex-shrink-0 whitespace-nowrap w-full sm:w-auto shadow-sm"
                         >
                             {{ __('pages.settings.edit_profile') }}
                         </Link>

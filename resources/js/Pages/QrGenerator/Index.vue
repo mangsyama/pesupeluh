@@ -269,9 +269,9 @@ onMounted(() => {
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full xl:w-auto">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full xl:w-auto">
                         <!-- Domain Origin Badge -->
-                        <div class="inline-flex items-center gap-2 px-3.5 h-10 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 flex-1 xl:flex-initial justify-center sm:justify-start">
+                        <div class="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 h-10 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300">
                             <Globe class="h-4 w-4 text-emerald-500 shrink-0" />
                             <span class="truncate font-bold text-emerald-600 dark:text-white">{{ currentOrigin }}</span>
                         </div>
@@ -279,7 +279,7 @@ onMounted(() => {
                         <!-- Reset / Refresh Button -->
                         <button 
                             @click="resetConfig" 
-                            class="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer flex-1 xl:flex-initial"
+                            class="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"
                         >
                             <RefreshCw class="h-4 w-4" />
                             <span>Reset Form</span>

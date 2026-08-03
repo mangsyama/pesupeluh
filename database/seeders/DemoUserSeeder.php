@@ -15,7 +15,7 @@ class DemoUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $defaultPassword = Hash::make('password123');
+        $defaultPassword = Hash::make('12345678');
 
         $demoUsers = [
             // 2. Director (DIREKTUR)

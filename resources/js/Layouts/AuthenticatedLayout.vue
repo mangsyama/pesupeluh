@@ -601,9 +601,12 @@ const searchableItems = [
 const mobilePageTitles = [
     { routeName: 'dashboard', label: 'Dashboard' },
     { routeName: 'services.index', label: 'Layanan Penunjang' },
-    { routeName: 'services.medik', label: 'Layanan Penunjang Medik' },
-    { routeName: 'services.non-medik', label: 'Layanan Penunjang Non-Medik' },
+    { routeName: 'services.medik', label: 'Penunjang Medik' },
+    { routeName: 'services.non-medik', label: 'Penunjang Non-Medik' },
     { routeName: 'services.units.show', label: 'Unit Penunjang' },
+    { routeName: 'technicians.position', label: 'Posisi & Status Teknisi' },
+    { routeName: 'technicians.radar', label: 'Posisi & Status Teknisi' },
+    { routeName: 'service-management.working-hours', label: 'Jam Operasional' },
     { routeName: 'reports.index', label: 'Laporan & Export' },
     { routeName: 'reports.history', label: 'Riwayat Pelaporan' },
     { routeName: 'reports.show', label: 'Detail Laporan Saya' },
@@ -625,9 +628,18 @@ const mobilePageTitles = [
     { routeName: 'design-system.tables', label: 'Sistem Desain - Tabel & Pagination' },
     { routeName: 'design-system.cards', label: 'Sistem Desain - Kartu Statistik' },
     { routeName: 'notifications.index', label: 'Semua Notifikasi' },
+    { routeName: 'admin.wa-gateway.index', label: 'WhatsApp Gateway' },
+    { routeName: 'admin.qr-code.index', label: 'Generator QR Code' },
+    { routeName: 'admin.qr-generator.index', label: 'Generator QR Code' },
 ];
 
 const currentPageTitle = computed(() => {
+    if (route().current('services.units.show')) {
+        const unit = page.props.unit;
+        if (unit && unit.name) {
+            return unit.name;
+        }
+    }
     const match = mobilePageTitles.find(item => route().current(item.routeName));
     return match ? match.label : '';
 });

@@ -364,69 +364,75 @@ const formatDate = (dateStr) => {
                                 <div
                                     v-for="ticket in tickets.data"
                                     :key="'mobile-ticket-' + ticket.id"
-                                    class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/65 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                                    class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 transition-all duration-150"
                                 >
-                                    <div class="space-y-3">
-                                        <div class="flex justify-between items-start gap-2">
-                                            <div class="space-y-0.5">
-                                                <span class="text-[10px] font-extrabold text-slate-400 dark:text-slate-500">
-                                                    #{{ ticket.ticket_number }}
-                                                </span>
-                                                <h4 class="font-bold text-slate-900 dark:text-white text-xs line-clamp-1">
-                                                    {{ ticket.category?.name ?? '-' }}
-                                                </h4>
-                                            </div>
-                                            <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border', getStatus(ticket.status).badge]">
-                                                {{ getStatus(ticket.status).label }}
-                                            </span>
-                                        </div>
-
-                                        <div class="flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 px-2.5 py-1 rounded-xl w-fit font-semibold">
-                                            <MapPin class="h-3.5 w-3.5" />
-                                            <span>{{ ticket.room?.name ?? '-' }}</span>
-                                        </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-extrabold text-xs text-slate-900 dark:text-white">#{{ ticket.ticket_number }}</span>
+                                        <span :class="['px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
+                                            {{ getStatus(ticket.status).label }}
+                                        </span>
+                                    </div>
 
                                     <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                         {{ ticket.problem_description }}
                                     </p>
 
-                                    <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/40">
-                                        <span>Pelapor: <strong class="text-slate-700 dark:text-slate-300">{{ ticket.reporter?.name ?? '-' }}</strong></span>
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="font-medium text-slate-500">Prioritas:</span>
-                                            <span v-if="!getPriority(ticket).isPending" :class="['px-1.5 py-0.2 rounded text-[8px] font-bold', getPriority(ticket).badge]">
+                                    <div class="text-[11px] space-y-1.5 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Pelapor:</span>
+                                            <span class="font-bold text-slate-800 dark:text-slate-200">
+                                                {{ ticket.reporter?.name ?? '-' }}
+                                                <span v-if="ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name" class="text-slate-400 font-normal text-[10px]">
+                                                    ({{ ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name }})
+                                                </span>
+                                            </span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Kategori:</span>
+                                            <span class="font-bold text-emerald-700 dark:text-emerald-400">{{ ticket.category?.name ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Ruangan:</span>
+                                            <span class="font-semibold text-slate-800 dark:text-slate-200">{{ ticket.room?.name ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Prioritas:</span>
+                                            <span v-if="!getPriority(ticket).isPending" :class="['px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border', getPriority(ticket).badge]">
                                                 {{ getPriority(ticket).label }}
                                             </span>
                                             <span v-else class="text-slate-400 font-bold text-xs">-</span>
                                         </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Tanggal:</span>
+                                            <span class="font-medium text-slate-700 dark:text-slate-300">{{ formatDate(ticket.created_at) }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-0">
+                                        <Link
+                                            :href="route('reports-management.show', ticket.uuid)"
+                                            :class="[
+                                                'w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-150',
+                                                ticket.status === 'ASSIGNED'
+                                                    ? 'bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
+                                                    : ticket.status === 'IN_PROGRESS'
+                                                    ? 'bg-emerald-700 hover:bg-emerald-600 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                                            ]"
+                                        >
+                                            <span>
+                                                {{ 
+                                                    ticket.status === 'ASSIGNED' 
+                                                        ? 'Mulai Kerjakan' 
+                                                        : ticket.status === 'IN_PROGRESS' 
+                                                        ? 'Update Progres Kerjaan' 
+                                                        : 'Lihat Detail Laporan' 
+                                                }}
+                                            </span>
+                                            <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
+                                        </Link>
                                     </div>
                                 </div>
-
-                                <div class="border-t border-slate-100 dark:border-slate-800/60 pt-3 mt-4">
-                                    <Link
-                                        :href="route('reports-management.show', ticket.uuid)"
-                                        :class="[
-                                            'w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-150',
-                                            ticket.status === 'ASSIGNED'
-                                                ? 'bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
-                                                : ticket.status === 'IN_PROGRESS'
-                                                ? 'bg-emerald-700 hover:bg-emerald-600 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
-                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
-                                        ]"
-                                    >
-                                        <span>
-                                            {{ 
-                                                ticket.status === 'ASSIGNED' 
-                                                    ? 'Mulai Kerjakan' 
-                                                    : ticket.status === 'IN_PROGRESS' 
-                                                    ? 'Update Progres Kerjaan' 
-                                                    : 'Lihat Detail Laporan' 
-                                            }}
-                                        </span>
-                                        <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
-                                    </Link>
-                                </div>
-                            </div>
                         </template>
                     </div>
         <!-- Pagination (Notifications Index Style - Only visible when > 1 page) -->

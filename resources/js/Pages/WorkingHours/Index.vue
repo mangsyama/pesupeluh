@@ -107,10 +107,10 @@ const executeSaveHours = () => {
 
     <AuthenticatedLayout>
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
-            <div class="w-full space-y-4">
+            <div class="w-full">
 
-                <!-- Header Panel (IDENTICAL TO USERMANAGEMENT/INDEX.VUE) -->
-                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
+                <!-- Header Panel (Hidden on Mobile) -->
+                <div class="hidden sm:flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <Clock class="h-6 w-6" />
@@ -226,13 +226,21 @@ const executeSaveHours = () => {
                         </table>
                     </div>
 
-                    <!-- Action Submit Button -->
-                    <div class="flex justify-end pt-2">
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 pt-2">
+                        <button
+                            type="button"
+                            @click="showInfoModal = true"
+                            class="sm:hidden w-full h-10 inline-flex items-center justify-center gap-2 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition duration-150 whitespace-nowrap border-0 shadow-none cursor-pointer"
+                        >
+                            <Info class="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                            <span>Panduan Jam Operasional</span>
+                        </button>
                         <button
                             type="button"
                             @click="openConfirmModal"
                             :disabled="hoursForm.processing"
-                            class="w-full sm:w-auto h-11 px-6 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-2 transition duration-200 disabled:opacity-50 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 cursor-pointer"
+                            class="w-full sm:w-auto sm:ml-auto h-11 px-6 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-2 transition duration-200 disabled:opacity-50 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 cursor-pointer"
                         >
                             <Save class="h-4 w-4" />
                             <span>{{ hoursForm.processing ? __('Menyimpan...') : __('Simpan Jam Operasional') }}</span>

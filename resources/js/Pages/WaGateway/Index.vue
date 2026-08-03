@@ -142,8 +142,8 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <div class="inline-flex items-center gap-2 px-3.5 h-10 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+                        <div class="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 h-10 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300">
                             <Cpu class="h-4 w-4 text-emerald-500" />
                             <span>Driver: <strong class="uppercase text-emerald-600 dark:text-white">{{ driver }}</strong></span>
                         </div>
@@ -151,7 +151,7 @@ onUnmounted(() => {
                         <button 
                             @click="checkStatus" 
                             :disabled="isChecking"
-                            class="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-2 transition disabled:opacity-50"
+                            class="h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center sm:justify-start gap-2 transition disabled:opacity-50"
                         >
                             <RefreshCw :class="['h-4 w-4', isChecking ? 'animate-spin' : '']" />
                             <span>Refresh Status</span>
@@ -195,9 +195,9 @@ onUnmounted(() => {
 
                             <!-- CASE 1: CONNECTED STATE -->
                             <div v-if="gatewayStatus === 'connected'" class="p-5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/50 space-y-4">
-                                <div class="flex items-center justify-between gap-4">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="h-10 w-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                                        <div class="h-10 w-10 shrink-0 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
                                             <Smartphone class="h-5 w-5" />
                                         </div>
                                         <div>
@@ -209,7 +209,7 @@ onUnmounted(() => {
                                     <button 
                                         @click="confirmLogout" 
                                         :disabled="isDisconnecting"
-                                        class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition border border-rose-200 dark:border-rose-900 cursor-pointer"
+                                        class="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center justify-center sm:justify-start gap-1.5 transition border border-rose-200 dark:border-rose-900 cursor-pointer order-last sm:order-none"
                                     >
                                         <LogOut class="h-3.5 w-3.5" />
                                         <span>Putuskan WA</span>

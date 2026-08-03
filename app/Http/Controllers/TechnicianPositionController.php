@@ -87,7 +87,7 @@ class TechnicianPositionController extends Controller
             ]);
         }
 
-        return Inertia::render('Service/TechnicianPosition', [
+        return Inertia::render('TechnicianPosition/Index', [
             'technicians' => $transformedTechnicians,
             'units' => $units,
             'currentUser' => [
@@ -106,7 +106,7 @@ class TechnicianPositionController extends Controller
         $units = SupportingUnit::where('status', 'ACTIVE')->get(['id', 'name', 'slug']);
         $workingHours = UnitWorkingHour::with('supportingUnit:id,name')->get();
 
-        return Inertia::render('Service/WorkingHours', [
+        return Inertia::render('WorkingHours/Index', [
             'units' => $units,
             'workingHours' => $workingHours,
             'currentUser' => [

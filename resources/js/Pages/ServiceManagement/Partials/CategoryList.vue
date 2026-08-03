@@ -77,12 +77,58 @@ const handleClickOutsideCategory = (event) => {
     }
 };
 
+const handleEscapeKeyCategory = (e) => {
+    if (e.key === 'Escape' && showCategoryModal.value) {
+        showCategoryModal.value = false;
+    }
+};
+
+const handlePopStateCategory = () => {
+    if (showCategoryModal.value) {
+        showCategoryModal.value = false;
+    }
+};
+
+let pushHistoryFlagCategory = false;
+
+watch(showCategoryModal, (newVal) => {
+    if (newVal) {
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleEscapeKeyCategory);
+        window.addEventListener('popstate', handlePopStateCategory);
+        try {
+            window.history.pushState({ modalOpen: true }, '');
+            pushHistoryFlagCategory = true;
+        } catch (e) {
+            // ignore
+        }
+    } else {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleEscapeKeyCategory);
+        window.removeEventListener('popstate', handlePopStateCategory);
+
+        if (pushHistoryFlagCategory && window.history.state && window.history.state.modalOpen) {
+            pushHistoryFlagCategory = false;
+            try {
+                window.history.back();
+            } catch (e) {
+                // ignore
+            }
+        } else {
+            pushHistoryFlagCategory = false;
+        }
+    }
+});
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutsideCategory);
 });
 
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutsideCategory);
+    window.removeEventListener('keydown', handleEscapeKeyCategory);
+    window.removeEventListener('popstate', handlePopStateCategory);
+    document.body.style.overflow = '';
 });
 
 const selectedUnitLabel = computed(() => {
@@ -255,52 +301,57 @@ defineExpose({
 
         <!-- CATEGORY MODAL -->
         <Teleport to="body">
-            <div v-if="showCategoryModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
-                        <h3 class="text-base font-bold text-slate-900 dark:text-white">
-                            {{ isEditingCategory ? __('pages.service_management.categories.edit_title') : __('pages.service_management.categories.add_title') }}
+            <div v-if="showCategoryModal" @click.self="showCategoryModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-950/40 backdrop-blur-sm">
+                <div class="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md bg-white dark:bg-slate-900 border-0 rounded-none sm:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col">
+                    <!-- Header Modal Warna Hijau -->
+                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 bg-emerald-600 dark:bg-emerald-700 text-white rounded-none sm:rounded-t-2xl shrink-0 shadow-sm">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <span>{{ isEditingCategory ? __('pages.service_management.categories.edit_title') : __('pages.service_management.categories.add_title') }}</span>
                         </h3>
-                        <button type="button" @click="showCategoryModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
+                        <button type="button" @click="showCategoryModal = false" class="p-1.5 text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors" aria-label="Tutup modal">
                             <X class="h-5 w-5" />
                         </button>
                     </div>
-                    <form @submit.prevent="submitCategoryForm" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.categories.label_name') }}</label>
-                            <input 
-                                v-model="categoryForm.name"
-                                type="text" 
-                                required
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
-                                :placeholder="__('pages.service_management.categories.placeholder_name')"
-                            />
-                            <div v-if="categoryForm.errors.name" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.name }}</div>
+                    <form @submit.prevent="submitCategoryForm" class="flex flex-col flex-1 overflow-hidden min-h-0">
+                        <div class="p-5 sm:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.categories.label_name') }}</label>
+                                <input 
+                                    v-model="categoryForm.name"
+                                    type="text" 
+                                    required
+                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
+                                    :placeholder="__('pages.service_management.categories.placeholder_name')"
+                                />
+                                <div v-if="categoryForm.errors.name" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.name }}</div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Unit Penunjang</label>
+                                <SearchableSelect
+                                    v-model="categoryForm.supporting_unit_id"
+                                    :options="unitOptions"
+                                    :searchable="true"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Pilih Unit Penunjang..."
+                                    search-placeholder="Cari unit penunjang..."
+                                />
+                                <div v-if="categoryForm.errors.supporting_unit_id" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.supporting_unit_id }}</div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.categories.label_description') }}</label>
+                                <textarea 
+                                    v-model="categoryForm.description"
+                                    rows="3"
+                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
+                                    :placeholder="__('pages.service_management.categories.placeholder_description')"
+                                ></textarea>
+                                <div v-if="categoryForm.errors.description" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.description }}</div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Unit Penunjang</label>
-                            <SearchableSelect
-                                v-model="categoryForm.supporting_unit_id"
-                                :options="unitOptions"
-                                :searchable="true"
-                                value-key="id"
-                                label-key="name"
-                                placeholder="Pilih Unit Penunjang..."
-                                search-placeholder="Cari unit penunjang..."
-                            />
-                            <div v-if="categoryForm.errors.supporting_unit_id" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.supporting_unit_id }}</div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.categories.label_description') }}</label>
-                            <textarea 
-                                v-model="categoryForm.description"
-                                rows="3"
-                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
-                                :placeholder="__('pages.service_management.categories.placeholder_description')"
-                            ></textarea>
-                            <div v-if="categoryForm.errors.description" class="text-xs text-red-500 mt-1">{{ categoryForm.errors.description }}</div>
-                        </div>
-                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
+
+                        <!-- Fixed Bottom Footer (pinned at bottom) -->
+                        <div class="flex justify-end gap-3 px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50 flex-shrink-0">
                             <button type="button" @click="showCategoryModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150">{{ __('global.cancel') }}</button>
                             <button type="submit" :disabled="categoryForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 border-0 shadow-sm disabled:opacity-50">{{ __('pages.service_management.categories.btn_save') }}</button>
                         </div>

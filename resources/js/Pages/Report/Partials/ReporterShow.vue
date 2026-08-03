@@ -157,14 +157,14 @@ const formatDuration = (seconds) => {
 const formatDateTime = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
-    return d.toLocaleString('id-ID', {
+    const datePart = d.toLocaleDateString('id-ID', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
     });
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${datePart}, ${hours}:${minutes} WITA`;
 };
 
 // Lightbox state
@@ -351,7 +351,7 @@ const contextLabel = computed(() => {
                                                 {{ __('pages.tickets.detail.room_location') }}
                                             </div>
                                             <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
-                                                {{ ticket.room?.name || '-' }} <span v-if="formatRoomDetails(ticket.room)" class="text-xs text-slate-400 dark:text-slate-500 font-normal">({{ formatRoomDetails(ticket.room) }})</span>
+                                                {{ ticket.room?.name || '-' }} <span v-if="formatRoomDetails(ticket.room)" class="text-slate-400 dark:text-slate-500">({{ formatRoomDetails(ticket.room) }})</span>
                                             </div>
                                         </div>
 
@@ -443,7 +443,6 @@ const contextLabel = computed(() => {
                                         <div class="flex flex-wrap items-center gap-1.5 text-slate-800 dark:text-slate-200">
                                             <UserCheck class="h-4 w-4 text-slate-400 flex-shrink-0" />
                                             <span class="text-xs font-semibold">{{ ticket.validator?.name || 'Sistem (Disposisi Otomatis)' }}</span>
-                                            <span class="text-[10px] text-slate-400 dark:text-slate-555">({{ formatDateTime(ticket.validated_at) }})</span>
                                         </div>
                                     </div>
 

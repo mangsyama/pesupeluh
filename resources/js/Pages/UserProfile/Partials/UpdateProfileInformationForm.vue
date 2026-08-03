@@ -190,7 +190,7 @@ const submit = () => {
                     <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Perbarui informasi identitas pribadi, penempatan unit/ruangan, dan pasfoto akun Anda.</p>
                 </div>
 
-                <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
+                <div class="pt-1">
                     <div class="flex flex-col sm:flex-row items-stretch gap-6">
                         <!-- Foto Profil Card -->
                         <div class="flex flex-col items-center justify-between shrink-0 w-full sm:w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm">

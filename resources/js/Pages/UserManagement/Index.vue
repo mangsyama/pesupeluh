@@ -1,9 +1,9 @@
 <script setup>
-import { ref, computed, watch, getCurrentInstance } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import { Head, useForm, usePage, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw, ChevronLeft, ChevronRight, Eye } from '@lucide/vue';
+import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, UserPlus, Plus, X, KeyRound, RotateCcw, ChevronLeft, ChevronRight, Eye } from '@lucide/vue';
 
 const props = defineProps({
     users: {
@@ -143,6 +143,55 @@ const formatDate = (dateStr) => {
 
 const showModal = ref(false);
 const isEditing = ref(false);
+
+const handleEscapeKey = (e) => {
+    if (e.key === 'Escape' && showModal.value) {
+        showModal.value = false;
+    }
+};
+
+const handlePopState = () => {
+    if (showModal.value) {
+        showModal.value = false;
+    }
+};
+
+let pushHistoryFlag = false;
+
+watch(showModal, (newVal) => {
+    if (newVal) {
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleEscapeKey);
+        window.addEventListener('popstate', handlePopState);
+        try {
+            window.history.pushState({ modalOpen: true }, '');
+            pushHistoryFlag = true;
+        } catch (e) {
+            // ignore
+        }
+    } else {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleEscapeKey);
+        window.removeEventListener('popstate', handlePopState);
+
+        if (pushHistoryFlag && window.history.state && window.history.state.modalOpen) {
+            pushHistoryFlag = false;
+            try {
+                window.history.back();
+            } catch (e) {
+                // ignore
+            }
+        } else {
+            pushHistoryFlag = false;
+        }
+    }
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleEscapeKey);
+    window.removeEventListener('popstate', handlePopState);
+    document.body.style.overflow = '';
+});
 
 const form = useForm({
     id: null,
@@ -509,19 +558,24 @@ const deleteUser = (user) => {
         </div>
 
         <Teleport to="body">
-            <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
-                        <h3 class="text-base font-bold text-slate-955 dark:text-white">
-                            {{ isEditing ? __('pages.user_management.edit_user_title') : __('pages.user_management.add_user_title') }}
+            <div v-if="showModal" @click.self="showModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-950/40 backdrop-blur-sm">
+                <div class="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-white dark:bg-slate-900 border-0 rounded-none sm:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col">
+                    <!-- Header Modal Warna Hijau -->
+                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 bg-emerald-600 dark:bg-emerald-700 text-white rounded-none sm:rounded-t-2xl shrink-0 shadow-sm">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2.5">
+                            <div class="h-7 w-7 rounded-lg bg-white/15 dark:bg-white/20 flex items-center justify-center shrink-0">
+                                <UserPlus v-if="!isEditing" class="h-4 w-4 text-white" />
+                                <UserCheck v-else class="h-4 w-4 text-white" />
+                            </div>
+                            <span>{{ isEditing ? __('pages.user_management.edit_user_title') : __('pages.user_management.add_user_title') }}</span>
                         </h3>
-                        <button type="button" @click="showModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
+                        <button type="button" @click="showModal = false" class="p-1.5 text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors" aria-label="Tutup modal">
                             <X class="h-5 w-5" />
                         </button>
                     </div>
 
                     <form @submit.prevent="submitForm" class="flex flex-col flex-1 overflow-hidden min-h-0">
-                        <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                        <div class="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- 1. Nama Lengkap -->
                                 <div>

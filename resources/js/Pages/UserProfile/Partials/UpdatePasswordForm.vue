@@ -73,7 +73,7 @@ const updatePassword = () => {
                     <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Pastikan akun Anda menggunakan kata sandi yang kuat untuk menjaga keamanan data.</p>
                 </div>
 
-                <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
+                <div class="pt-1">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- Kata Sandi Saat Ini -->
                         <div class="space-y-1.5">

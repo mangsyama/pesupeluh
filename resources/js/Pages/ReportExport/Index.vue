@@ -285,14 +285,31 @@ const resetFilters = () => {
     applyFilters();
 };
 
+const isExporting = ref(false);
+const exportType = ref('pdf');
+
 const exportPdf = () => {
-    proxy.$toast(proxy.__('pages.reports.center.export_toast').replace('{format}', 'PDF'), 'success');
-    window.open(route('reports.export.pdf', formFilters.value), '_blank');
+    exportType.value = 'pdf';
+    isExporting.value = true;
+    setTimeout(() => {
+        window.location.href = route('reports.export.pdf', formFilters.value);
+        setTimeout(() => {
+            isExporting.value = false;
+            proxy.$toast(proxy.__('pages.reports.center.export_toast').replace('{format}', 'PDF'), 'success');
+        }, 1500);
+    }, 500);
 };
 
 const exportCsv = () => {
-    proxy.$toast(proxy.__('pages.reports.center.export_toast').replace('{format}', 'CSV'), 'success');
-    window.location.href = route('reports.export.csv', formFilters.value);
+    exportType.value = 'csv';
+    isExporting.value = true;
+    setTimeout(() => {
+        window.location.href = route('reports.export.csv', formFilters.value);
+        setTimeout(() => {
+            isExporting.value = false;
+            proxy.$toast(proxy.__('pages.reports.center.export_toast').replace('{format}', 'CSV'), 'success');
+        }, 1500);
+    }, 500);
 };
 
 const totalCount = computed(() => props.tickets?.total ?? props.tickets?.meta?.total ?? 0);
@@ -371,9 +388,9 @@ watch(() => props.filters, (newVal) => {
 
     <AuthenticatedLayout>
         <div class="py-4 px-4 sm:px-4 lg:px-4 animate-spa-fade-in">
-            <div class="w-full space-y-4">
+            <div class="w-full">
                 <!-- Premium Header Panel -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+                <div class="hidden sm:flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm mb-4">
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:flex h-12 w-12 rounded-xl flex-shrink-0 items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
                             <FileBarChart2 class="h-6 w-6" />
@@ -390,7 +407,7 @@ watch(() => props.filters, (newVal) => {
                 </div>
 
                 <!-- Stats Grid (Row 2) -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <!-- Total Laporan Bulan Ini -->
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">
@@ -429,7 +446,7 @@ watch(() => props.filters, (newVal) => {
                 </div>
 
                 <!-- Split Grid Layout (Row 3: Filters & Exports) -->
-                <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 mb-4">
                     <!-- Left Column: Filters (8 cols) -->
                     <div class="xl:col-span-8">
                         <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between h-full space-y-6">
@@ -706,23 +723,23 @@ watch(() => props.filters, (newVal) => {
                             </div>
 
                             <!-- Action Buttons -->
-                            <div class="flex items-center justify-end gap-3 pt-2">
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-2">
                                 <button 
                                     type="button"
                                     @click="resetFilters"
-                                    class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition"
+                                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold transition w-full sm:w-auto"
                                 >
                                     <RotateCcw class="h-3.5 w-3.5" />
-                                    Reset Filter
+                                    <span>Reset Filter</span>
                                 </button>
                                 
                                 <button 
                                     type="button"
                                     @click="applyFilters"
-                                    class="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 text-xs font-bold transition shadow-sm shadow-emerald-500/10"
+                                    class="inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 text-xs font-bold transition shadow-sm shadow-emerald-500/10 w-full sm:w-auto"
                                 >
                                     <Filter class="h-3.5 w-3.5" />
-                                    Terapkan Filter
+                                    <span>Terapkan Filter</span>
                                 </button>
                             </div>
                         </div>
@@ -767,7 +784,7 @@ watch(() => props.filters, (newVal) => {
 
                 <!-- Row 4: Data Preview Table -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-                    <div class="p-6 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                    <div class="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0">
                         <div>
                             <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
                                 Preview Data Laporan
@@ -904,6 +921,36 @@ watch(() => props.filters, (newVal) => {
             </div>
         </div>
     </AuthenticatedLayout>
+
+    <!-- Fullscreen Export Loading Backdrop Overlay -->
+    <Teleport to="body">
+        <Transition
+            enter-active-class="transition ease-out duration-200"
+            enter-from-class="opacity-0"
+            enter-to-class="opacity-100"
+            leave-active-class="transition ease-in duration-150"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+        >
+            <div v-if="isExporting" class="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-950/60 backdrop-blur-md text-white select-none">
+                <div class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-xs text-center">
+                    <div class="relative flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-full border-4 border-emerald-200 dark:border-emerald-900/60 border-t-emerald-600 dark:border-t-emerald-400 animate-spin"></div>
+                        <FileText v-if="exportType === 'pdf'" class="h-5 w-5 text-emerald-600 dark:text-emerald-400 absolute" />
+                        <BarChart3 v-else class="h-5 w-5 text-emerald-600 dark:text-emerald-400 absolute" />
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-extrabold text-slate-900 dark:text-white">
+                            {{ exportType === 'pdf' ? 'Mengunduh Dokumen PDF...' : 'Mengunduh File Data CSV...' }}
+                        </h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Mohon tunggu sebentar, file ekspor laporan sedang disiapkan.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+    </Teleport>
 </template>
 
 <style scoped>

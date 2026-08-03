@@ -20,6 +20,14 @@ const emit = defineEmits(['close']);
 const dialog = ref();
 const showSlot = ref(props.show);
 
+const handlePopState = () => {
+    if (props.show && props.closeable) {
+        close();
+    }
+};
+
+let pushHistoryFlag = false;
+
 watch(
     () => props.show,
     () => {
@@ -28,8 +36,27 @@ watch(
             showSlot.value = true;
 
             dialog.value?.showModal();
+            window.addEventListener('popstate', handlePopState);
+            try {
+                window.history.pushState({ modalOpen: true }, '');
+                pushHistoryFlag = true;
+            } catch (e) {
+                // ignore
+            }
         } else {
             document.body.style.overflow = '';
+            window.removeEventListener('popstate', handlePopState);
+
+            if (pushHistoryFlag && window.history.state && window.history.state.modalOpen) {
+                pushHistoryFlag = false;
+                try {
+                    window.history.back();
+                } catch (e) {
+                    // ignore
+                }
+            } else {
+                pushHistoryFlag = false;
+            }
 
             setTimeout(() => {
                 dialog.value?.close();
@@ -59,6 +86,7 @@ onMounted(() => document.addEventListener('keydown', closeOnEscape));
 
 onUnmounted(() => {
     document.removeEventListener('keydown', closeOnEscape);
+    window.removeEventListener('popstate', handlePopState);
 
     document.body.style.overflow = '';
 });

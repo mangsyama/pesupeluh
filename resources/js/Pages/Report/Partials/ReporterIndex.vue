@@ -333,43 +333,53 @@ const formatDate = (dateStr) => {
                                 <div
                                     v-for="ticket in tickets.data"
                                     :key="'mobile-ticket-' + ticket.id"
-                                    class="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800/60 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-200"
+                                    class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 transition-all duration-150"
                                 >
-                                    <div class="flex justify-between items-start mb-2">
-                                        <div>
-                                            <span class="text-[10px] font-extrabold text-slate-400 dark:text-slate-500">
-                                                #{{ ticket.ticket_number }}
-                                            </span>
-                                            <h4 class="font-bold text-slate-900 dark:text-white text-xs mt-0.5">
-                                                {{ ticket.category?.name ?? '-' }}
-                                            </h4>
-                                        </div>
-                                        <span :class="['inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase', getStatus(ticket.status).badge]">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-extrabold text-xs text-slate-900 dark:text-white">#{{ ticket.ticket_number }}</span>
+                                        <span :class="['px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border', getStatus(ticket.status).badge]">
                                             {{ getStatus(ticket.status).label }}
                                         </span>
                                     </div>
 
-                                    <p class="text-xs text-slate-650 dark:text-slate-400 line-clamp-2 my-2.5">
+                                    <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                         {{ ticket.problem_description }}
                                     </p>
 
-                                    <div class="border-t border-slate-100 dark:border-slate-800/50 pt-2.5 mt-2 flex justify-between items-center text-[10px] text-slate-400">
-                                        <div class="flex items-center gap-1">
-                                            <Calendar class="h-3 w-3" />
-                                            <span>{{ formatDate(ticket.created_at) }}</span>
-                                            <span class="mx-1">&bull;</span>
-                                            <span>{{ ticket.room?.name ?? '-' }}</span>
+                                    <div class="text-[11px] space-y-1.5 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                                        <div v-if="!filters.personal" class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Pelapor:</span>
+                                            <span class="font-bold text-slate-800 dark:text-slate-200">
+                                                {{ ticket.reporter?.name ?? '-' }}
+                                                <span v-if="ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name" class="text-slate-400 font-normal text-[10px]">
+                                                    ({{ ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name }})
+                                                </span>
+                                            </span>
                                         </div>
-                                        
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Kategori:</span>
+                                            <span class="font-bold text-emerald-700 dark:text-emerald-400">{{ ticket.category?.name ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Ruangan:</span>
+                                            <span class="font-semibold text-slate-800 dark:text-slate-200">{{ ticket.room?.name ?? '-' }}</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium text-slate-400 dark:text-slate-500">Tanggal:</span>
+                                            <span class="font-medium text-slate-700 dark:text-slate-300">{{ formatDate(ticket.created_at) }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-0">
                                         <Link
                                             :href="getDetailRoute(ticket.uuid)"
-                                            class="text-indigo-600 dark:text-indigo-405 font-bold flex items-center gap-0.5 hover:underline"
+                                            class="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1.5 transition-all duration-150"
                                         >
-                                            Pantau
+                                            <span>Pantau Detail Laporan</span>
                                             <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                         </Link>
                                     </div>
-                                 </div>
+                                </div>
                             </template>
                         </div>
 
