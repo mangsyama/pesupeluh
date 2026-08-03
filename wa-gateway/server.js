@@ -61,6 +61,14 @@ async function initWhatsApp() {
     connectionStatus = 'connecting';
 
     try {
+        if (sock) {
+            try {
+                sock.ev.removeAllListeners();
+                sock.end(undefined);
+            } catch (e) {}
+            sock = null;
+        }
+
         if (!fs.existsSync(SESSION_DIR)) {
             fs.mkdirSync(SESSION_DIR, { recursive: true });
         }
@@ -72,7 +80,7 @@ async function initWhatsApp() {
             version,
             auth: state,
             logger,
-            browser: ['Pesu Peluh System', 'Chrome', '120.0.0.0'],
+            browser: Browsers.ubuntu('Desktop'),
             markOnlineOnConnect: false,
             syncFullHistory: false
         });
@@ -143,7 +151,14 @@ async function initWhatsApp() {
 function clearSession() {
     try {
         if (fs.existsSync(SESSION_DIR)) {
-            fs.rmSync(SESSION_DIR, { recursive: true, force: true });
+            const files = fs.readdirSync(SESSION_DIR);
+            for (const file of files) {
+                try {
+                    fs.rmSync(path.join(SESSION_DIR, file), { recursive: true, force: true });
+                } catch (fileErr) {
+                    console.error(`Error deleting session file ${file}:`, fileErr);
+                }
+            }
         }
         connectionStatus = 'disconnected';
         qrCodeData = null;
