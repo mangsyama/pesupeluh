@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::disableForeignKeyConstraints();
 
+        $isSqlSrv = DB::connection()->getDriverName() === 'sqlsrv';
+
         // Step 1: Clear and re-populate the roles table with the 11 new roles first
         DB::table('roles')->delete();
 
@@ -24,7 +26,7 @@ return new class extends Migration
             'dashboard', 'services.index', 'reports.history', 'technicians.position', 'settings.index'
         ]);
 
-        DB::table('roles')->insert([
+        $roles = [
             [
                 'id' => 1,
                 'name' => 'ADMINISTRATOR',
@@ -89,7 +91,24 @@ return new class extends Migration
                 'name' => 'STAFF',
                 'page_permissions' => $reportOnlyPermissions
             ],
-        ]);
+        ];
+
+        if ($isSqlSrv) {
+            $values = [];
+            foreach ($roles as $r) {
+                $id = (int) $r['id'];
+                $name = str_replace("'", "''", $r['name']);
+                $perms = str_replace("'", "''", $r['page_permissions']);
+                $values[] = "({$id}, '{$name}', '{$perms}')";
+            }
+            $sql = "SET IDENTITY_INSERT roles ON; ";
+            $sql .= "INSERT INTO roles (id, name, page_permissions) VALUES " . implode(', ', $values) . "; ";
+            $sql .= "SET IDENTITY_INSERT roles OFF;";
+
+            DB::unprepared($sql);
+        } else {
+            DB::table('roles')->insert($roles);
+        }
 
         // Step 2: Safely remap existing user role_ids in descending order
         // Old 8 (REPORTER / Staff) -> New 11 (STAFF)
