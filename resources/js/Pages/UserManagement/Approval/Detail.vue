@@ -34,7 +34,7 @@ const { proxy } = getCurrentInstance();
 const showPhotoModal = ref(false);
 
 const form = useForm({
-    role_id: props.targetUser.role_id || 8,
+    role_id: props.targetUser.role_id || 11,
     supporting_unit_id: props.targetUser.supporting_unit_id || '',
     room_id: props.targetUser.room_id || '',
 });
@@ -53,7 +53,15 @@ const unitOptions = computed(() => [
 
 const roomOptions = computed(() => [
     { id: '', name: 'Tanpa Ruangan' },
-    ...(props.rooms || [])
+    ...(props.rooms || []).map(r => {
+        const b = r.building_name ? (/^gedung/i.test(r.building_name.trim()) ? r.building_name.trim() : `Gedung ${r.building_name.trim()}`) : null;
+        const f = r.location_floor ? (/^lantai/i.test(r.location_floor.trim()) || /^lt\./i.test(r.location_floor.trim()) ? r.location_floor.trim() : `Lantai ${r.location_floor.trim()}`) : null;
+        const details = [b, f].filter(Boolean).join(' - ');
+        return {
+            ...r,
+            location_floor: details
+        };
+    })
 ]);
 
 const submitApproval = () => {
@@ -153,44 +161,70 @@ const formatDate = (dateStr) => {
                         </div>
 
                         <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
-                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-5 sm:gap-6">
+                            <div class="flex flex-col sm:flex-row items-stretch gap-6">
                                 <!-- Foto Pendaftar -->
-                                <div class="flex flex-col items-center shrink-0">
+                                <div class="flex flex-col items-center justify-between shrink-0 w-full sm:w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm">
                                     <div
-                                        class="h-36 w-36 sm:h-[142px] sm:w-[142px] aspect-square rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-center cursor-pointer relative group"
+                                        class="w-full flex-1 min-h-[160px] rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-950/50 flex items-center justify-center cursor-pointer relative group"
                                         @click="targetUser.profile_photo_path && (showPhotoModal = true)"
                                     >
                                         <img v-if="targetUser.profile_photo_path" :src="targetUser.profile_photo_path" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                                        <User v-else class="h-12 w-12 text-slate-400" />
+                                        <User v-else class="h-14 w-14 text-slate-400" />
                                         <div v-if="targetUser.profile_photo_path" class="absolute inset-0 bg-slate-950/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold uppercase tracking-wider">Perbesar</div>
                                     </div>
+                                    <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-2 text-center truncate w-full">Terdaftar: {{ formatDate(targetUser.created_at) }}</span>
                                 </div>
 
-                                <!-- Grid Informasi -->
-                                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3.5 text-sm">
-                                    <div>
-                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Nama Lengkap</div>
-                                        <div class="text-sm font-bold text-slate-800 dark:text-white uppercase leading-tight">{{ targetUser.name || '-' }}</div>
+                                <!-- Read-Only Fields Profil (Kolom-kolom Form) -->
+                                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                                    <!-- Nama Lengkap -->
+                                    <div class="space-y-1.5">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                            Nama Lengkap
+                                        </label>
+                                        <div class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center uppercase">
+                                            {{ targetUser.name || '-' }}
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">NIP</div>
-                                        <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">{{ targetUser.nip || '-' }}</div>
+
+                                    <!-- NIP / Pegawai ID -->
+                                    <div class="space-y-1.5">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                            NIP / Pegawai ID
+                                        </label>
+                                        <div class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center">
+                                            {{ targetUser.nip || '-' }}
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Username</div>
-                                        <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">{{ targetUser.username || '-' }}</div>
+
+                                    <!-- Username -->
+                                    <div class="space-y-1.5">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                            Username
+                                        </label>
+                                        <div class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center">
+                                            {{ targetUser.username || '-' }}
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Email</div>
-                                        <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight break-all">{{ targetUser.email || '-' }}</div>
+
+                                    <!-- Email -->
+                                    <div class="space-y-1.5">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                            Email
+                                        </label>
+                                        <div class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center break-all">
+                                            {{ targetUser.email || '-' }}
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Nomor HP</div>
-                                        <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">{{ targetUser.phone_number || '-' }}</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Tanggal Registrasi</div>
-                                        <div class="text-sm font-medium text-slate-700 dark:text-slate-300 leading-tight">{{ formatDate(targetUser.created_at) }}</div>
+
+                                    <!-- Nomor HP -->
+                                    <div class="space-y-1.5 sm:col-span-2">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                            Nomor Telepon / WhatsApp
+                                        </label>
+                                        <div class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium flex items-center">
+                                            {{ targetUser.phone_number || '-' }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

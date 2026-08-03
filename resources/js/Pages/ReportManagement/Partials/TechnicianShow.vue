@@ -28,6 +28,13 @@ import {
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
+
+const formatRoomDetails = (room) => {
+    if (!room) return '';
+    const b = room.building_name ? (/^gedung/i.test(room.building_name.trim()) ? room.building_name.trim() : `Gedung ${room.building_name.trim()}`) : null;
+    const f = room.location_floor ? (/^lantai/i.test(room.location_floor.trim()) || /^lt\./i.test(room.location_floor.trim()) ? room.location_floor.trim() : `Lantai ${room.location_floor.trim()}`) : null;
+    return [b, f].filter(Boolean).join(' - ');
+};
 const showSlaInfoModal = ref(false);
 
 const pendingHistories = computed(() => {
@@ -368,9 +375,8 @@ const statusConfig = {
 const getStatus = (status) => statusConfig[status] ?? { label: status, badge: 'bg-slate-100 text-slate-600 border-slate-200' };
 
 const priorityConfig = {
-    EMERGENCY: { label: 'EMERGENCY', badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
-    URGENT:    { label: 'URGENT',  badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' },
-    ROUTINE:   { label: 'ROUTINE',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
+    URGENT:    { label: 'URGENT',  badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
+    ROUTINE:   { label: 'RUTIN',   badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
 };
 
 const getPriority = (target) => {
@@ -379,7 +385,7 @@ const getPriority = (target) => {
     const priority = typeof target === 'string' ? target : target.priority;
     const status = typeof target === 'object' ? target.status : (props.ticket?.status || null);
 
-    if (status === 'PENDING_VALIDATION' && priority !== 'EMERGENCY') {
+    if (status === 'PENDING_VALIDATION') {
         return { label: '-', badge: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:border-slate-800' };
     }
 
@@ -500,7 +506,7 @@ const contextLabel = computed(() => {
                                                 {{ __('pages.tickets.detail.room_location') }}
                                             </div>
                                             <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
-                                                {{ ticket.room?.name || '-' }} <span v-if="ticket.room?.location_floor" class="text-xs text-slate-400 dark:text-slate-500 font-normal">({{ ticket.room.location_floor }})</span>
+                                                {{ ticket.room?.name || '-' }} <span v-if="formatRoomDetails(ticket.room)" class="text-xs text-slate-400 dark:text-slate-500 font-normal">({{ formatRoomDetails(ticket.room) }})</span>
                                             </div>
                                         </div>
 

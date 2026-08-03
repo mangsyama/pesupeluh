@@ -9,7 +9,7 @@ const searchQuery = ref('');
 const statusFilter = ref('');
 
 const demoUsers = [
-  { id: 1, name: 'Budi Santoso', email: 'budi.santoso@email.com', role: 'Super Admin', room: 'Lantai 1 - Tulip 101', status: 'ACTIVE', nip: '199308122019031002' },
+  { id: 1, name: 'Budi Santoso', email: 'budi.santoso@email.com', role: 'ADMINISTRATOR', room: 'Lantai 1 - Tulip 101', status: 'ACTIVE', nip: '199308122019031002' },
   { id: 2, name: 'Siti Rahma', email: 'siti.rahma@email.com', role: 'Kepala Unit', room: 'Lantai 2 - IPSRS Office', status: 'ACTIVE', nip: '198711042013082001' },
   { id: 3, name: 'Ahmad Fauzi', email: 'ahmad.fauzi@email.com', role: 'Teknisi', room: 'Lantai 1 - Bengkel IPSRS', status: 'ACTIVE', nip: '199105232018011003' },
   { id: 4, name: 'Rani Wijaya', email: 'rani.wijaya@email.com', role: 'Kepala Ruangan', room: 'Lantai 3 - Dahlia 304', status: 'PENDING', nip: '199504152020122002' },

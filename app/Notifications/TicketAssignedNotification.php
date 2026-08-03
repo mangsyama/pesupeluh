@@ -22,14 +22,18 @@ class TicketAssignedNotification extends Notification implements ShouldQueue
 
     public function via($notifiable): array
     {
-        $channels = ['database', 'broadcast'];
+        $channels = [];
+
+        if (!($notifiable instanceof User) || $notifiable->system_notify_enabled !== false) {
+            $channels = ['database', 'broadcast'];
+        }
 
         if (config('services.telegram.token') && $notifiable instanceof User && $notifiable->telegram_chat_id) {
             $channels[] = TelegramChannel::class;
         }
 
-        // WhatsApp ONLY for Technician (role_id === 6)
-        if ($notifiable instanceof User && (int) $notifiable->role_id === 6 && $notifiable->phone_number) {
+        // WhatsApp ONLY for Technician (if wa_notify_enabled)
+        if ($notifiable instanceof User && $notifiable->wa_notify_enabled !== false && $notifiable->isTechnician() && $notifiable->phone_number) {
             $channels[] = WaGatewayChannel::class;
         }
 
@@ -38,14 +42,12 @@ class TicketAssignedNotification extends Notification implements ShouldQueue
 
     public function toDatabase($notifiable): array
     {
-        $isEmergency = ($this->ticket->priority === 'EMERGENCY');
+        $isUrgent = ($this->ticket->priority === 'URGENT');
         return [
             'type'      => 'ticket',
-            'priority'  => $isEmergency ? 'EMERGENCY' : 'HIGH',
-            'title'     => $isEmergency ? '🚨 PENUGASAN DARURAT (EMERGENCY) INSTAN' : 'Tugas Baru Diterima',
-            'message'   => $isEmergency 
-                ? "Laporan Darurat #{$this->ticket->ticket_number} OTOMATIS DITUGASKAN KEPADA ANDA! Segera luncur ke lokasi!"
-                : "Anda telah ditugaskan untuk menangani laporan #{$this->ticket->ticket_number}.",
+            'priority'  => $isUrgent ? 'URGENT' : 'HIGH',
+            'title'     => $isUrgent ? '🔴 PENUGASAN TIKET URGENT' : 'Tugas Baru Diterima',
+            'message'   => "Anda telah ditugaskan untuk menangani laporan #{$this->ticket->ticket_number}.",
             'ticket_id' => $this->ticket->id,
             'route'     => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
         ];
@@ -63,10 +65,10 @@ class TicketAssignedNotification extends Notification implements ShouldQueue
 
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
-        $isEmergency = ($this->ticket->priority === 'EMERGENCY');
+        $isUrgent = ($this->ticket->priority === 'URGENT');
 
-        $header = $isEmergency 
-            ? "🚨 *PENUGASAN DARURAT (CODE RED)*" 
+        $header = $isUrgent 
+            ? "🔴 *PENUGASAN TIKET URGENT*" 
             : "🛠️ *Tugas Baru Diterima*";
 
         return TelegramMessage::create()
@@ -80,22 +82,10 @@ class TicketAssignedNotification extends Notification implements ShouldQueue
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
         $link = route('reports-management.show', ['ticket' => $this->ticket->uuid]);
-        $isEmergency = ($this->ticket->priority === 'EMERGENCY');
-
-        if ($isEmergency) {
-            return "🚨 *PENUGASAN DARURAT (EMERGENCY / CODE RED)*\n\n"
-                 . "Laporan Darurat *#{$this->ticket->ticket_number}* telah dibuat!\n\n"
-                 . "• *Ruangan:* {$roomName}\n"
-                 . "• *Kategori:* {$categoryName}\n"
-                 . "• *Deskripsi Kendala:* {$this->ticket->problem_description}\n\n"
-                 . "⚠️ *SELURUH TEKNISI PIKET LANGSUNG DITUGASKAN. SEGERA MENUJU LOKASI!*\n\n"
-                 . "Lihat Tiket:\n{$link}";
-        }
 
         $priorityText = match($this->ticket->priority) {
-            'URGENT' => '🚨 *URGENT (Mendesak)*',
-            'HIGH'   => '⚡ *TINGGI (Segera)*',
-            default  => '📋 *BIASA (Normal)*',
+            'URGENT' => '🔴 *URGENT (Mendesak)*',
+            default  => '🟢 *RUTIN (Standar)*',
         };
 
         return "🛠️ *Tugas Baru Diterima*\n\n"

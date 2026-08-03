@@ -81,10 +81,19 @@ const selectedCategoryLabel = computed(() => {
     return c ? c.name : '-- Semua Kategori --';
 });
 
+const formatRoomDetails = (room) => {
+    if (!room) return '';
+    const b = room.building_name ? (/^gedung/i.test(room.building_name.trim()) ? room.building_name.trim() : `Gedung ${room.building_name.trim()}`) : null;
+    const f = room.location_floor ? (/^lantai/i.test(room.location_floor.trim()) || /^lt\./i.test(room.location_floor.trim()) ? room.location_floor.trim() : `Lantai ${room.location_floor.trim()}`) : null;
+    return [b, f].filter(Boolean).join(' - ');
+};
+
 const selectedRoomLabel = computed(() => {
     if (!formFilters.value.room_id) return '-- Semua Ruangan --';
     const r = props.rooms.find(item => String(item.id) === String(formFilters.value.room_id));
-    return r ? `${r.name} (Lt. ${r.location_floor})` : '-- Semua Ruangan --';
+    if (!r) return '-- Semua Ruangan --';
+    const details = formatRoomDetails(r);
+    return details ? `${r.name} (${details})` : r.name;
 });
 
 const selectedReporterLabel = computed(() => {
@@ -185,7 +194,8 @@ const filteredRooms = computed(() => {
     const q = roomSearchQuery.value.toLowerCase().trim();
     if (!q) return props.rooms;
     return props.rooms.filter(r => 
-        r.name.toLowerCase().includes(q) || 
+        (r.name && r.name.toLowerCase().includes(q)) || 
+        (r.building_name && r.building_name.toLowerCase().includes(q)) ||
         (r.location_floor && r.location_floor.toLowerCase().includes(q))
     );
 });
@@ -623,7 +633,7 @@ watch(() => props.filters, (newVal) => {
                                                         class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between hover:bg-emerald-50/50 dark:hover:bg-white/10"
                                                         :class="String(formFilters.room_id) === String(room.id) ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300'"
                                                     >
-                                                        <span class="truncate">{{ room.name }} (Lt. {{ room.location_floor }})</span>
+                                                        <span class="truncate">{{ room.name }} <span v-if="formatRoomDetails(room)" class="opacity-75">({{ formatRoomDetails(room) }})</span></span>
                                                         <Check v-if="String(formFilters.room_id) === String(room.id)" class="h-3.5 w-3.5 text-emerald-600 dark:text-white shrink-0" />
                                                     </button>
                                                 </div>

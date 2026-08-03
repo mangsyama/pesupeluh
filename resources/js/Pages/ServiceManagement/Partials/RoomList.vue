@@ -22,6 +22,7 @@ const isEditingRoom = ref(false);
 const roomForm = useForm({
     id: null,
     name: '',
+    building_name: '',
     location_floor: ''
 });
 
@@ -31,6 +32,7 @@ const filteredRooms = computed(() => {
     const query = props.searchQuery.toLowerCase();
     return list.filter(room => 
         room.name.toLowerCase().includes(query) || 
+        (room.building_name && room.building_name.toLowerCase().includes(query)) ||
         (room.location_floor && room.location_floor.toLowerCase().includes(query))
     );
 });
@@ -70,6 +72,7 @@ const openEditRoomModal = (room) => {
     roomForm.clearErrors();
     roomForm.id = room.id;
     roomForm.name = room.name;
+    roomForm.building_name = room.building_name || '';
     roomForm.location_floor = room.location_floor || '';
     showRoomModal.value = true;
 };
@@ -127,42 +130,44 @@ defineExpose({
                 <thead>
                     <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
                         <th class="px-6 py-4">{{ __('pages.service_management.rooms.table_name') }}</th>
+                        <th class="px-6 py-4">Gedung</th>
                         <th class="px-6 py-4">{{ __('pages.service_management.rooms.table_floor') }}</th>
                         <th class="px-6 py-4 text-right">{{ __('pages.service_management.rooms.table_actions') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
-                            <tr v-if="filteredRooms.length === 0">
-                                <td colspan="3" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.rooms.empty_data') }}</td>
-                            </tr>
-                            <tr 
-                                v-else
-                                v-for="room in paginatedRooms" 
-                                :key="room.id"
-                                class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
-                            >
-                                <td class="px-6 py-4 font-semibold text-slate-955 dark:text-white">{{ room.name }}</td>
-                                <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ room.location_floor || '-' }}</td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-1.5">
-                                        <button 
-                                            @click="openEditRoomModal(room)" 
-                                            class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
-                                            :title="__('Edit')"
-                                        >
-                                            <Edit2 class="h-3.5 w-3.5" />
-                                        </button>
-                                        <button 
-                                            @click="deleteRoom(room)" 
-                                            class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
-                                            :title="__('global.delete')"
-                                        >
-                                            <Trash2 class="h-3.5 w-3.5" />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
+                    <tr v-if="filteredRooms.length === 0">
+                        <td colspan="4" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.rooms.empty_data') }}</td>
+                    </tr>
+                    <tr 
+                        v-else
+                        v-for="room in paginatedRooms" 
+                        :key="room.id"
+                        class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
+                    >
+                        <td class="px-6 py-4 font-semibold text-slate-955 dark:text-white">{{ room.name }}</td>
+                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ room.building_name || '-' }}</td>
+                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ room.location_floor || '-' }}</td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button 
+                                    @click="openEditRoomModal(room)" 
+                                    class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
+                                    :title="__('Edit')"
+                                >
+                                    <Edit2 class="h-3.5 w-3.5" />
+                                </button>
+                                <button 
+                                    @click="deleteRoom(room)" 
+                                    class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
+                                    :title="__('global.delete')"
+                                >
+                                    <Trash2 class="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
 
             <!-- Pagination -->
@@ -208,7 +213,7 @@ defineExpose({
                     </div>
                     <form @submit.prevent="submitRoomForm" class="p-6 space-y-4">
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.rooms.label_name') }}</label>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.rooms.label_name') }} <span class="text-red-400">*</span></label>
                             <input 
                                 v-model="roomForm.name"
                                 type="text" 
@@ -217,6 +222,16 @@ defineExpose({
                                 :placeholder="__('pages.service_management.rooms.placeholder_name')"
                             />
                             <div v-if="roomForm.errors.name" class="text-xs text-red-500 mt-1">{{ roomForm.errors.name }}</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Gedung</label>
+                            <input 
+                                v-model="roomForm.building_name"
+                                type="text" 
+                                class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
+                                placeholder="Contoh: Gedung A / Gedung Utama"
+                            />
+                            <div v-if="roomForm.errors.building_name" class="text-xs text-red-500 mt-1">{{ roomForm.errors.building_name }}</div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.rooms.label_floor') }}</label>

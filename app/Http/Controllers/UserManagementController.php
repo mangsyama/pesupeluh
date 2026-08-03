@@ -141,98 +141,7 @@ class UserManagementController extends Controller
         ]);
     }
 
-    /**
-     * Display a listing of admin users.
-     */
-    public function indexAdmin()
-    {
-        return Inertia::render('UserManagement/Admin', [
-            'users' => Inertia::defer(fn() => User::with(['role'])
-                ->where('role_id', 1)
-                ->whereNotNull('approved_by')
-                ->orderBy('id', 'desc')
-                ->get()),
-        ]);
-    }
 
-    /**
-     * Display a listing of management users.
-     */
-    public function indexManagement()
-    {
-        return Inertia::render('UserManagement/Management', [
-            'users' => Inertia::defer(fn() => User::with(['role'])
-                ->whereIn('role_id', [2, 3, 4])
-                ->whereNotNull('approved_by')
-                ->orderBy('id', 'desc')
-                ->get()),
-            'managementRoles' => Inertia::defer(fn() => Role::whereIn('id', [2, 3, 4])->orderBy('id', 'asc')->get()),
-        ]);
-    }
-
-    /**
-     * Display a listing of unit head users.
-     */
-    public function indexUnitHead()
-    {
-        return Inertia::render('UserManagement/UnitHead', [
-            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
-                ->where('role_id', 5)
-                ->whereNotNull('approved_by')
-                ->orderBy('id', 'desc')
-                ->get()),
-            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
-            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
-        ]);
-    }
-
-    /**
-     * Display a listing of technician users.
-     */
-    public function indexTechnician()
-    {
-        return Inertia::render('UserManagement/Technician', [
-            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
-                ->where('role_id', 6)
-                ->whereNotNull('approved_by')
-                ->orderBy('id', 'desc')
-                ->get()),
-            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
-            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
-        ]);
-    }
-
-    /**
-     * Display a listing of room head users.
-     */
-    public function indexRoomHead()
-    {
-        return Inertia::render('UserManagement/RoomHead', [
-            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
-                ->where('role_id', 7)
-                ->whereNotNull('approved_by')
-                ->orderBy('id', 'desc')
-                ->get()),
-            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
-            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
-        ]);
-    }
-
-    /**
-     * Display a listing of reporter users.
-     */
-    public function indexReporter()
-    {
-        return Inertia::render('UserManagement/Reporter', [
-            'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
-                ->where('role_id', 8)
-                ->whereNotNull('approved_by')
-                ->orderBy('id', 'desc')
-                ->get()),
-            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
-            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
-        ]);
-    }
 
     /**
      * Store a newly created user in storage.
@@ -265,6 +174,120 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Display the specified user detail page (read-only).
+     */
+    public function show(User $user)
+    {
+        $allPermissionKeys = [
+            [
+                'group' => 'Menu Utama',
+                'permissions' => [
+                    ['key' => 'dashboard', 'label' => 'Dashboard'],
+                ],
+            ],
+            [
+                'group' => 'Layanan & Laporan',
+                'permissions' => [
+                    ['key' => 'services.index', 'label' => 'Layanan Penunjang'],
+                    ['key' => 'reports.history', 'label' => 'Riwayat Pelaporan'],
+                    ['key' => 'reports-management.index', 'label' => 'Manajemen Laporan'],
+                    ['key' => 'reports.index', 'label' => 'Ekspor Laporan'],
+                ],
+            ],
+            [
+                'group' => 'Teknisi & Operasional',
+                'permissions' => [
+                    ['key' => 'technicians.position', 'label' => 'Posisi & Status Teknisi'],
+                    ['key' => 'service-management.working-hours', 'label' => 'Jam Operasional Unit'],
+                ],
+            ],
+            [
+                'group' => 'Master Data',
+                'permissions' => [
+                    ['key' => 'service-management.rooms', 'label' => 'Manajemen Ruangan'],
+                    ['key' => 'service-management.categories', 'label' => 'Kategori Kerusakan'],
+                    ['key' => 'service-management.supporting-units', 'label' => 'Unit Penunjang'],
+                    ['key' => 'users.approvals', 'label' => 'Persetujuan Pengguna'],
+                    ['key' => 'users.index', 'label' => 'Daftar Pengguna'],
+                ],
+            ],
+            [
+                'group' => 'Sistem',
+                'permissions' => [
+                    ['key' => 'admin.wa-gateway.index', 'label' => 'WhatsApp Gateway'],
+                    ['key' => 'admin.qr-code.index', 'label' => 'Generator QR Code'],
+                    ['key' => 'settings.index', 'label' => 'Pengaturan'],
+                    ['key' => 'design-system.index', 'label' => 'Design System'],
+                ],
+            ],
+        ];
+
+        return Inertia::render('UserManagement/Show', [
+            'targetUser' => $user->load(['role', 'room', 'supportingUnit']),
+            'roles' => Role::orderBy('id', 'asc')->get(),
+            'allPermissionKeys' => $allPermissionKeys,
+        ]);
+    }
+
+    /**
+     * Display edit page for a specific user.
+     */
+    public function edit(User $user)
+    {
+        $allPermissionKeys = [
+            [
+                'group' => 'Menu Utama',
+                'permissions' => [
+                    ['key' => 'dashboard', 'label' => 'Dashboard'],
+                ],
+            ],
+            [
+                'group' => 'Layanan & Laporan',
+                'permissions' => [
+                    ['key' => 'services.index', 'label' => 'Layanan Penunjang'],
+                    ['key' => 'reports.history', 'label' => 'Riwayat Pelaporan'],
+                    ['key' => 'reports-management.index', 'label' => 'Manajemen Laporan'],
+                    ['key' => 'reports.index', 'label' => 'Ekspor Laporan'],
+                ],
+            ],
+            [
+                'group' => 'Teknisi & Operasional',
+                'permissions' => [
+                    ['key' => 'technicians.position', 'label' => 'Posisi & Status Teknisi'],
+                    ['key' => 'service-management.working-hours', 'label' => 'Jam Operasional Unit'],
+                ],
+            ],
+            [
+                'group' => 'Master Data',
+                'permissions' => [
+                    ['key' => 'service-management.rooms', 'label' => 'Manajemen Ruangan'],
+                    ['key' => 'service-management.categories', 'label' => 'Kategori Kerusakan'],
+                    ['key' => 'service-management.supporting-units', 'label' => 'Unit Penunjang'],
+                    ['key' => 'users.approvals', 'label' => 'Persetujuan Pengguna'],
+                    ['key' => 'users.index', 'label' => 'Daftar Pengguna'],
+                ],
+            ],
+            [
+                'group' => 'Sistem',
+                'permissions' => [
+                    ['key' => 'admin.wa-gateway.index', 'label' => 'WhatsApp Gateway'],
+                    ['key' => 'admin.qr-code.index', 'label' => 'Generator QR Code'],
+                    ['key' => 'settings.index', 'label' => 'Pengaturan'],
+                    ['key' => 'design-system.index', 'label' => 'Design System'],
+                ],
+            ],
+        ];
+
+        return Inertia::render('UserManagement/Edit', [
+            'targetUser' => $user->load(['role', 'room', 'supportingUnit']),
+            'roles' => Inertia::defer(fn() => Role::orderBy('id', 'asc')->get()),
+            'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
+            'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
+            'allPermissionKeys' => $allPermissionKeys,
+        ]);
+    }
+
+    /**
      * Update the specified user in storage.
      */
     public function update(Request $request, User $user)
@@ -280,6 +303,10 @@ class UserManagementController extends Controller
             'supporting_unit_id' => 'nullable|exists:supporting_units,id',
             'phone_number' => 'nullable|string|max:20',
             'telegram_chat_id' => 'nullable|string|max:50',
+            'is_active' => 'nullable|boolean',
+            'page_permissions' => 'nullable|array',
+            'page_permissions.*' => 'string',
+            'use_role_default' => 'nullable|boolean',
         ];
 
         $validated = $request->validate($rules);
@@ -290,9 +317,13 @@ class UserManagementController extends Controller
             unset($validated['password']);
         }
 
+        if ($request->has('use_role_default') && $request->boolean('use_role_default')) {
+            $validated['page_permissions'] = null;
+        }
+
         $user->update($validated);
 
-        return redirect()->back()->with('success', 'User berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data profil & akun pengguna berhasil diperbarui.');
     }
 
     /**

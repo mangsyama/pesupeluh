@@ -16,34 +16,79 @@ class DatabaseSeeder extends Seeder
     {
         // 1. Seed Roles
         if (DB::table('roles')->count() === 0) {
+            $disposisiPermissions = json_encode([
+                'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'settings.index'
+            ]);
+
+            $reportOnlyPermissions = json_encode([
+                'dashboard', 'services.index', 'reports.history', 'technicians.position', 'settings.index'
+            ]);
+
             DB::table('roles')->insert([
-                ['name' => 'ADMINISTRATOR', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index',
-                    'technicians.position', 'service-management.working-hours',
-                    'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
-                    'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index', 'design-system.index',
-                ])],
-                ['name' => 'DIRECTOR', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'settings.index',
-                ])],
-                ['name' => 'DIVISION_HEAD', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'settings.index',
-                ])],
-                ['name' => 'SECTION_HEAD', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'settings.index',
-                ])],
-                ['name' => 'UNIT_HEAD', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'service-management.working-hours', 'settings.index',
-                ])],
-                ['name' => 'TECHNICIAN', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'technicians.position', 'settings.index',
-                ])],
-                ['name' => 'ROOM_HEAD', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'technicians.position', 'settings.index',
-                ])],
-                ['name' => 'REPORTER', 'page_permissions' => json_encode([
-                    'dashboard', 'services.index', 'reports.history', 'technicians.position', 'settings.index',
-                ])],
+                [
+                    'id' => 1,
+                    'name' => 'ADMINISTRATOR',
+                    'page_permissions' => json_encode([
+                        'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index',
+                        'technicians.position', 'service-management.working-hours',
+                        'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
+                        'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index', 'design-system.index',
+                    ])
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'DIREKTUR',
+                    'page_permissions' => json_encode(['dashboard', 'settings.index'])
+                ],
+                [
+                    'id' => 3,
+                    'name' => 'KEPALA BIDANG',
+                    'page_permissions' => $disposisiPermissions
+                ],
+                [
+                    'id' => 4,
+                    'name' => 'KEPALA BAGIAN',
+                    'page_permissions' => $reportOnlyPermissions
+                ],
+                [
+                    'id' => 5,
+                    'name' => 'KEPALA SEKSI',
+                    'page_permissions' => $disposisiPermissions
+                ],
+                [
+                    'id' => 6,
+                    'name' => 'KEPALA SUB BAGIAN',
+                    'page_permissions' => $reportOnlyPermissions
+                ],
+                [
+                    'id' => 7,
+                    'name' => 'KEPALA INSTALASI',
+                    'page_permissions' => json_encode([
+                        'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index', 'technicians.position', 'service-management.working-hours', 'settings.index'
+                    ])
+                ],
+                [
+                    'id' => 8,
+                    'name' => 'SEKRETARIS INSTALASI',
+                    'page_permissions' => $disposisiPermissions
+                ],
+                [
+                    'id' => 9,
+                    'name' => 'PJ RUANGAN',
+                    'page_permissions' => $disposisiPermissions
+                ],
+                [
+                    'id' => 10,
+                    'name' => 'TEKNISI',
+                    'page_permissions' => json_encode([
+                        'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'technicians.position', 'settings.index'
+                    ])
+                ],
+                [
+                    'id' => 11,
+                    'name' => 'STAFF',
+                    'page_permissions' => $reportOnlyPermissions
+                ],
             ]);
         }
 
@@ -114,16 +159,16 @@ class DatabaseSeeder extends Seeder
         // 3. Seed Rooms
         if (DB::table('rooms')->count() === 0) {
             DB::table('rooms')->insert([
-                ['name' => 'Ruang IGD (Instalasi Gawat Darurat)', 'location_floor' => 'Lantai 1'],
-                ['name' => 'Ruang ICU (Intensive Care Unit)', 'location_floor' => 'Lantai 2'],
-                ['name' => 'Poliklinik Penyakit Dalam', 'location_floor' => 'Lantai 1'],
-                ['name' => 'Poliklinik Anak', 'location_floor' => 'Lantai 1'],
-                ['name' => 'Ruang Operasi (OK) Sentral', 'location_floor' => 'Lantai 3'],
-                ['name' => 'Ruang Rawat Inap Melati - Kamar 101', 'location_floor' => 'Lantai 2'],
-                ['name' => 'Ruang Rawat Inap Melati - Kamar 102', 'location_floor' => 'Lantai 2'],
-                ['name' => 'Ruang Rawat Inap Dahlia - Kamar 201', 'location_floor' => 'Lantai 3'],
-                ['name' => 'Laboratorium Patologi Klinik', 'location_floor' => 'Lantai 1'],
-                ['name' => 'Apotek Rawat Jalan', 'location_floor' => 'Lantai 1'],
+                ['name' => 'Ruang IGD (Instalasi Gawat Darurat)', 'building_name' => 'Gedung Utama A', 'location_floor' => 'Lantai 1'],
+                ['name' => 'Ruang ICU (Intensive Care Unit)', 'building_name' => 'Gedung Utama A', 'location_floor' => 'Lantai 2'],
+                ['name' => 'Poliklinik Penyakit Dalam', 'building_name' => 'Gedung Rawat Jalan B', 'location_floor' => 'Lantai 1'],
+                ['name' => 'Poliklinik Anak', 'building_name' => 'Gedung Rawat Jalan B', 'location_floor' => 'Lantai 1'],
+                ['name' => 'Ruang Operasi (OK) Sentral', 'building_name' => 'Gedung Bedah C', 'location_floor' => 'Lantai 3'],
+                ['name' => 'Ruang Rawat Inap Melati - Kamar 101', 'building_name' => 'Gedung Rawat Inap D', 'location_floor' => 'Lantai 2'],
+                ['name' => 'Ruang Rawat Inap Melati - Kamar 102', 'building_name' => 'Gedung Rawat Inap D', 'location_floor' => 'Lantai 2'],
+                ['name' => 'Ruang Rawat Inap Dahlia - Kamar 201', 'building_name' => 'Gedung Rawat Inap D', 'location_floor' => 'Lantai 3'],
+                ['name' => 'Laboratorium Patologi Klinik', 'building_name' => 'Gedung Penunjang E', 'location_floor' => 'Lantai 1'],
+                ['name' => 'Apotek Rawat Jalan', 'building_name' => 'Gedung Rawat Jalan B', 'location_floor' => 'Lantai 1'],
             ]);
         }
 
@@ -138,11 +183,11 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 5. Seed Users (Only Super Admin for production readiness)
+        // 5. Seed Users (Only ADMINISTRATOR for production readiness)
         if (DB::table('users')->count() === 0) {
             $defaultPassword = Hash::make('password123');
 
-            // 1. Super Admin (ADMINISTRATOR)
+            // 1. ADMINISTRATOR
             User::create([
                 'role_id' => 1,
                 'room_id' => null,

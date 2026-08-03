@@ -18,9 +18,16 @@ const props = defineProps({
 
 const searchQuery = ref(props.filters.search || '');
 // Set default tab to '' (Semua Tugas) if status not set
-const currentTab = ref(props.filters.status || '');
+const currentTab = ref(props.filters.status || ''); // '' for Semua, or group string
 const isFiltering = ref(false);
 const isLoading = computed(() => isFiltering.value || !props.tickets?.data);
+
+const formatRoomDetails = (room) => {
+    if (!room) return '';
+    const b = room.building_name ? (/^gedung/i.test(room.building_name.trim()) ? room.building_name.trim() : `Gedung ${room.building_name.trim()}`) : null;
+    const f = room.location_floor ? (/^lantai/i.test(room.location_floor.trim()) || /^lt\./i.test(room.location_floor.trim()) ? room.location_floor.trim() : `Lantai ${room.location_floor.trim()}`) : null;
+    return [b, f].filter(Boolean).join(' - ');
+};
 
 // Debounce search
 let searchTimeout = null;
@@ -76,9 +83,8 @@ const statusConfig = {
 const getStatus = (status) => statusConfig[status] ?? { label: status, badge: 'bg-slate-100 text-slate-600 border border-slate-200' };
 
 const priorityConfig = {
-    EMERGENCY: { label: 'EMERGENCY', badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
-    URGENT:    { label: 'URGENT',  badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' },
-    ROUTINE:   { label: 'ROUTINE',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
+    URGENT:    { label: 'URGENT',  badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
+    ROUTINE:   { label: 'RUTIN',   badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
 };
 
 const getPriority = (target) => {
@@ -87,7 +93,7 @@ const getPriority = (target) => {
     const priority = typeof target === 'string' ? target : target?.priority;
     const status = typeof target === 'object' ? target?.status : null;
 
-    if (status === 'PENDING_VALIDATION' && priority !== 'EMERGENCY') {
+    if (status === 'PENDING_VALIDATION') {
         return { label: '-', badge: '', isPending: true };
     }
 
@@ -274,7 +280,6 @@ const formatDate = (dateStr) => {
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                                                 <MapPin class="h-3.5 w-3.5 text-slate-400" />
                                                 <span>{{ ticket.room?.name ?? '-' }}</span>
-                                                <span v-if="ticket.room?.location_floor" class="opacity-75">({{ ticket.room.location_floor }})</span>
                                             </div>
                                         </td>
                                         <!-- Desc -->

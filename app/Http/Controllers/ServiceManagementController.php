@@ -48,6 +48,7 @@ class ServiceManagementController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:150',
+            'building_name' => 'nullable|string|max:150',
             'location_floor' => 'nullable|string|max:50',
         ]);
 
@@ -63,6 +64,7 @@ class ServiceManagementController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:150',
+            'building_name' => 'nullable|string|max:150',
             'location_floor' => 'nullable|string|max:50',
         ]);
 

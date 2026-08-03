@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use App\Models\SupportingUnit;
 use App\Models\UnitWorkingHour;
@@ -18,13 +19,13 @@ class TechnicianPositionController extends Controller
         $user = $request->user();
 
         // Query technicians with their in-progress ticket assignments and location
-        $technicians = User::where('role_id', 6) // TECHNICIAN
+        $technicians = User::where('role_id', Role::TEKNISI) // TECHNICIAN
             ->where('is_active', 1)
             ->with(['supportingUnit:id,name,slug'])
             ->with(['assignments' => function ($query) {
                 $query->whereHas('ticket', function ($q) {
                     $q->where('status', 'IN_PROGRESS');
-                })->with(['ticket:id,uuid,ticket_number,problem_description,status,room_id', 'ticket.room:id,name']);
+                })->with(['ticket:id,uuid,ticket_number,problem_description,status,room_id', 'ticket.room:id,name,building_name,location_floor']);
             }])
             ->withCount([
                 'assignments as active_tickets_count' => function ($query) {
@@ -124,8 +125,8 @@ class TechnicianPositionController extends Controller
     {
         $user = $request->user();
 
-        // Allow Technician (role_id 6) or Admin (role_id 1) to update status
-        if (!in_array((int) $user->role_id, [1, 5, 6])) {
+        // Allow Technician, Admin, or Disposisi roles to update status
+        if (!$user->isTechnician() && !$user->isAdmin() && !$user->canDisposisi()) {
             abort(403, 'Anda tidak memiliki hak akses untuk merubah status teknisi.');
         }
 
@@ -138,7 +139,7 @@ class TechnicianPositionController extends Controller
         ]);
 
         $targetUser = $user;
-        if (!empty($validated['technician_id']) && in_array((int) $user->role_id, [1, 5])) {
+        if (!empty($validated['technician_id']) && ($user->isAdmin() || $user->canDisposisi())) {
             $targetUser = User::findOrFail($validated['technician_id']);
         }
 
@@ -153,13 +154,13 @@ class TechnicianPositionController extends Controller
     }
 
     /**
-     * Save/update working hours configuration (Admin / Ka Unit)
+     * Save/update working hours configuration (Admin / Kepala Instalasi / Disposisi)
      */
     public function updateWorkingHours(Request $request)
     {
         $user = $request->user();
-        if (!in_array((int) $user->role_id, [1, 5])) {
-            abort(403, 'Hanya Admin atau Ka. Unit yang dapat mengubah jam operasional.');
+        if (!$user->isAdmin() && !$user->canDisposisi()) {
+            abort(403, 'Hanya Admin atau Kepala Instalasi yang dapat mengubah jam operasional.');
         }
 
         $validated = $request->validate([
@@ -171,8 +172,8 @@ class TechnicianPositionController extends Controller
             'hours.*.is_active' => 'required|boolean',
         ]);
 
-        // Unit Head (role 5) can only edit working hours of their own unit
-        if ((int) $user->role_id === 5 && (int) $user->supporting_unit_id !== (int) $validated['supporting_unit_id']) {
+        // Disposisi role can only edit working hours of their own unit
+        if (!$user->isAdmin() && (int) $user->supporting_unit_id !== (int) $validated['supporting_unit_id']) {
             abort(403, 'Anda hanya dapat mengubah jam operasional unit penunjang Anda sendiri.');
         }
 

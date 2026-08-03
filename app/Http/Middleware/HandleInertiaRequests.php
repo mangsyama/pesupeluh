@@ -52,17 +52,17 @@ class HandleInertiaRequests extends Middleware
                     $query = \App\Models\ServiceTicket::whereNull('deleted_at')
                         ->whereIn('status', ['PENDING_VALIDATION', 'ASSIGNED', 'IN_PROGRESS', 'PENDING']);
 
-                    if (in_array($roleId, [1, 2, 3, 4])) {
-                        // Admin / Management
-                    } elseif ($roleId === 5) {
+                    if ($user->isAdmin() || $user->isDirector()) {
+                        // Admin & Direktur (Full/Dashboard)
+                    } elseif ($user->canDisposisi() && $user->supporting_unit_id) {
                         $query->whereHas('category', function ($q) use ($user) {
                             $q->where('supporting_unit_id', $user->supporting_unit_id);
                         });
-                    } elseif ($roleId === 6) {
+                    } elseif ($user->isTechnician()) {
                         $query->whereHas('assignments', function ($q) use ($userId) {
                             $q->where('technician_id', $userId);
                         });
-                    } elseif ($roleId === 7) {
+                    } elseif ((int) $user->role_id === \App\Models\Role::PJ_RUANGAN && $user->room_id) {
                         $query->where('room_id', $user->room_id);
                     } else {
                         return 0;
@@ -71,7 +71,7 @@ class HandleInertiaRequests extends Middleware
                     return $query->count();
                 }) : 0,
             ],
-            'notifications' => $user ? \Inertia\Inertia::defer(fn() => $user->unreadNotifications()->take(10)->get()->map(function ($notification) {
+            'notifications' => $user ? \Inertia\Inertia::defer(fn() => $user->unreadNotifications()->take(15)->get()->map(function ($notification) {
                 return [
                     'id' => $notification->id,
                     'type' => $notification->data['type'] ?? 'user',

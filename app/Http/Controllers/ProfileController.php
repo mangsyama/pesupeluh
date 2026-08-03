@@ -26,7 +26,26 @@ class ProfileController extends Controller
             'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
             'user' => $user,
+            'supportingUnits' => \App\Models\SupportingUnit::orderBy('name', 'asc')->get(),
+            'rooms' => \App\Models\Room::orderBy('name', 'asc')->get(),
         ]);
+    }
+
+    /**
+     * Update the user's notification preferences.
+     */
+    public function updateNotifications(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'system_notify_enabled' => 'required|boolean',
+            'wa_notify_enabled' => 'required|boolean',
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        $user->update($validated);
+
+        return back()->with('success', 'Pengaturan notifikasi berhasil diperbarui.');
     }
 
     /**
@@ -72,5 +91,33 @@ class ProfileController extends Controller
         $user->save();
 
         return Redirect::route('profile.edit');
+    }
+
+    /**
+     * Update the user's face descriptor.
+     */
+    public function updateFace(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'face_descriptor' => 'required|array|min:128|max:128',
+        ]);
+
+        $user = $request->user();
+        $user->face_descriptor = $request->input('face_descriptor');
+        $user->save();
+
+        return Redirect::route('profile.edit')->with('status', 'face-updated');
+    }
+
+    /**
+     * Delete the user's face descriptor.
+     */
+    public function deleteFace(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $user->face_descriptor = null;
+        $user->save();
+
+        return Redirect::route('profile.edit')->with('status', 'face-deleted');
     }
 }

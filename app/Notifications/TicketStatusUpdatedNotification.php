@@ -25,10 +25,18 @@ class TicketStatusUpdatedNotification extends Notification
 
     public function via($notifiable): array
     {
-        $channels = ['database', 'broadcast'];
+        $channels = [];
+
+        if (!($notifiable instanceof User) || $notifiable->system_notify_enabled !== false) {
+            $channels = ['database', 'broadcast'];
+        }
 
         if (config('services.telegram.token') && $notifiable instanceof User && $notifiable->telegram_chat_id) {
             $channels[] = TelegramChannel::class;
+        }
+
+        if ($notifiable instanceof User && $notifiable->wa_notify_enabled !== false && $notifiable->phone_number) {
+            $channels[] = WaGatewayChannel::class;
         }
 
         return $channels;
@@ -36,8 +44,7 @@ class TicketStatusUpdatedNotification extends Notification
 
     private function getNotificationDetails($notifiable): array
     {
-        $roleId = (int) ($notifiable->role_id ?? 0);
-        $isManagement = in_array($roleId, [1, 2, 3, 4, 5]);
+        $isManagement = $notifiable instanceof User && ($notifiable->isAdmin() || $notifiable->canDisposisi() || $notifiable->isDirector());
         $targetRoute = $isManagement 
             ? route('reports-management.show', ['ticket' => $this->ticket->uuid])
             : route('reports.show', ['ticket' => $this->ticket->uuid]);

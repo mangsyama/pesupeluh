@@ -26,7 +26,7 @@ class RegisteredUserController extends Controller
     {
         return Inertia::render('Auth/Register', [
             'supportingUnits' => \App\Models\SupportingUnit::orderBy('name', 'asc')->get(['id', 'name', 'type']),
-            'rooms' => \App\Models\Room::orderBy('name', 'asc')->get(['id', 'name']),
+            'rooms' => \App\Models\Room::orderBy('name', 'asc')->get(['id', 'name', 'building_name', 'location_floor']),
         ]);
     }
 
@@ -71,7 +71,7 @@ class RegisteredUserController extends Controller
             $profilePhotoPath = SecureFileUpload::saveBase64($request->profile_photo, 'profile_photos', 'profile_');
         }
 
-        $reporterRole = \Illuminate\Support\Facades\DB::table('roles')->where('name', 'REPORTER')->first();
+        $staffRole = \Illuminate\Support\Facades\DB::table('roles')->where('name', 'STAFF')->first();
 
         $user = User::create([
             'name' => $request->name,
@@ -83,7 +83,7 @@ class RegisteredUserController extends Controller
             'room_id' => $request->room_id,
             'password' => Hash::make($request->password),
             'face_descriptor' => $request->face_descriptor,
-            'role_id' => $reporterRole ? $reporterRole->id : 6,
+            'role_id' => $staffRole ? $staffRole->id : \App\Models\Role::STAFF,
             'is_active' => false,
             'profile_photo_path' => $profilePhotoPath,
         ]);

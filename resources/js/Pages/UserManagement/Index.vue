@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed, watch, getCurrentInstance } from 'vue';
-import { Head, useForm, usePage, router } from '@inertiajs/vue3';
+import { Head, useForm, usePage, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw, ChevronLeft, ChevronRight } from '@lucide/vue';
+import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, Plus, X, KeyRound, RotateCcw, ChevronLeft, ChevronRight, Eye } from '@lucide/vue';
 
 const props = defineProps({
     users: {
@@ -81,11 +81,11 @@ const filteredUsers = computed(() => {
     return props.users.filter(user => {
         let matchesTab = true;
         if (currentTab.value === 'admin') matchesTab = user.role_id === 1;
-        else if (currentTab.value === 'management') matchesTab = [2, 3, 4].includes(user.role_id);
-        else if (currentTab.value === 'unit_head') matchesTab = user.role_id === 5;
-        else if (currentTab.value === 'technician') matchesTab = user.role_id === 6;
-        else if (currentTab.value === 'room_head') matchesTab = user.role_id === 7;
-        else if (currentTab.value === 'reporter') matchesTab = user.role_id === 8;
+        else if (currentTab.value === 'management') matchesTab = [2, 3, 4, 5, 6].includes(user.role_id);
+        else if (currentTab.value === 'unit_head') matchesTab = [7, 8].includes(user.role_id);
+        else if (currentTab.value === 'technician') matchesTab = user.role_id === 10;
+        else if (currentTab.value === 'room_head') matchesTab = user.role_id === 9;
+        else if (currentTab.value === 'reporter') matchesTab = user.role_id === 11;
 
         if (!matchesTab) return false;
 
@@ -155,7 +155,6 @@ const form = useForm({
     role_id: props.roles && props.roles.length > 0 ? props.roles[0].id : null,
     supporting_unit_id: '',
     room_id: '',
-    telegram_chat_id: '',
 });
 
 // Custom Dropdowns State
@@ -338,94 +337,6 @@ const deleteUser = (user) => {
     });
 };
 
-const editUser = (user) => {
-    openEditModal(user);
-};
-
-// ===== Permission Modal =====
-const showPermissionModal = ref(false);
-const permissionUser = ref(null);
-const permissionChecked = ref([]);
-const permissionUseDefault = ref(true);
-const permissionProcessing = ref(false);
-
-const getRoleDefaultPermissions = (roleId) => {
-    const role = props.roles.find(r => r.id === roleId);
-    let perms = [];
-    if (role && role.page_permissions) {
-        perms = Array.isArray(role.page_permissions) ? role.page_permissions : JSON.parse(role.page_permissions);
-    }
-    // Ensure default fallback items for role defaults
-    if (!perms.includes('technicians.position')) perms.push('technicians.position');
-    if ([1, 5].includes(roleId) && !perms.includes('service-management.working-hours')) {
-        perms.push('service-management.working-hours');
-    }
-    if (roleId === 1) {
-        if (!perms.includes('admin.qr-code.index')) perms.push('admin.qr-code.index');
-        if (!perms.includes('admin.wa-gateway.index')) perms.push('admin.wa-gateway.index');
-    }
-    return perms;
-};
-
-const openPermissionModal = (user) => {
-    permissionUser.value = user;
-    const roleDefaults = getRoleDefaultPermissions(user.role_id);
-
-    if (user.page_permissions && Array.isArray(user.page_permissions) && user.page_permissions.length > 0) {
-        // User has custom override
-        permissionUseDefault.value = false;
-        permissionChecked.value = [...user.page_permissions];
-    } else {
-        // Using role defaults
-        permissionUseDefault.value = true;
-        permissionChecked.value = [...roleDefaults];
-    }
-    showPermissionModal.value = true;
-};
-
-const isRoleDefault = (key) => {
-    if (!permissionUser.value) return false;
-    const roleDefaults = getRoleDefaultPermissions(permissionUser.value.role_id);
-    return roleDefaults.includes(key);
-};
-
-const togglePermission = (key) => {
-    if (permissionUseDefault.value) {
-        // Switch to custom mode when user changes anything
-        permissionUseDefault.value = false;
-    }
-    const idx = permissionChecked.value.indexOf(key);
-    if (idx >= 0) {
-        permissionChecked.value.splice(idx, 1);
-    } else {
-        permissionChecked.value.push(key);
-    }
-};
-
-const resetToDefault = () => {
-    if (!permissionUser.value) return;
-    permissionUseDefault.value = true;
-    permissionChecked.value = [...getRoleDefaultPermissions(permissionUser.value.role_id)];
-};
-
-const savePermissions = () => {
-    if (!permissionUser.value) return;
-    permissionProcessing.value = true;
-
-    router.put(route('users.update-permissions', permissionUser.value.uuid || permissionUser.value.id), {
-        page_permissions: permissionChecked.value,
-        use_role_default: permissionUseDefault.value,
-    }, {
-        onSuccess: () => {
-            showPermissionModal.value = false;
-            permissionProcessing.value = false;
-            proxy.$toast('Hak akses pengguna berhasil diperbarui.', 'success');
-        },
-        onError: () => {
-            permissionProcessing.value = false;
-        },
-    });
-};
 </script>
 
 <template>
@@ -539,37 +450,24 @@ const savePermissions = () => {
                                     </td>
                                     <td class="px-6 py-4 text-center text-xs text-slate-500 dark:text-slate-400">
                                         <div class="flex items-center justify-center gap-1.5">
-                                            <button
-                                                @click="openPermissionModal(user)"
-                                                class="p-2 rounded-md bg-violet-50 text-violet-700 hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-400 dark:hover:bg-violet-900/60 border border-violet-200/50 dark:border-violet-900/40 transition duration-150"
-                                                title="Atur Akses Halaman"
+                                            <Link
+                                                :href="route('users.show', user.uuid || user.id)"
+                                                class="p-2 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-800 transition duration-150"
+                                                title="Lihat Detail Profil"
                                             >
-                                                <KeyRound class="h-3.5 w-3.5" />
-                                            </button>
-                                            <button
-                                                @click="editUser(user)"
+                                                <Eye class="h-3.5 w-3.5" />
+                                            </Link>
+                                            <Link
+                                                :href="route('users.edit', user.uuid || user.id)"
                                                 class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
-                                                :title="__('Edit')"
+                                                title="Edit Data & Hak Akses"
                                             >
                                                 <Edit2 class="h-3.5 w-3.5" />
-                                            </button>
-                                            <button
-                                                @click="toggleStatus(user)"
-                                                :class="[
-                                                    'p-2 rounded-md border transition duration-150',
-                                                    user.is_active
-                                                        ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200/50 dark:border-amber-900/40'
-                                                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-900/40'
-                                                ]"
-                                                :title="user.is_active ? __('pages.user_management.suspend_account') : __('pages.user_management.activate_account')"
-                                            >
-                                                <UserX v-if="user.is_active" class="h-3.5 w-3.5" />
-                                                <UserCheck v-else class="h-3.5 w-3.5" />
-                                            </button>
+                                            </Link>
                                             <button
                                                 @click="deleteUser(user)"
                                                 class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
-                                                :title="__('pages.user_management.alerts.yes_revoke')"
+                                                title="Hapus User"
                                             >
                                                 <Trash2 class="h-3.5 w-3.5" />
                                             </button>
@@ -612,7 +510,7 @@ const savePermissions = () => {
 
         <Teleport to="body">
             <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
+                <div class="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
                     <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl shrink-0">
                         <h3 class="text-base font-bold text-slate-955 dark:text-white">
                             {{ isEditing ? __('pages.user_management.edit_user_title') : __('pages.user_management.add_user_title') }}
@@ -623,141 +521,130 @@ const savePermissions = () => {
                     </div>
 
                     <form @submit.prevent="submitForm" class="flex flex-col flex-1 overflow-hidden min-h-0">
-                        <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-                            <!-- 1. Nama Lengkap -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.full_name') }}</label>
-                                <input
-                                    v-model="form.name"
-                                    type="text"
-                                    required
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                    :placeholder="__('pages.user_management.form.full_name_placeholder')"
-                                />
-                                <div v-if="form.errors.name" class="text-xs text-red-500 mt-1">{{ form.errors.name }}</div>
-                            </div>
+                        <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- 1. Nama Lengkap -->
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.full_name') }}</label>
+                                    <input
+                                        v-model="form.name"
+                                        type="text"
+                                        required
+                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
+                                        :placeholder="__('pages.user_management.form.full_name_placeholder')"
+                                    />
+                                    <div v-if="form.errors.name" class="text-xs text-red-500 mt-1">{{ form.errors.name }}</div>
+                                </div>
 
-                            <!-- 2. NIP -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.nip') }}</label>
-                                <input
-                                    v-model="form.nip"
-                                    type="text"
-                                    required
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                    :placeholder="__('pages.user_management.form.nip_placeholder')"
-                                />
-                                <div v-if="form.errors.nip" class="text-xs text-red-500 mt-1">{{ form.errors.nip }}</div>
-                            </div>
+                                <!-- 2. NIP -->
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.nip') }}</label>
+                                    <input
+                                        v-model="form.nip"
+                                        type="text"
+                                        required
+                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
+                                        :placeholder="__('pages.user_management.form.nip_placeholder')"
+                                    />
+                                    <div v-if="form.errors.nip" class="text-xs text-red-500 mt-1">{{ form.errors.nip }}</div>
+                                </div>
 
-                            <!-- 3. Nama Pengguna (Username) -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.username') }}</label>
-                                <input
-                                    v-model="form.username"
-                                    type="text"
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                    :placeholder="__('pages.user_management.form.username_placeholder')"
-                                />
-                                <div v-if="form.errors.username" class="text-xs text-red-500 mt-1">{{ form.errors.username }}</div>
-                            </div>
+                                <!-- 3. Nama Pengguna (Username) -->
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.username') }}</label>
+                                    <input
+                                        v-model="form.username"
+                                        type="text"
+                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
+                                        :placeholder="__('pages.user_management.form.username_placeholder')"
+                                    />
+                                    <div v-if="form.errors.username" class="text-xs text-red-500 mt-1">{{ form.errors.username }}</div>
+                                </div>
 
-                            <!-- 4. Email -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.email') }}</label>
-                                <input
-                                    v-model="form.email"
-                                    type="email"
-                                    required
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                    :placeholder="__('pages.user_management.form.email_placeholder')"
-                                />
-                                <div v-if="form.errors.email" class="text-xs text-red-500 mt-1">{{ form.errors.email }}</div>
-                            </div>
+                                <!-- 4. Email -->
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.email') }}</label>
+                                    <input
+                                        v-model="form.email"
+                                        type="email"
+                                        required
+                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
+                                        :placeholder="__('pages.user_management.form.email_placeholder')"
+                                    />
+                                    <div v-if="form.errors.email" class="text-xs text-red-500 mt-1">{{ form.errors.email }}</div>
+                                </div>
 
-                            <!-- 5. Nomor HP -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.phone') }}</label>
-                                <input
-                                    v-model="form.phone_number"
-                                    type="text"
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                    :placeholder="__('pages.user_management.form.phone_placeholder')"
-                                />
-                                <div v-if="form.errors.phone_number" class="text-xs text-red-500 mt-1">{{ form.errors.phone_number }}</div>
-                            </div>
+                                <!-- 5. Nomor HP -->
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.phone') }}</label>
+                                    <input
+                                        v-model="form.phone_number"
+                                        type="text"
+                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
+                                        :placeholder="__('pages.user_management.form.phone_placeholder')"
+                                    />
+                                    <div v-if="form.errors.phone_number" class="text-xs text-red-500 mt-1">{{ form.errors.phone_number }}</div>
+                                </div>
 
-                            <!-- 6. Kata Sandi -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                                    {{ isEditing ? __('pages.user_management.form.password_optional') : __('pages.user_management.form.password') }}
-                                </label>
-                                <input
-                                    v-model="form.password"
-                                    type="password"
-                                    :required="!isEditing"
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                    :placeholder="isEditing ? __('pages.user_management.form.password_placeholder_edit') : __('pages.user_management.form.password_placeholder_add')"
-                                />
-                                <div v-if="form.errors.password" class="text-xs text-red-500 mt-1">{{ form.errors.password }}</div>
-                            </div>
+                                <!-- 6. Kata Sandi -->
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                                        {{ isEditing ? __('pages.user_management.form.password_optional') : __('pages.user_management.form.password') }}
+                                    </label>
+                                    <input
+                                        v-model="form.password"
+                                        type="password"
+                                        :required="!isEditing"
+                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
+                                        :placeholder="isEditing ? __('pages.user_management.form.password_placeholder_edit') : __('pages.user_management.form.password_placeholder_add')"
+                                    />
+                                    <div v-if="form.errors.password" class="text-xs text-red-500 mt-1">{{ form.errors.password }}</div>
+                                </div>
 
-                            <!-- 7. Peran Spesifik (Role) -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.specific_role') }}</label>
-                                <SearchableSelect
-                                    v-model="form.role_id"
-                                    :options="roleOptions"
-                                    :searchable="false"
-                                    value-key="id"
-                                    label-key="name"
-                                    placeholder="Pilih Peran..."
-                                />
-                                <div v-if="form.errors.role_id" class="text-xs text-red-500 mt-1">{{ form.errors.role_id }}</div>
-                            </div>
+                                <!-- 7. Peran Spesifik (Role) -->
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.specific_role') }}</label>
+                                    <SearchableSelect
+                                        v-model="form.role_id"
+                                        :options="roleOptions"
+                                        :searchable="false"
+                                        value-key="id"
+                                        label-key="name"
+                                        placeholder="Pilih Peran..."
+                                    />
+                                    <div v-if="form.errors.role_id" class="text-xs text-red-500 mt-1">{{ form.errors.role_id }}</div>
+                                </div>
 
-                            <!-- 8. Unit Penunjang -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.supporting_unit') }}</label>
-                                <SearchableSelect
-                                    v-model="form.supporting_unit_id"
-                                    :options="unitOptions"
-                                    :searchable="true"
-                                    value-key="id"
-                                    label-key="name"
-                                    placeholder="Tanpa Unit Penunjang"
-                                    search-placeholder="Cari unit..."
-                                />
-                                <div v-if="form.errors.supporting_unit_id" class="text-xs text-red-500 mt-1">{{ form.errors.supporting_unit_id }}</div>
-                            </div>
+                                <!-- 8. Unit Penunjang -->
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.supporting_unit') }}</label>
+                                    <SearchableSelect
+                                        v-model="form.supporting_unit_id"
+                                        :options="unitOptions"
+                                        :searchable="true"
+                                        value-key="id"
+                                        label-key="name"
+                                        placeholder="Tanpa Unit Penunjang"
+                                        search-placeholder="Cari unit..."
+                                    />
+                                    <div v-if="form.errors.supporting_unit_id" class="text-xs text-red-500 mt-1">{{ form.errors.supporting_unit_id }}</div>
+                                </div>
 
-                            <!-- 9. Ruangan -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.room') }}</label>
-                                <SearchableSelect
-                                    v-model="form.room_id"
-                                    :options="roomOptions"
-                                    :searchable="true"
-                                    value-key="id"
-                                    label-key="name"
-                                    subtitle-key="location_floor"
-                                    placeholder="Tanpa Ruangan"
-                                    search-placeholder="Cari ruangan..."
-                                />
-                                <div v-if="form.errors.room_id" class="text-xs text-red-500 mt-1">{{ form.errors.room_id }}</div>
-                            </div>
-
-                            <!-- 10. Telegram Chat ID -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Telegram Chat ID (Personal)</label>
-                                <input
-                                    v-model="form.telegram_chat_id"
-                                    type="text"
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
-                                    placeholder="Masukkan Chat ID Telegram (contoh: 987654321)"
-                                />
-                                <div v-if="form.errors.telegram_chat_id" class="text-xs text-red-500 mt-1">{{ form.errors.telegram_chat_id }}</div>
-                                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Dapatkan via bot pembantu @userinfobot di Telegram</p>
+                                <!-- 9. Ruangan -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.room') }}</label>
+                                    <SearchableSelect
+                                        v-model="form.room_id"
+                                        :options="roomOptions"
+                                        :searchable="true"
+                                        value-key="id"
+                                        label-key="name"
+                                        subtitle-key="location_floor"
+                                        placeholder="Tanpa Ruangan"
+                                        search-placeholder="Cari ruangan..."
+                                    />
+                                    <div v-if="form.errors.room_id" class="text-xs text-red-500 mt-1">{{ form.errors.room_id }}</div>
+                                </div>
                             </div>
                         </div>
 
@@ -783,122 +670,6 @@ const savePermissions = () => {
             </div>
         </Teleport>
 
-        <!-- Permission Modal -->
-        <Teleport to="body">
-            <div v-if="showPermissionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col">
-                    <!-- Header -->
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-t-2xl flex-shrink-0">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 dark:text-white">
-                                Pengaturan Akses Halaman
-                            </h3>
-                            <p v-if="permissionUser" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                {{ permissionUser.name }}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600 dark:bg-white/10 dark:text-white ml-1">
-                                    {{ permissionUser.role?.name ? __('roles.' + permissionUser.role.name) : '-' }}
-                                </span>
-                            </p>
-                        </div>
-                        <button type="button" @click="showPermissionModal = false" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
-                            <X class="h-5 w-5" />
-                        </button>
-                    </div>
-
-                    <!-- Body -->
-                    <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                        <!-- Mode indicator -->
-                        <div class="flex items-center justify-between mb-5">
-                            <div class="flex items-center gap-2">
-                                <span :class="[
-                                    'inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors',
-                                    permissionUseDefault
-                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white border border-emerald-200/50 dark:border-white/10'
-                                        : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border border-amber-200/50 dark:border-amber-500/20'
-                                ]">
-                                    {{ permissionUseDefault ? 'Menggunakan Default Role' : 'Custom Override' }}
-                                </span>
-                            </div>
-                            <button
-                                v-if="!permissionUseDefault"
-                                @click="resetToDefault"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                            >
-                                <RotateCcw class="h-3 w-3" />
-                                Reset ke Default
-                            </button>
-                        </div>
-
-                        <!-- Permission groups -->
-                        <div class="space-y-5">
-                            <div v-for="group in allPermissionKeys" :key="group.group">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5 flex items-center gap-2">
-                                    <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
-                                    {{ group.group }}
-                                    <span class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></span>
-                                </h4>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <label
-                                        v-for="perm in group.permissions"
-                                        :key="perm.key"
-                                        :class="[
-                                            'flex items-center gap-3 px-3.5 py-2.5 rounded-xl border cursor-pointer transition-all duration-150 select-none group',
-                                            permissionChecked.includes(perm.key)
-                                                ? 'bg-emerald-50/70 dark:bg-white/10 border-emerald-300 dark:border-white/30 shadow-sm'
-                                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                                        ]"
-                                    >
-                                        <div class="relative flex items-center justify-center">
-                                            <input
-                                                type="checkbox"
-                                                :checked="permissionChecked.includes(perm.key)"
-                                                @change="togglePermission(perm.key)"
-                                                class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 dark:text-white focus:ring-0 focus:ring-offset-0 focus:outline-none dark:bg-slate-800 cursor-pointer"
-                                            />
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <span :class="[
-                                                'text-sm font-medium',
-                                                permissionChecked.includes(perm.key)
-                                                    ? 'text-slate-900 dark:text-white font-semibold'
-                                                    : 'text-slate-600 dark:text-slate-400'
-                                            ]">
-                                                {{ perm.label }}
-                                            </span>
-                                        </div>
-                                        <span
-                                            v-if="isRoleDefault(perm.key)"
-                                            class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-300"
-                                        >
-                                            default
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50 flex-shrink-0">
-                        <button
-                            type="button"
-                            @click="showPermissionModal = false"
-                            class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            @click="savePermissions"
-                            :disabled="permissionProcessing"
-                            class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 border-0 shadow-sm disabled:opacity-50 flex items-center gap-2"
-                        >
-                            <KeyRound v-if="!permissionProcessing" class="h-3.5 w-3.5" />
-                            {{ permissionProcessing ? 'Menyimpan...' : 'Simpan Akses' }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Teleport>
     </AuthenticatedLayout>
 </template>
 

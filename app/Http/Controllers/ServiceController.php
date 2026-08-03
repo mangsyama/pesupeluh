@@ -33,7 +33,7 @@ class ServiceController extends Controller
             'room_id' => 'required|exists:rooms,id',
             'category_id' => 'required|exists:issue_categories,id',
             'problem_description' => 'required|string|min:5',
-            'priority' => 'nullable|in:ROUTINE,URGENT,EMERGENCY',
+            'priority' => 'nullable|in:ROUTINE,URGENT',
             'attachments' => 'required|array|min:1|max:5',
             'attachments.*' => 'required|string',
         ], [
@@ -43,18 +43,15 @@ class ServiceController extends Controller
 
         $ticketNumber = 'TK-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
         $inputPriority = $validated['priority'] ?? 'ROUTINE';
-        $isEmergency = ($inputPriority === 'EMERGENCY');
 
         // Check category & supporting unit
         $category = \App\Models\IssueCategory::find($validated['category_id']);
         $supportingUnitId = $category?->supporting_unit_id;
 
         // Determine if currently off-hours using UnitWorkingHourService
-        $isOffHours = !$isEmergency && \App\Services\UnitWorkingHourService::isOffHours($supportingUnitId);
+        $isOffHours = \App\Services\UnitWorkingHourService::isOffHours($supportingUnitId);
 
-
-        $initialStatus = ($isEmergency || $isOffHours) ? 'ASSIGNED' : 'PENDING_VALIDATION';
-        $finalPriority = $isEmergency ? 'EMERGENCY' : $inputPriority;
+        $initialStatus = $isOffHours ? 'ASSIGNED' : 'PENDING_VALIDATION';
 
         $ticket = ServiceTicket::create([
             'ticket_number' => $ticketNumber,
@@ -62,34 +59,32 @@ class ServiceController extends Controller
             'room_id' => $validated['room_id'],
             'category_id' => $validated['category_id'],
             'problem_description' => $validated['problem_description'],
-            'priority' => $finalPriority,
+            'priority' => $inputPriority,
             'status' => $initialStatus,
-            'validated_at' => ($isEmergency || $isOffHours) ? now() : null,
-            'validated_by' => $isEmergency ? $request->user()->id : null,
+            'validated_at' => $isOffHours ? now() : null,
+            'validated_by' => null,
         ]);
 
         \App\Models\TicketHistory::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'status' => $initialStatus,
-            'action' => $isEmergency ? 'EMERGENCY_CREATED' : ($isOffHours ? 'OFF_HOURS_CREATED' : 'CREATED'),
-            'notes' => $isEmergency 
-                ? '🚨 LAPORAN DARURAT (CODE RED): Dibuat oleh pelapor, sistem otomatis memotong alur disposisi.' 
-                : ($isOffHours 
-                    ? '🌙 LAPORAN DIBUAT DI LUAR JAM OPERASIONAL: Sistem mengaktifkan disposisi otomatis.' 
-                    : 'Laporan berhasil dibuat dan dikirim oleh pelapor.'),
+            'action' => $isOffHours ? 'OFF_HOURS_CREATED' : 'CREATED',
+            'notes' => $isOffHours 
+                ? '🌙 LAPORAN DIBUAT DI LUAR JAM OPERASIONAL: Sistem mengaktifkan disposisi otomatis.' 
+                : 'Laporan berhasil dibuat dan dikirim oleh pelapor.',
         ]);
 
-        // Auto-assign technicians if Emergency or Off-Hours
-        if ($isEmergency || $isOffHours) {
-            $onDutyTechnicians = \App\Models\User::where('role_id', 6) // TECHNICIAN
+        // Auto-assign technicians if Off-Hours
+        if ($isOffHours) {
+            $onDutyTechnicians = \App\Models\User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
                 ->where('supporting_unit_id', $supportingUnitId)
                 ->where('is_active', 1)
                 ->where('is_on_duty', 1)
                 ->get();
 
             if ($onDutyTechnicians->isEmpty()) {
-                $onDutyTechnicians = \App\Models\User::where('role_id', 6)
+                $onDutyTechnicians = \App\Models\User::where('role_id', \App\Models\Role::TEKNISI)
                     ->where('supporting_unit_id', $supportingUnitId)
                     ->where('is_active', 1)
                     ->get();
@@ -108,13 +103,11 @@ class ServiceController extends Controller
                 'ticket_id' => $ticket->id,
                 'user_id' => $request->user()->id,
                 'status' => 'ASSIGNED',
-                'action' => $isEmergency ? 'EMERGENCY_DISPATCH' : 'AUTO_DISPATCH',
-                'notes' => $isEmergency 
-                    ? 'Penanganan darurat! Tiket otomatis disebar ke seluruh teknisi piket.' 
-                    : 'Disposisi otomatis di luar jam kerja operasional unit penunjang.',
+                'action' => 'AUTO_DISPATCH',
+                'notes' => 'Disposisi otomatis di luar jam kerja operasional unit penunjang.',
             ]);
 
-            // Immediately send WA & App notification to assigned technicians for Emergency / Off-Hours
+            // Immediately send WA & App notification to assigned technicians for Off-Hours
             if ($onDutyTechnicians->isNotEmpty()) {
                 try {
                     $ticket->load(['room', 'category']);
@@ -147,23 +140,23 @@ class ServiceController extends Controller
         if ($supportingUnitId || $ticket->room_id) {
             $recipients = \App\Models\User::where('is_active', 1)
                 ->where('id', '!=', $ticket->reporter_id)
-                ->where(function ($query) use ($supportingUnitId, $ticket, $isEmergency, $isOffHours) {
+                ->where(function ($query) use ($supportingUnitId, $ticket, $isOffHours) {
                     if ($supportingUnitId) {
                         $query->where(function ($q) use ($supportingUnitId) {
-                            $q->where('role_id', 5)->where('supporting_unit_id', $supportingUnitId);
+                            $q->where('role_id', \App\Models\Role::KEPALA_INSTALASI)->where('supporting_unit_id', $supportingUnitId);
                         });
 
-                        // If Emergency or Off-Hours, also notify Technicians directly!
-                        if ($isEmergency || $isOffHours) {
+                        // If Off-Hours, also notify Technicians directly!
+                        if ($isOffHours) {
                             $query->orWhere(function ($q) use ($supportingUnitId) {
-                                $q->where('role_id', 6)->where('supporting_unit_id', $supportingUnitId);
+                                $q->where('role_id', \App\Models\Role::TEKNISI)->where('supporting_unit_id', $supportingUnitId);
                             });
                         }
                     }
-                    $query->orWhere('role_id', 1); // Administrator
+                    $query->orWhere('role_id', \App\Models\Role::ADMINISTRATOR); // Administrator
                     if ($ticket->room_id) {
                         $query->orWhere(function ($q) use ($ticket) {
-                            $q->where('role_id', 7)->where('room_id', $ticket->room_id); // Kepala Ruangan
+                            $q->where('role_id', \App\Models\Role::PJ_RUANGAN)->where('room_id', $ticket->room_id); // PJ Ruangan
                         });
                     }
                 })
@@ -178,11 +171,9 @@ class ServiceController extends Controller
             }
         }
 
-        $successMsg = $isEmergency 
-            ? '🚨 Laporan DARURAT berhasil terkirim dan langsung diteruskan ke seluruh teknisi piket!' 
-            : ($isOffHours 
-                ? '🌙 Laporan berhasil terbuat di luar jam operasional & otomatis didisposisikan ke teknisi piket.' 
-                : 'Tiket pelaporan baru berhasil dibuat.');
+        $successMsg = $isOffHours 
+            ? '🌙 Laporan berhasil terbuat di luar jam operasional & otomatis didisposisikan ke teknisi piket.' 
+            : 'Tiket pelaporan baru berhasil dibuat.';
 
         return redirect()->route('reports.history')->with('success', $successMsg);
     }

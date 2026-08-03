@@ -10,8 +10,9 @@ class QrGeneratorController extends Controller
 {
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = $request->user();
-        if (!$user->hasPageAccess('admin.qr-code.index') && (int) $user->role_id !== 1) {
+        if (!$user->hasPageAccess('admin.qr-code.index') && !$user->isAdmin()) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 
@@ -19,7 +20,7 @@ class QrGeneratorController extends Controller
             ->where('status', 'ACTIVE')
             ->get();
 
-        return Inertia::render('Admin/QrGenerator/Index', [
+        return Inertia::render('QrGenerator/Index', [
             'baseUrl' => url('/'),
             'units' => $units,
         ]);

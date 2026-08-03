@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage, router } from '@inertiajs/vue3';
 import {
     Calendar,
     User,
@@ -21,11 +21,42 @@ import {
     Pause,
     Play,
     Check,
-    Info
+    Info,
+    Trash2
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
+
+const formatRoomDetails = (room) => {
+    if (!room) return '';
+    const b = room.building_name ? (/^gedung/i.test(room.building_name.trim()) ? room.building_name.trim() : `Gedung ${room.building_name.trim()}`) : null;
+    const f = room.location_floor ? (/^lantai/i.test(room.location_floor.trim()) || /^lt\./i.test(room.location_floor.trim()) ? room.location_floor.trim() : `Lantai ${room.location_floor.trim()}`) : null;
+    return [b, f].filter(Boolean).join(' - ');
+};
+
 const showSlaInfoModal = ref(false);
+
+const user = computed(() => usePage().props.auth.user);
+const isAdmin = computed(() => Number(user.value?.role_id) === 1);
+
+const confirmDelete = () => {
+    if (!props.ticket?.uuid) return;
+    proxy.$swal({
+        title: proxy.__('Apakah Anda yakin?'),
+        text: `Laporan #${props.ticket.ticket_number} akan dihapus dari antrean!`,
+        icon: 'error',
+        iconColor: '#ef4444',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Hapus Laporan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route('reports-management.destroy', props.ticket.uuid));
+        }
+    });
+};
 
 const pendingHistories = computed(() => {
     const list = props.ticket?.histories ? props.ticket.histories.filter(h => h.action === 'PAUSED' || h.action === 'RESUMED' || h.status === 'PENDING') : [];
@@ -73,8 +104,6 @@ onMounted(() => {
 onUnmounted(() => {
     if (timer) clearInterval(timer);
 });
-
-const user = computed(() => usePage().props.auth.user);
 
 // Date Parsing
 const parseDateSafe = (dateStr) => {
@@ -169,12 +198,12 @@ const formatDateTime = (dateStr) => {
 };
 
 const assignForm = useForm({
-    priority: props.ticket?.priority && props.ticket?.priority !== 'EMERGENCY' ? props.ticket.priority : 'ROUTINE',
+    priority: props.ticket?.priority || 'ROUTINE',
     technician_ids: []
 });
 
 watch(() => props.ticket, (newTicket) => {
-    if (newTicket?.priority && newTicket?.priority !== 'EMERGENCY') {
+    if (newTicket?.priority) {
         assignForm.priority = newTicket.priority;
     }
 }, { immediate: true });
@@ -289,9 +318,8 @@ const statusConfig = {
 const getStatus = (status) => statusConfig[status] ?? { label: status, badge: 'bg-slate-100 text-slate-600 border-slate-200' };
 
 const priorityConfig = {
-    EMERGENCY: { label: 'EMERGENCY', badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
-    URGENT:    { label: 'URGENT',  badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' },
-    ROUTINE:   { label: 'ROUTINE',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
+    URGENT:    { label: 'URGENT',  badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
+    ROUTINE:   { label: 'RUTIN',   badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
 };
 
 const getPriority = (target) => {
@@ -300,7 +328,7 @@ const getPriority = (target) => {
     const priority = typeof target === 'string' ? target : target.priority;
     const status = typeof target === 'object' ? target.status : (props.ticket?.status || null);
 
-    if (status === 'PENDING_VALIDATION' && priority !== 'EMERGENCY') {
+    if (status === 'PENDING_VALIDATION') {
         return { label: '-', badge: '', isPending: true };
     }
 
@@ -373,15 +401,25 @@ const contextLabel = computed(() => {
                         <Wrench class="h-6 w-6" />
                     </div>
                     <div>
-                            <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
-                                #{{ ticket.ticket_number }}
-                            </h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed uppercase font-semibold">
-                                    {{ ticket.category?.supporting_unit?.name ?? ticket.category?.supportingUnit?.name ?? 'IPSRS' }} &bull; {{ ticket.category?.name ?? 'PELAPORAN' }}
-                                </p>
-                            </div>
-                        </div>
+                        <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                            #{{ ticket.ticket_number }}
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed uppercase font-semibold">
+                            {{ ticket.category?.supporting_unit?.name ?? ticket.category?.supportingUnit?.name ?? 'IPSRS' }} &bull; {{ ticket.category?.name ?? 'PELAPORAN' }}
+                        </p>
                     </div>
+                </div>
+                <div v-if="isAdmin" class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        @click="confirmDelete"
+                        class="px-4 py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs"
+                    >
+                        <Trash2 class="h-4 w-4" />
+                        <span>Hapus Laporan</span>
+                    </button>
+                </div>
+            </div>
 
                     <!-- Main Section Layout Grid -->
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -423,7 +461,7 @@ const contextLabel = computed(() => {
                                                 {{ __('pages.tickets.detail.room_location') }}
                                             </div>
                                             <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
-                                                {{ ticket.room?.name || '-' }} <span v-if="ticket.room?.location_floor" class="text-xs text-slate-400 dark:text-slate-500 font-normal">({{ ticket.room.location_floor }})</span>
+                                                {{ ticket.room?.name || '-' }} <span v-if="formatRoomDetails(ticket.room)" class="text-xs text-slate-400 dark:text-slate-500 font-normal">({{ formatRoomDetails(ticket.room) }})</span>
                                             </div>
                                         </div>
 
@@ -573,7 +611,7 @@ const contextLabel = computed(() => {
                                                 class="rounded-xl p-3 flex items-center justify-between cursor-pointer select-none"
                                                 :class="[
                                                     assignForm.priority === 'URGENT'
-                                                        ? 'bg-amber-500 dark:bg-amber-500 text-white font-bold shadow-sm'
+                                                        ? 'bg-red-600 dark:bg-red-600 text-white font-bold shadow-sm'
                                                         : 'border border-slate-200 dark:border-slate-800 text-slate-650 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900'
                                                 ]"
                                             >

@@ -22,15 +22,19 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
 
     public function via($notifiable): array
     {
-        $channels = ['database', 'broadcast'];
+        $channels = [];
+
+        if (!($notifiable instanceof User) || $notifiable->system_notify_enabled !== false) {
+            $channels = ['database', 'broadcast'];
+        }
 
         // Send to Telegram if bot token is configured and the user has a telegram_chat_id
         if (config('services.telegram.token') && $notifiable instanceof User && $notifiable->telegram_chat_id) {
             $channels[] = TelegramChannel::class;
         }
 
-        // WhatsApp ONLY for Kepala Unit (role_id === 5)
-        if ($notifiable instanceof User && (int) $notifiable->role_id === 5 && $notifiable->phone_number) {
+        // WhatsApp for Disposisi & Admin roles (if wa_notify_enabled)
+        if ($notifiable instanceof User && $notifiable->wa_notify_enabled !== false && ($notifiable->canDisposisi() || $notifiable->isAdmin()) && $notifiable->phone_number) {
             $channels[] = WaGatewayChannel::class;
         }
 
@@ -44,47 +48,12 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $reporterName = $this->ticket->reporter?->name ?? 'Staf';
         $unitName = $this->ticket->category?->supportingUnit?->name ?? 'IPSRS';
-        $isEmergency = ($this->ticket->priority === 'EMERGENCY') || (bool) ($this->ticket->is_emergency ?? false);
+        $ticketPriority = strtoupper($this->ticket->priority ?? 'ROUTINE');
+        $isUrgent = ($ticketPriority === 'URGENT');
 
-        if ($isEmergency) {
-            if ($roleId === 6) { // Teknisi
-                return [
-                    'title' => '🚨 PENUGASAN DARURAT (EMERGENCY) INSTAN',
-                    'message' => "Laporan Darurat #{$ticketNum} di {$roomName} OTOMATIS DITUGASKAN KEPADA ANDA! Segera menuju ke lokasi!",
-                    'priority' => 'EMERGENCY',
-                    'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
-                ];
-            }
-            if ($roleId === 5) { // Kepala Unit
-                return [
-                    'title' => '🚨 INFORMASI PENUGASAN DARURAT (AUTO-DISPATCH)',
-                    'message' => "Laporan Darurat #{$ticketNum} di {$roomName} telah OTOMATIS DIDISPOSISI ke Teknisi On-Duty.",
-                    'priority' => 'EMERGENCY',
-                    'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
-                ];
-            }
-            if ($roleId === 7) { // Kepala Ruangan
-                return [
-                    'title' => '🚨 LAPORAN DARURAT DI RUANGAN ANDA',
-                    'message' => "Laporan Darurat #{$ticketNum} di {$roomName} telah diajukan staf dan LANGSUNG DIDISPOSISIKAN ke Teknisi.",
-                    'priority' => 'EMERGENCY',
-                    'route' => route('reports.show', ['ticket' => $this->ticket->uuid]),
-                ];
-            }
-            // Admin & default
+        if ($roleId === 6) { // Teknisi (Auto-dispatched on Off Hours)
             return [
-                'title' => '🚨 LAPORAN DARURAT (EMERGENCY) MASUK',
-                'message' => "Laporan Darurat #{$ticketNum} di {$roomName} diajukan dan langsung diteruskan ke Teknisi.",
-                'priority' => 'EMERGENCY',
-                'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
-            ];
-        }
-
-        if ($roleId === 6) { // Teknisi Non-Emergency (Auto-dispatched on Off Hours)
-            $ticketPriority = strtoupper($this->ticket->priority ?? 'ROUTINE');
-            $isUrgent = ($ticketPriority === 'URGENT');
-            return [
-                'title' => $isUrgent ? '⚠️ PENUGASAN TIKET URGENT' : 'Tugas Baru Diterima (Disposisi Otomatis)',
+                'title' => $isUrgent ? '🔴 PENUGASAN TIKET URGENT' : 'Tugas Baru Diterima (Disposisi Otomatis)',
                 'message' => "Anda menerima penugasan laporan #{$ticketNum} di {$roomName} (" . ($isUrgent ? 'Status URGENT' : 'Luar Jam Kerja') . ").",
                 'priority' => $isUrgent ? 'URGENT' : 'HIGH',
                 'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
@@ -93,18 +62,18 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
 
         if ($roleId === 7) { // Kepala Ruangan
             return [
-                'title' => 'Laporan Diajukan Staf',
+                'title' => $isUrgent ? '🔴 Laporan Urgent Diajukan Staf' : 'Laporan Diajukan Staf',
                 'message' => "Staf {$reporterName} di ruangan {$roomName} telah mengajukan laporan #{$ticketNum} ke unit {$unitName}.",
-                'priority' => 'NORMAL',
+                'priority' => $isUrgent ? 'URGENT' : 'NORMAL',
                 'route' => route('reports.show', ['ticket' => $this->ticket->uuid]),
             ];
         }
 
         // Kepala Unit & Admin
         return [
-            'title' => 'Laporan Baru Masuk',
+            'title' => $isUrgent ? '🔴 Laporan Urgent Baru Masuk' : 'Laporan Baru Masuk',
             'message' => "Laporan baru #{$ticketNum} telah dibuat dan membutuhkan validasi Anda.",
-            'priority' => 'NORMAL',
+            'priority' => $isUrgent ? 'URGENT' : 'NORMAL',
             'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
         ];
     }

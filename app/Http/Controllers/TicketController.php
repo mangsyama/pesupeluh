@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\ServiceTicket;
 use App\Models\TicketAssignment;
 use App\Models\TicketAttachment;
@@ -25,6 +26,7 @@ class TicketController extends Controller
      */
     private function authorizeTicket(ServiceTicket $ticket, string $action = 'view')
     {
+        /** @var \App\Models\User $user */
         $user = \Illuminate\Support\Facades\Auth::user();
         if (!$user) {
             abort(401);
@@ -41,38 +43,33 @@ class TicketController extends Controller
         $supportingUnitId = (int) ($ticket->category?->supporting_unit_id ?? 0);
 
         if ($action === 'view') {
-            // Director, Division Head, Section Head have read-only access to all tickets
-            if (in_array($roleId, [2, 3, 4])) {
-                return true;
-            }
-
-            // Unit Head can view if same unit
-            if ($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) {
+            // Admin and Disposisi roles can view any ticket
+            if ($user->isAdmin() || $user->canDisposisi()) {
                 return true;
             }
 
             // Technician can view if assigned
-            if ($roleId === 6 && $ticket->assignments()->where('technician_id', $userId)->exists()) {
+            if ($user->isTechnician() && $ticket->assignments()->where('technician_id', $userId)->exists()) {
                 return true;
             }
 
-            // Room Head can view if same room
-            if ($roleId === 7 && (int) $user->room_id === (int) $ticket->room_id) {
+            // Room PJ can view if same room
+            if ((int) $user->role_id === Role::PJ_RUANGAN && (int) $user->room_id === (int) $ticket->room_id) {
                 return true;
             }
 
             // Reporter can view if they submitted it
-            if ($roleId === 8 && $userId === (int) $ticket->reporter_id) {
+            if ($userId === (int) $ticket->reporter_id) {
                 return true;
             }
         } elseif ($action === 'assign') {
-            // Unit Head of same unit can validate/assign
-            if ($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) {
+            // Disposisi roles (Kepala Instalasi, etc.) of same unit can validate/assign
+            if (($user->canDisposisi() || $user->isAdmin()) && (int) $user->supporting_unit_id === $supportingUnitId) {
                 return true;
             }
         } elseif ($action === 'execute') {
             // Assigned Technician can execute actions
-            if ($roleId === 6 && $ticket->assignments()->where('technician_id', $userId)->exists()) {
+            if ($user->isTechnician() && $ticket->assignments()->where('technician_id', $userId)->exists()) {
                 return true;
             }
         }
@@ -96,7 +93,7 @@ class TicketController extends Controller
                 'ticket' => Inertia::defer(fn() => $ticket->load([
                     'reporter:id,name,nip',
                     'validator:id,name,nip',
-                    'room:id,name,location_floor',
+                    'room:id,name,building_name,location_floor',
                     'category.supportingUnit',
                     'assignments.technician:id,name,nip',
                     'attachments.user:id,name',
@@ -110,15 +107,16 @@ class TicketController extends Controller
             'ticket' => Inertia::defer(fn() => $ticket->load([
                 'reporter:id,name,nip',
                 'validator:id,name,nip',
-                'room:id,name,location_floor',
+                'room:id,name,building_name,location_floor',
                 'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
                 'histories.user:id,name',
             ])),
-            'technicians' => Inertia::defer(function() use ($roleId, $user, $supportingUnitId) {
-                if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {
-                    return User::where('role_id', 6) // TECHNICIAN
+            'technicians' => Inertia::defer(function() use ($user, $supportingUnitId) {
+                /** @var \App\Models\User $user */
+                if (($user->canDisposisi() && (int) $user->supporting_unit_id === $supportingUnitId) || $user->isAdmin()) {
+                    return User::where('role_id', Role::TEKNISI) // TEKNISI
                         ->where('is_active', 1)
                         ->with('supportingUnit:id,name')
                         ->orderBy('name')
@@ -401,12 +399,12 @@ class TicketController extends Controller
             ->where('id', '!=', $actorId) // Don't send notification to the user who performed the action
             ->where(function ($query) use ($status, $supportingUnitId, $reporterId) {
                 $query->where('id', $reporterId) // Pelapor
-                    ->orWhere('role_id', 1); // Administrator
+                    ->orWhere('role_id', Role::ADMINISTRATOR); // Administrator
 
-                // Ka Unit receives updates for status changes (Arrived, Pending, Resumed, Completed, Cancel)
+                // Ka Instalasi receives updates for status changes
                 if ($status !== 'ASSIGNED' && $supportingUnitId) {
                     $query->orWhere(function ($q) use ($supportingUnitId) {
-                        $q->where('role_id', 5)->where('supporting_unit_id', $supportingUnitId); // Ka Unit
+                        $q->where('role_id', Role::KEPALA_INSTALASI)->where('supporting_unit_id', $supportingUnitId); // Ka Instalasi
                     });
                 }
             })
@@ -419,5 +417,28 @@ class TicketController extends Controller
                 Log::error('Gagal mengirim notifikasi status tiket: ' . $e->getMessage());
             }
         }
+    }
+
+    /**
+     * Soft delete ticket (Admin only).
+     */
+    public function destroy(Request $request, ServiceTicket $ticket)
+    {
+        $user = $request->user();
+        if ((int) $user->role_id !== 1) {
+            abort(403, 'Hanya Administrator yang memiliki wewenang untuk menghapus laporan.');
+        }
+
+        TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => $user->id,
+            'status'    => $ticket->status,
+            'action'    => 'DELETED',
+            'notes'     => 'Laporan #' . $ticket->ticket_number . ' telah di-soft delete oleh Administrator (' . $user->name . ').',
+        ]);
+
+        $ticket->delete();
+
+        return redirect()->route('reports-management.index')->with('success', 'Laporan #' . $ticket->ticket_number . ' berhasil dihapus (Soft Delete).');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\ServiceTicket;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -10,15 +11,15 @@ use Inertia\Inertia;
 
 class ReportManagementController extends Controller
 {
-    private const FILTER_SESSION_KEY = 'reports-management.filters';
+    const FILTER_SESSION_KEY = 'report_management_filters';
 
     /**
      * Halaman index / riwayat tugas kerja operasional untuk role yang bersangkutan.
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = $request->user();
-        $roleId = (int) $user->role_id;
         $userId = (int) $user->id;
 
         if ($request->filled('search') || $request->filled('status')) {
@@ -30,15 +31,11 @@ class ReportManagementController extends Controller
             return redirect()->route('reports-management.index');
         }
 
-        // Validasi akses operasional: hanya Admin, Management, Kepala Unit, Teknisi, dan Kepala Ruangan
-        if (!in_array($roleId, [1, 2, 3, 4, 5, 6, 7])) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $filters = $request->session()->get(self::FILTER_SESSION_KEY, [
-            'search' => '',
-            'status' => '',
-        ]);
+        $sessionFilters = $request->session()->get(self::FILTER_SESSION_KEY, []);
+        $filters = [
+            'search' => $request->input('search', $sessionFilters['search'] ?? ''),
+            'status' => $request->input('status', $sessionFilters['status'] ?? ''),
+        ];
 
         $query = ServiceTicket::select([
             'id', 
@@ -54,30 +51,35 @@ class ReportManagementController extends Controller
         ])
         ->with([
             'reporter:id,name,phone_number',
-            'room:id,name',
+            'room:id,name,building_name,location_floor',
             'category:id,name,supporting_unit_id',
             'category.supportingUnit:id,name',
         ])
         ->whereNull('deleted_at');
 
         // Scoping data berdasarkan peran/role:
-        if ($roleId === 1) {
-            // Admin: melihat semua
-        } elseif (in_array($roleId, [2, 3, 4])) {
-            // Direktur / Manajemen: melihat semua
-        } elseif ($roleId === 5) {
-            // Kepala Unit (IPRS/dll): melihat tiket yang berada di dalam unit penunjang mereka
+        if ($user->isAdmin() || $user->isDirector() || (int) $user->role_id === Role::KEPALA_BIDANG) {
+            // Admin & Direktur & Kabid: melihat semua
+        } elseif ($user->canDisposisi() && $user->supporting_unit_id) {
+            // Kepala Instalasi & Disposisi Unit Penunjang: melihat tiket unit penunjang mereka
             $query->whereHas('category', function ($q) use ($user) {
                 $q->where('supporting_unit_id', $user->supporting_unit_id);
             });
-        } elseif ($roleId === 6) {
+        } elseif ($user->isTechnician()) {
             // Teknisi: melihat tiket yang ditugaskan kepada mereka
             $query->whereHas('assignments', function ($q) use ($userId) {
                 $q->where('technician_id', $userId);
             });
-        } elseif ($roleId === 7) {
-            // Kepala Ruangan: melihat tiket yang dilaporkan dari ruangan mereka
+        } elseif ((int) $user->role_id === Role::PJ_RUANGAN) {
+            // PJ Ruangan: melihat tiket dari ruangan mereka
             $query->where('room_id', $user->room_id);
+        } else {
+            // Role lainnya: memfilter unit jika ada
+            if ($user->supporting_unit_id) {
+                $query->whereHas('category', function ($q) use ($user) {
+                    $q->where('supporting_unit_id', $user->supporting_unit_id);
+                });
+            }
         }
 
         $query->orderByDesc('created_at');
@@ -123,21 +125,22 @@ class ReportManagementController extends Controller
      */
     public function show(Request $request, ServiceTicket $ticket)
     {
+        /** @var \App\Models\User $user */
         $user = $request->user();
         $roleId = (int) $user->role_id;
         $supportingUnitId = (int) ($ticket->category?->supporting_unit_id ?? 0);
 
         // Otorisasi akses detail operasional
-        if ($roleId === 1) {
-            // Admin: bebas akses
-        } elseif (in_array($roleId, [2, 3, 4])) {
-            // Direktur/Manajemen: bebas pantau
-        } elseif ($roleId === 5 && (int)$user->supporting_unit_id === $supportingUnitId) {
-            // Kepala unit penunjang terkait
-        } elseif ($roleId === 6 && $ticket->assignments()->where('technician_id', $user->id)->exists()) {
+        if ($user->isAdmin() || $user->isDirector() || (int) $user->role_id === Role::KEPALA_BIDANG) {
+            // Admin, Direktur, Kabid: bebas pantau
+        } elseif ($user->canDisposisi() && (int)$user->supporting_unit_id === $supportingUnitId) {
+            // Kepala Instalasi / Disposisi unit penunjang terkait
+        } elseif ($user->isTechnician() && $ticket->assignments()->where('technician_id', $user->id)->exists()) {
             // Teknisi yang ditugaskan
-        } elseif ($roleId === 7 && $ticket->room_id === $user->room_id) {
-            // Kepala ruangan tempat kejadian
+        } elseif ((int) $user->role_id === Role::PJ_RUANGAN && $ticket->room_id === $user->room_id) {
+            // PJ Ruangan tempat kejadian
+        } elseif ($user->canDisposisi()) {
+            // Disposisi role lainnya
         } else {
             abort(403, 'Unauthorized action.');
         }
@@ -146,15 +149,15 @@ class ReportManagementController extends Controller
             'ticket' => Inertia::defer(fn() => $ticket->load([
                 'reporter:id,name,nip,phone_number',
                 'validator:id,name,nip',
-                'room:id,name,location_floor',
+                'room:id,name,building_name,location_floor',
                 'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
                 'histories.user:id,name',
             ])),
-            'technicians' => Inertia::defer(function() use ($roleId, $user, $supportingUnitId) {
-                if (($roleId === 5 && (int) $user->supporting_unit_id === $supportingUnitId) || $roleId === 1) {
-                    return User::where('role_id', 6) // TECHNICIAN
+            'technicians' => Inertia::defer(function() use ($user, $supportingUnitId) {
+                if (($user->canDisposisi() && (int) $user->supporting_unit_id === $supportingUnitId) || $user->isAdmin()) {
+                    return User::where('role_id', Role::TEKNISI) // TEKNISI
                         ->where('is_active', 1)
                         ->with('supportingUnit:id,name')
                         ->orderBy('name')
@@ -164,5 +167,28 @@ class ReportManagementController extends Controller
             }),
             'personal' => false,
         ]);
+    }
+
+    /**
+     * Soft delete laporan (Khusus Administrator).
+     */
+    public function destroy(Request $request, ServiceTicket $ticket)
+    {
+        $user = $request->user();
+        if ((int) $user->role_id !== 1) {
+            abort(403, 'Hanya Administrator yang memiliki wewenang untuk menghapus laporan.');
+        }
+
+        \App\Models\TicketHistory::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => $user->id,
+            'status'    => $ticket->status,
+            'action'    => 'DELETED',
+            'notes'     => 'Laporan #' . $ticket->ticket_number . ' telah di-soft delete oleh Administrator (' . $user->name . ').',
+        ]);
+
+        $ticket->delete();
+
+        return redirect()->route('reports-management.index')->with('success', 'Laporan #' . $ticket->ticket_number . ' berhasil dihapus (Soft Delete).');
     }
 }

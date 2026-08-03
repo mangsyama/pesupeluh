@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Role;
 
 class NotificationController extends Controller
 {
@@ -20,7 +21,7 @@ class NotificationController extends Controller
             $notification->markAsRead();
         }
 
-        return back();
+        return response()->json(['status' => 'success']);
     }
 
     /**
@@ -30,7 +31,7 @@ class NotificationController extends Controller
     {
         $request->user()->unreadNotifications->markAsRead();
 
-        return back();
+        return response()->json(['status' => 'success']);
     }
 
     /**
@@ -38,7 +39,10 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
-        $notifications = $request->user()->notifications()->paginate(15)->through(function ($notification) {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $notifications = $user->notifications()->paginate(20)->through(function ($notification) {
             return [
                 'id' => $notification->id,
                 'type' => $notification->data['type'] ?? 'user',
@@ -54,22 +58,22 @@ class NotificationController extends Controller
         });
 
         return \Inertia\Inertia::render('Notifications/Index', [
-            'allNotifications' => $notifications,
+            'notifications' => $notifications,
         ]);
     }
 
     /**
      * Display Design System Notifications Test Page grouped by roles.
      */
-    public function designSystemIndex(Request $request)
+    public function designSystemCatalog(Request $request)
     {
         $user = $request->user();
 
         // Comprehensive notification catalog based on exact system notification classes & statuses
         $notificationCatalog = [
             'STAF_PELAPOR' => [
-                'role_name' => 'Staf Pelapor (Reporter)',
-                'role_id' => 8,
+                'role_name' => 'Staf Pelapor (Staff)',
+                'role_id' => Role::STAFF,
                 'items' => [
                     [
                         'key' => 'REPORTER_REGISTRATION_SUBMITTED',
@@ -88,14 +92,6 @@ class NotificationController extends Controller
                         'priority' => 'normal',
                     ],
                     [
-                        'key' => 'REPORTER_EMERGENCY_SUBMITTED',
-                        'title' => '🚨 LAPORAN DARURAT (EMERGENCY) DIKIRIM',
-                        'message' => 'Laporan Darurat #TK-2026-099 (Tabung Oksigen ICU Bocor) dikirim & OTOMATIS DIDISPOSISI ke Teknisi On-Duty!',
-                        'type' => 'ticket',
-                        'icon' => 'ShieldAlert',
-                        'priority' => 'emergency',
-                    ],
-                    [
                         'key' => 'REPORTER_TICKET_COMPLETED',
                         'title' => 'Tiket Selesai Dikerjakan',
                         'message' => 'Laporan #TK-2026-089 telah selesai dikerjakan oleh teknisi dan menunggu konfirmasi Anda.',
@@ -106,8 +102,8 @@ class NotificationController extends Controller
                 ]
             ],
             'KEPALA_RUANGAN' => [
-                'role_name' => 'Kepala Ruangan (Room Head)',
-                'role_id' => 7,
+                'role_name' => 'PJ Ruangan (Room Head)',
+                'role_id' => Role::PJ_RUANGAN,
                 'items' => [
                     [
                         'key' => 'ROOM_HEAD_STAFF_REPORTED',
@@ -117,28 +113,12 @@ class NotificationController extends Controller
                         'icon' => 'FileText',
                         'priority' => 'normal',
                     ],
-                    [
-                        'key' => 'ROOM_HEAD_EMERGENCY_ALERT',
-                        'title' => '🚨 LAPORAN DARURAT DI RUANGAN ANDA',
-                        'message' => 'Laporan Darurat #TK-2026-099 di R. ICU telah dibuat dan LANGSUNG DITUGASKAN ke Teknisi Standby.',
-                        'type' => 'ticket',
-                        'icon' => 'ShieldAlert',
-                        'priority' => 'emergency',
-                    ],
                 ]
             ],
             'TEKNISI' => [
                 'role_name' => 'Teknisi (Technician)',
-                'role_id' => 6,
+                'role_id' => Role::TEKNISI,
                 'items' => [
-                    [
-                        'key' => 'TECH_EMERGENCY_ASSIGNED',
-                        'title' => '🚨 PENUGASAN DARURAT (EMERGENCY) INSTAN',
-                        'message' => 'Laporan Darurat #TK-2026-099 (Kerusakan Alat Oksigen ICU) OTOMATIS DITUGASKAN KEPADA ANDA! Segera ke lokasi!',
-                        'type' => 'ticket',
-                        'icon' => 'ShieldAlert',
-                        'priority' => 'emergency',
-                    ],
                     [
                         'key' => 'TECH_TICKET_ASSIGNED',
                         'title' => 'Tugas Baru Diterima',
@@ -158,17 +138,9 @@ class NotificationController extends Controller
                 ]
             ],
             'KEPALA_UNIT' => [
-                'role_name' => 'Kepala Unit (Unit Head)',
-                'role_id' => 5,
+                'role_name' => 'Kepala Instalasi (Unit Head)',
+                'role_id' => Role::KEPALA_INSTALASI,
                 'items' => [
-                    [
-                        'key' => 'UNIT_HEAD_EMERGENCY_AUTO_DISPATCH',
-                        'title' => '🚨 INFORMASI PENUGASAN DARURAT (AUTO-DISPATCH)',
-                        'message' => 'Laporan Darurat #TK-2026-099 (Alat ICU) telah OTOMATIS DIDISPOSISI ke Teknisi Rizky Pratama.',
-                        'type' => 'ticket',
-                        'icon' => 'ShieldAlert',
-                        'priority' => 'emergency',
-                    ],
                     [
                         'key' => 'UNIT_HEAD_SLA_VALIDATION_WARNING',
                         'title' => '⚠️ PERINGATAN URGENT: VALIDASI TERTUNDA (>15 MNT)',
@@ -189,7 +161,7 @@ class NotificationController extends Controller
             ],
             'ADMINISTRATOR' => [
                 'role_name' => 'Administrator & Manajemen',
-                'role_id' => 1,
+                'role_id' => Role::ADMINISTRATOR,
                 'items' => [
                     [
                         'key' => 'ADMIN_NEW_USER_REGISTERED',
@@ -233,7 +205,7 @@ class NotificationController extends Controller
             'title' => 'required|string|max:150',
             'message' => 'required|string|max:255',
             'type' => 'required|string|in:ticket,user,sla,system',
-            'priority' => 'nullable|string|in:normal,high,urgent,emergency',
+            'priority' => 'nullable|string|in:normal,high,urgent',
             'route' => 'nullable|string',
         ]);
 

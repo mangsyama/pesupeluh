@@ -34,10 +34,7 @@ const category = computed(() => {
     const title = (notif.title || notif.data?.title || '').toLowerCase();
     const priority = (notif.priority || notif.data?.priority || '').toLowerCase();
 
-    if (priority === 'emergency' || title.includes('darurat') || title.includes('emergency')) {
-        return 'emergency_alert';
-    }
-    if (priority === 'urgent' || title.includes('sla') || title.includes('terlambat') || title.includes('peringatan validasi')) {
+    if (priority === 'urgent' || title.includes('sla') || title.includes('terlambat') || title.includes('peringatan validasi') || title.includes('urgent')) {
         return 'urgent_warning';
     }
     if (type === 'user' || title.includes('pendaftaran') || title.includes('pengguna') || title.includes('user')) {
@@ -61,25 +58,15 @@ const category = computed(() => {
 // Stylings mapping per notification type & role relevance
 const styling = computed(() => {
     switch (category.value) {
-        case 'emergency_alert':
-            return {
-                iconComponent: ShieldAlert,
-                bgClass: 'bg-red-600 text-white shadow-md border border-red-500 animate-pulse',
-                badgeText: '🚨 EMERGENCY',
-                badgeClass: 'bg-red-600 text-white font-black tracking-wider animate-bounce shadow-xs',
-                cardBorderClass: 'border-l-4 border-l-red-600 bg-red-50/40 dark:bg-red-950/30 border-red-200 dark:border-red-900/60',
-                roleTag: 'Penting & Darurat (SLA Melampaui)',
-                roleTagClass: 'bg-red-600 text-white font-extrabold',
-            };
         case 'urgent_warning':
             return {
                 iconComponent: AlertTriangle,
-                bgClass: 'bg-amber-500 text-white shadow-sm border border-amber-400',
-                badgeText: '⚠️ URGENT',
-                badgeClass: 'bg-amber-500 text-white font-extrabold tracking-wider animate-pulse',
-                cardBorderClass: 'border-l-4 border-l-amber-500 bg-amber-50/30 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60',
-                roleTag: 'SLA Urgent Warning',
-                roleTagClass: 'bg-amber-500 text-white font-bold',
+                bgClass: 'bg-red-600 text-white shadow-sm border border-red-500',
+                badgeText: '🔴 URGENT',
+                badgeClass: 'bg-red-600 text-white font-extrabold tracking-wider animate-pulse',
+                cardBorderClass: 'border-l-4 border-l-red-600 bg-red-50/30 dark:bg-red-950/20 border-red-200 dark:border-red-900/60',
+                roleTag: 'Penting & Urgent',
+                roleTagClass: 'bg-red-600 text-white font-bold',
             };
         case 'user_registration':
             return {

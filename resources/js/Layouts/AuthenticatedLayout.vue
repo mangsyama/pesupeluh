@@ -142,12 +142,8 @@ const getInitialOpenMenus = () => {
         'menu.user_management': route().current('users.approvals') ||
             route().current('users.approvals.show') ||
             route().current('users.index') ||
-            route().current('users.admin') ||
-            route().current('users.management') ||
-            route().current('users.unit-head') ||
-            route().current('users.technician') ||
-            route().current('users.room-head') ||
-            route().current('users.reporter'),
+            route().current('users.show') ||
+            route().current('users.edit'),
         'menu.service_management': route().current('service-management.rooms') ||
             route().current('service-management.categories') ||
             route().current('service-management.supporting-units'),
@@ -197,6 +193,11 @@ const isChildActive = (children) => {
 const isItemActive = (child) => {
     if (route().current(child.routeName)) return true;
     if (child.routeName === 'users.approvals' && route().current('users.approvals.show')) return true;
+    if (child.routeName === 'users.index' && (route().current('users.edit') || route().current('users.show'))) return true;
+    if (child.routeName === 'reports-management.index' && route().current('reports-management.show')) return true;
+    if (child.routeName === 'reports.history' && route().current('reports.show')) return true;
+    if (child.routeName === 'settings.index' && route().current('profile.edit')) return true;
+    if (child.routeName === 'services.index' && (route().current('services.index') || route().current('services.medik') || route().current('services.non-medik') || route().current('services.units.show'))) return true;
     return false;
 };
 
@@ -205,6 +206,9 @@ const isRouteActive = (item) => {
         return true;
     }
     if (item.routeName === 'users.approvals' && route().current('users.approvals.show')) {
+        return true;
+    }
+    if (item.routeName === 'users.index' && (route().current('users.edit') || route().current('users.show'))) {
         return true;
     }
     if (item.routeName === 'reports-management.index' && route().current('reports-management.show')) {
@@ -313,6 +317,9 @@ const triggerSupportBack = () => {
 
 const page = usePage();
 const backRoute = computed(() => {
+    if (route().current('users.edit') || route().current('users.show')) {
+        return route('users.index');
+    }
     if (route().current('profile.edit') || route().current('design-system.*')) {
         return route('settings.index');
     }
@@ -341,6 +348,8 @@ const showBackButton = computed(() => {
            route().current('reports.show') || 
            route().current('reports-management.show') ||
            route().current('users.approvals.show') ||
+           route().current('users.edit') ||
+           route().current('users.show') ||
            route().current('design-system.*');
 });
 
@@ -410,7 +419,20 @@ watch(
 );
 
 const unreadNotifications = computed(() => notifications.value.filter(notification => !notification.read_at));
-const unreadCount = computed(() => unreadNotifications.value.length);
+
+const totalUnreadCount = ref(page.props.unread_notifications_count ?? 0);
+
+watch(
+    () => page.props.unread_notifications_count,
+    (value) => {
+        if (value !== undefined && value !== null) {
+            totalUnreadCount.value = value;
+        }
+    }
+);
+
+const unreadCount = computed(() => Math.max(totalUnreadCount.value, unreadNotifications.value.length));
+const hiddenNotificationsCount = computed(() => Math.max(0, unreadCount.value - unreadNotifications.value.length));
 
 const normalizeNotificationPayload = (notification) => {
     const title = notification.title ?? notification.data?.title ?? null;
@@ -467,6 +489,7 @@ const registerNotificationListeners = () => {
             .notification((notification) => {
                 const normalized = normalizeNotificationPayload(notification);
                 notifications.value.unshift(normalized);
+                totalUnreadCount.value += 1;
 
                 // Show real-time visual toast
                 showNotificationToast(normalized);
@@ -485,8 +508,9 @@ const markAsRead = (notif) => {
 
     // Mark locally first for instant UI feedback
     const idx = notifications.value.findIndex(n => n.id === notif.id);
-    if (idx !== -1) {
+    if (idx !== -1 && !notifications.value[idx].read_at) {
         notifications.value[idx].read_at = new Date().toISOString();
+        totalUnreadCount.value = Math.max(0, totalUnreadCount.value - 1);
     }
 
     showDesktopNotifications.value = false;
@@ -516,6 +540,7 @@ const markAllAsRead = () => {
             n.read_at = new Date().toISOString();
         }
     });
+    totalUnreadCount.value = 0;
 
     // Send to server
     router.post(route('notifications.markAllAsRead'), {}, {
@@ -562,12 +587,7 @@ const searchableItems = [
     { label: 'Kategori Permasalahan', routeName: 'service-management.categories', description: 'Pengelolaan data master kategori permasalahan aset & operasional' },
     { label: 'Layanan Penunjang (Managemen Layanan)', routeName: 'service-management.supporting-units', description: 'Pengelolaan data divisi dan unit penunjang' },
     { label: 'Persetujuan Registrasi', routeName: 'users.approvals', description: 'Persetujuan pendaftar pengguna baru' },
-    { label: 'Super Admin', routeName: 'users.admin', description: 'Manajemen pengguna administrator' },
-    { label: 'Manajemen', routeName: 'users.management', description: 'Manajemen pengguna direksi & manajemen' },
-    { label: 'Kepala Unit', routeName: 'users.unit-head', description: 'Manajemen pengguna kepala unit' },
-    { label: 'Teknisi Lapangan', routeName: 'users.technician', description: 'Manajemen pengguna teknisi lapangan' },
-    { label: 'Kepala Ruangan', routeName: 'users.room-head', description: 'Manajemen pengguna kepala ruangan' },
-    { label: 'Staf / Pelapor', routeName: 'users.reporter', description: 'Manajemen pengguna staf umum / pelapor' },
+    { label: 'Daftar Pengguna', routeName: 'users.index', description: 'Kelola data pengguna sistem' },
     { label: 'Pengaturan Profil', routeName: 'settings.index', description: 'Ubah sandi, tema, dan profil' },
     { label: 'Sistem Desain - Ringkasan', routeName: 'design-system.index', description: 'Ringkasan panduan warna, tema dark mode, & tipografi' },
     { label: 'Sistem Desain - Tombol & Badge', routeName: 'design-system.buttons-badges', description: 'Koleksi komponen tombol, animasi loading, & badge status' },
@@ -593,12 +613,9 @@ const mobilePageTitles = [
     { routeName: 'service-management.categories', label: 'Kategori Permasalahan' },
     { routeName: 'service-management.supporting-units', label: 'Layanan Penunjang' },
     { routeName: 'users.approvals', label: 'Persetujuan Registrasi' },
-    { routeName: 'users.admin', label: 'Super Admin' },
-    { routeName: 'users.management', label: 'Manajemen' },
-    { routeName: 'users.unit-head', label: 'Kepala Unit' },
-    { routeName: 'users.technician', label: 'Teknisi Lapangan' },
-    { routeName: 'users.room-head', label: 'Kepala Ruangan' },
-    { routeName: 'users.reporter', label: 'Staf / Pelapor' },
+    { routeName: 'users.index', label: 'Daftar Pengguna' },
+    { routeName: 'users.show', label: 'Detail Pengguna' },
+    { routeName: 'users.edit', label: 'Edit Pengguna' },
     { routeName: 'profile.edit', label: 'Profil Saya' },
     { routeName: 'settings.index', label: 'Pengaturan Profil' },
     { routeName: 'design-system.index', label: 'Sistem Desain - Ringkasan' },
@@ -803,6 +820,16 @@ const getGroupInitials = (title) => {
                                                  variant="dropdown"
                                                  @click="markAsRead(notif)"
                                              />
+
+                                             <!-- Hidden Notifications Count Notice -->
+                                             <div v-if="hiddenNotificationsCount > 0" class="px-4 py-3 bg-amber-50/70 dark:bg-amber-950/30 border-t border-amber-100 dark:border-amber-900/50 text-center">
+                                                 <p class="text-[11px] font-medium text-amber-800 dark:text-amber-300">
+                                                     Masih ada <strong class="font-black text-amber-900 dark:text-amber-200">{{ hiddenNotificationsCount }}</strong> notifikasi belum dibaca lainnya.
+                                                 </p>
+                                                 <p class="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 font-medium">
+                                                     Klik <strong class="font-bold">"Lihat Semua"</strong> di bawah untuk membuka seluruh riwayat.
+                                                 </p>
+                                             </div>
                                          </template>
                                      </div>                                      
                                       <!-- Footer -->
@@ -1008,39 +1035,25 @@ const getGroupInitials = (title) => {
                                          <div v-if="unreadNotifications.length === 0" class="py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
                                              Tidak ada notifikasi baru
                                          </div>
-                                         <div 
-                                             v-else
-                                             v-for="notif in unreadNotifications" 
-                                             :key="notif.id"
-                                             @click="markAsRead(notif)"
-                                             :class="[
-                                                 'flex gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition cursor-pointer',
-                                                 !notif.read_at ? 'bg-emerald-50/30 dark:bg-white/5' : ''
-                                             ]"
-                                         >
-                                             <!-- Icon -->
-                                             <div :class="[
-                                                  'h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
-                                                  notif.priority === 'URGENT' ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-500' : 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white'
-                                              ]">
-                                                 <Bell v-if="notif.type === 'ticket'" class="h-4 w-4" />
-                                                 <Clock v-else-if="notif.type === 'progress'" class="h-4 w-4" />
-                                                 <CheckCircle2 v-else-if="notif.type === 'done'" class="h-4 w-4" />
-                                                 <User v-else class="h-4 w-4" />
+                                         <template v-else>
+                                             <NotificationItem
+                                                 v-for="notif in unreadNotifications"
+                                                 :key="notif.id"
+                                                 :notification="notif"
+                                                 variant="dropdown"
+                                                 @click="markAsRead(notif)"
+                                             />
+
+                                             <!-- Hidden Notifications Count Notice -->
+                                             <div v-if="hiddenNotificationsCount > 0" class="px-4 py-3 bg-amber-50/70 dark:bg-amber-950/30 border-t border-amber-100 dark:border-amber-900/50 text-center">
+                                                 <p class="text-[11px] font-medium text-amber-800 dark:text-amber-300">
+                                                     Masih ada <strong class="font-black text-amber-900 dark:text-amber-200">{{ hiddenNotificationsCount }}</strong> notifikasi belum dibaca lainnya.
+                                                 </p>
+                                                 <p class="text-[10px] text-amber-700 dark:text-amber-400 mt-0.5 font-medium">
+                                                     Klik <strong class="font-bold">"Lihat Semua"</strong> di bawah untuk membuka seluruh riwayat.
+                                                 </p>
                                              </div>
-                                             <!-- Content -->
-                                             <div class="flex-1 min-w-0">
-                                                 <div class="flex items-start justify-between gap-2">
-                                                     <div class="flex items-center gap-1.5 min-w-0">
-                                                         <p :class="['text-xs font-semibold truncate', !notif.read_at ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300']">{{ notif.title }}</p>
-                                                         <span v-if="notif.priority === 'URGENT'" class="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500 text-white flex-shrink-0 animate-pulse">URGENT</span>
-                                                     </div>
-                                                     <span v-if="!notif.read_at" :class="['h-2 w-2 rounded-full flex-shrink-0 mt-1', notif.priority === 'URGENT' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500 dark:bg-white']"></span>
-                                                 </div>
-                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5 line-clamp-2">{{ notif.message }}</p>
-                                                 <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1 font-medium">{{ notif.time }}</p>
-                                             </div>
-                                         </div>
+                                         </template>
                                      </div>
                                       <!-- Footer -->
                                       <div class="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/50 dark:bg-slate-900/50">

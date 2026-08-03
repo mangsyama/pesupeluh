@@ -347,6 +347,7 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::post('/tickets/{ticket:uuid}/respond', [\App\Http\Controllers\TicketController::class, 'respond'])->name('tickets.respond');
     Route::post('/tickets/{ticket:uuid}/resolve', [\App\Http\Controllers\TicketController::class, 'resolve'])->name('tickets.resolve');
     Route::post('/tickets/{ticket:uuid}/resume', [\App\Http\Controllers\TicketController::class, 'resume'])->name('tickets.resume');
+    Route::delete('/tickets/{ticket:uuid}', [\App\Http\Controllers\TicketController::class, 'destroy'])->name('tickets.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
@@ -355,13 +356,9 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/users/approvals', [UserManagementController::class, 'indexApprovals'])->name('users.approvals');
     Route::get('/users/approvals/{user:uuid}', [UserManagementController::class, 'showApprovalDetail'])->name('users.approvals.show');
     Route::patch('/users/{user:uuid}/approve', [UserManagementController::class, 'approveUser'])->name('users.approve');
-    Route::get('/users/admin', [UserManagementController::class, 'indexAdmin'])->name('users.admin');
-    Route::get('/users/management', [UserManagementController::class, 'indexManagement'])->name('users.management');
-    Route::get('/users/unit-head', [UserManagementController::class, 'indexUnitHead'])->name('users.unit-head');
-    Route::get('/users/technician', [UserManagementController::class, 'indexTechnician'])->name('users.technician');
-    Route::get('/users/room-head', [UserManagementController::class, 'indexRoomHead'])->name('users.room-head');
-    Route::get('/users/reporter', [UserManagementController::class, 'indexReporter'])->name('users.reporter');
     Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
+    Route::get('/users/{user:uuid}', [UserManagementController::class, 'show'])->name('users.show');
+    Route::get('/users/{user:uuid}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user:uuid}', [UserManagementController::class, 'update'])->name('users.update');
     Route::patch('/users/{user:uuid}/toggle-active', [UserManagementController::class, 'toggleActive'])->name('users.toggle-active');
     Route::delete('/users/{user:uuid}', [UserManagementController::class, 'destroy'])->name('users.destroy');
@@ -412,6 +409,7 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/reports-management', [\App\Http\Controllers\ReportManagementController::class, 'index'])->name('reports-management.index');
     Route::post('/reports-management/filters', [\App\Http\Controllers\ReportManagementController::class, 'storeFilters'])->name('reports-management.filters');
     Route::get('/reports-management/{ticket:uuid}', [\App\Http\Controllers\ReportManagementController::class, 'show'])->name('reports-management.show');
+    Route::delete('/reports-management/{ticket:uuid}', [\App\Http\Controllers\ReportManagementController::class, 'destroy'])->name('reports-management.destroy');
 
     Route::get('/settings', function () {
         return Inertia::render('UserSettings/Index');
@@ -449,6 +447,9 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/notifications', [ProfileController::class, 'updateNotifications'])->name('profile.update-notifications');
+    Route::patch('/profile/face', [ProfileController::class, 'updateFace'])->name('profile.update-face');
+    Route::delete('/profile/face', [ProfileController::class, 'deleteFace'])->name('profile.delete-face');
 
     // Notification mark-as-read & list
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

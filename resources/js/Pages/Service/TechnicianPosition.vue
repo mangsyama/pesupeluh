@@ -116,8 +116,8 @@ const toggleDutyStatus = (isOnDuty) => {
                     </div>
                 </div>
 
-                <!-- Prominent Technician Attendance Control Banner (ONLY visible for TECHNICIANS: role_id 6) -->
-                <div v-if="currentUser?.role_id === 6" class="bg-emerald-600 text-white p-6 rounded-2xl shadow-sm">
+                <!-- Prominent Technician Attendance Control Banner (ONLY visible for TECHNICIANS: role_id 10) -->
+                <div v-if="currentUser?.role_id === 10" class="bg-emerald-600 text-white p-6 rounded-2xl shadow-sm">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div class="space-y-1.5 max-w-xl">
                             <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-md bg-emerald-700/60 text-xs font-bold text-emerald-100">
@@ -167,8 +167,8 @@ const toggleDutyStatus = (isOnDuty) => {
                     </div>
                 </div>
 
-                <!-- Stats Overview Grid (4 Columns) - HIDDEN FOR TECHNICIANS (role_id 6) -->
-                <div v-if="currentUser?.role_id !== 6" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Stats Overview Grid (4 Columns) - HIDDEN FOR TECHNICIANS (role_id 10) -->
+                <div v-if="currentUser?.role_id !== 10" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Total Teknisi -->
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                         <div class="space-y-1">

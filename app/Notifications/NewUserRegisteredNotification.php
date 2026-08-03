@@ -26,8 +26,8 @@ class NewUserRegisteredNotification extends Notification
             $channels[] = TelegramChannel::class;
         }
 
-        // WhatsApp ONLY for Admin (role_id === 1)
-        if ($notifiable instanceof User && (int) $notifiable->role_id === 1 && $notifiable->phone_number) {
+        // WhatsApp ONLY for Admin
+        if ($notifiable instanceof User && $notifiable->isAdmin() && $notifiable->phone_number) {
             $channels[] = WaGatewayChannel::class;
         }
 

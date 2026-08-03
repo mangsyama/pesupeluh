@@ -205,7 +205,7 @@ const toggleLoader = () => {
               <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest text-[10px]">Role Access Badges</h4>
               <div class="flex flex-wrap gap-2.5">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-100/40 dark:border-indigo-900/40 text-xs font-bold uppercase tracking-wider">
-                  Super Admin
+                  ADMINISTRATOR
                 </span>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-100/40 dark:border-amber-900/40 text-xs font-bold uppercase tracking-wider">
                   Kepala Unit

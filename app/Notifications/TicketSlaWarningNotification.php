@@ -27,6 +27,10 @@ class TicketSlaWarningNotification extends Notification
             $channels[] = TelegramChannel::class;
         }
 
+        if ($notifiable instanceof User && $notifiable->phone_number) {
+            $channels[] = WaGatewayChannel::class;
+        }
+
         return $channels;
     }
 

@@ -65,7 +65,7 @@ class AutoDispoCheckCommand extends Command
             }
 
             // Query active technicians for this supporting unit with active task counts
-            $technicians = User::where('role_id', 6) // TECHNICIAN
+            $technicians = User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
                 ->where('supporting_unit_id', $supportingUnitId)
                 ->where('is_active', 1)
                 ->withCount(['assignments as active_tickets_count' => function ($query) {

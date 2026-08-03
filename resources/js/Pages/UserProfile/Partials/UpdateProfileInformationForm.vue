@@ -1,12 +1,9 @@
 <script setup>
 import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed, getCurrentInstance } from 'vue';
-import { User, Lock } from '@lucide/vue';
+import { User, Lock, Save, Camera, Trash2 } from '@lucide/vue';
 import { compressImage } from '@/Utils/imageCompressor';
 
 const props = defineProps({
@@ -20,8 +17,17 @@ const props = defineProps({
         type: Object,
         default: null,
     },
+    supportingUnits: {
+        type: Array,
+        default: () => [],
+    },
+    rooms: {
+        type: Array,
+        default: () => [],
+    },
 });
 
+const { proxy } = getCurrentInstance();
 const pageAuthUser = usePage().props.auth.user;
 const currentUser = computed(() => props.user || pageAuthUser);
 
@@ -29,19 +35,78 @@ const photoPreview = ref(null);
 const photoInput = ref(null);
 const isPhotoDeleted = ref(false);
 
+const initialProfileState = ref({
+    name: currentUser.value.name || '',
+    nip: currentUser.value.nip || '',
+    username: currentUser.value.username || '',
+    email: currentUser.value.email || '',
+    phone_number: currentUser.value.phone_number || '',
+    supporting_unit_id: currentUser.value.supporting_unit_id || currentUser.value.supporting_unit?.id || currentUser.value.supportingUnit?.id || '',
+    room_id: currentUser.value.room_id || currentUser.value.room?.id || '',
+});
+
 const form = useForm({
     name: currentUser.value.name || '',
     nip: currentUser.value.nip || '',
     username: currentUser.value.username || '',
     email: currentUser.value.email || '',
     phone_number: currentUser.value.phone_number || '',
+    supporting_unit_id: currentUser.value.supporting_unit_id || currentUser.value.supporting_unit?.id || currentUser.value.supportingUnit?.id || '',
+    room_id: currentUser.value.room_id || currentUser.value.room?.id || '',
     profile_photo: null,
 });
+
+const isProfileDirty = computed(() => {
+    const init = initialProfileState.value;
+    return (
+        form.name !== init.name ||
+        form.nip !== init.nip ||
+        form.username !== init.username ||
+        form.email !== init.email ||
+        form.phone_number !== init.phone_number ||
+        (form.supporting_unit_id || '') !== (init.supporting_unit_id || '') ||
+        (form.room_id || '') !== (init.room_id || '') ||
+        form.profile_photo !== null
+    );
+});
+
+const unitOptions = computed(() => {
+    return (props.supportingUnits || []).map(u => ({
+        id: u.id,
+        name: u.name,
+    }));
+});
+
+const roomOptions = computed(() => {
+    return (props.rooms || []).map(r => {
+        const b = r.building_name ? (/^gedung/i.test(r.building_name.trim()) ? r.building_name.trim() : `Gedung ${r.building_name.trim()}`) : null;
+        const f = r.location_floor ? (/^lantai/i.test(r.location_floor.trim()) || /^lt\./i.test(r.location_floor.trim()) ? r.location_floor.trim() : `Lantai ${r.location_floor.trim()}`) : null;
+        const details = [b, f].filter(Boolean).join(' - ');
+        return {
+            id: r.id,
+            name: r.name,
+            location_floor: details,
+        };
+    });
+});
+
+const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    } catch (e) {
+        return dateStr;
+    }
+};
 
 const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-        const { proxy } = getCurrentInstance();
         if (!file.type.startsWith('image/')) {
             proxy.$swal({
                 title: 'File tidak didukung',
@@ -49,11 +114,10 @@ const handlePhotoChange = async (e) => {
                 icon: 'warning',
                 confirmButtonColor: '#059669',
             });
-            e.target.value = ''; // clear input
+            e.target.value = '';
             return;
         }
         try {
-            // Compress the image before uploading (limit dimensions to 800x800, quality 0.85)
             const compressedBase64 = await compressImage(file, 800, 800, 0.85);
             form.profile_photo = compressedBase64;
             photoPreview.value = compressedBase64;
@@ -78,13 +142,38 @@ const deletePhoto = () => {
 };
 
 const submit = () => {
-    form.transform((data) => ({
-        ...data,
-        _method: 'PATCH',
-    })).post(route('profile.update'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            form.profile_photo = null;
+    if (!isProfileDirty.value) return;
+
+    proxy.$swal({
+        title: 'Simpan Perubahan Profil?',
+        text: 'Informasi data profil Anda akan diperbarui.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Simpan',
+        cancelButtonText: 'Batal',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.transform((data) => ({
+                ...data,
+                _method: 'PATCH',
+            })).post(route('profile.update'), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    form.profile_photo = null;
+                    initialProfileState.value = {
+                        name: form.name,
+                        nip: form.nip,
+                        username: form.username,
+                        email: form.email,
+                        phone_number: form.phone_number,
+                        supporting_unit_id: form.supporting_unit_id,
+                        room_id: form.room_id,
+                    };
+                    proxy.$toast('Data profil berhasil diperbarui.', 'success');
+                }
+            });
         }
     });
 };
@@ -92,234 +181,239 @@ const submit = () => {
 
 <template>
     <section>
-        <header>
-            <h2 class="text-md font-bold text-slate-955 dark:text-white flex items-center gap-2.5">
-                <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                    <User class="h-4 w-4 text-emerald-600 dark:text-white" />
-                </div>
-                <span>{{ __('pages.profile.info_title') }}</span>
-            </h2>
-
-            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                {{ __('pages.profile.info_desc') }}
-            </p>
-        </header>
-
-        <form @submit.prevent="submit" class="mt-6 space-y-6">
-            <!-- 1. Foto Profil (SELALU DI ATAS) -->
-            <div class="flex items-center gap-5 pb-6 border-b border-slate-100 dark:border-slate-800">
-                <div class="relative h-20 w-20 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex-shrink-0 flex items-center justify-center shadow-sm">
-                    <img 
-                        v-if="!isPhotoDeleted && (photoPreview || currentUser.profile_photo_path)" 
-                        :src="photoPreview || currentUser.profile_photo_path" 
-                        class="h-full w-full object-cover" 
-                        alt="Profile Photo"
-                    />
-                    <User v-else class="h-10 w-10 text-slate-400" />
-                </div>
+        <form @submit.prevent="submit">
+            <div class="p-6 space-y-6">
                 <div>
-                    <InputLabel :value="__('pages.profile.photo') || 'Foto Profil'" />
-                    <input 
-                        type="file" 
-                        ref="photoInput" 
-                        class="hidden" 
-                        accept="image/*"
-                        @change="handlePhotoChange"
-                    />
-                    <div class="flex items-center gap-2 mt-1">
-                        <SecondaryButton 
-                            type="button" 
-                            class="!px-3 !py-2 !text-xs"
-                            @click="photoInput.click()"
+                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                        Data Profil & Akun Pengguna
+                    </h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Perbarui informasi identitas pribadi, penempatan unit/ruangan, dan pasfoto akun Anda.</p>
+                </div>
+
+                <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
+                    <div class="flex flex-col sm:flex-row items-stretch gap-6">
+                        <!-- Foto Profil Card -->
+                        <div class="flex flex-col items-center justify-between shrink-0 w-full sm:w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm">
+                            <div class="w-full flex-1 min-h-[160px] rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-950/50 flex items-center justify-center relative group">
+                                <img 
+                                    v-if="!isPhotoDeleted && (photoPreview || currentUser.profile_photo_path)" 
+                                    :src="photoPreview || currentUser.profile_photo_path" 
+                                    class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                                    alt="Profile Photo"
+                                />
+                                <User v-else class="h-14 w-14 text-slate-400" />
+                            </div>
+
+                            <input 
+                                type="file" 
+                                ref="photoInput" 
+                                class="hidden" 
+                                accept="image/*"
+                                @change="handlePhotoChange"
+                            />
+                            <div class="flex items-center gap-1.5 w-full mt-3">
+                                <button
+                                    type="button"
+                                    @click="photoInput.click()"
+                                    class="flex-1 h-8 px-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] rounded-lg border border-emerald-200/60 dark:border-emerald-800/40 flex items-center justify-center gap-1 transition"
+                                >
+                                    <Camera class="h-3.5 w-3.5" />
+                                    <span>Pilih Foto</span>
+                                </button>
+                                <button
+                                    v-if="!isPhotoDeleted && (photoPreview || currentUser.profile_photo_path)"
+                                    type="button"
+                                    @click="deletePhoto"
+                                    class="h-8 w-8 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold text-[11px] rounded-lg border border-rose-200/60 dark:border-rose-800/40 flex items-center justify-center shrink-0 transition"
+                                    title="Hapus Foto"
+                                >
+                                    <Trash2 class="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                            <InputError class="mt-1" :message="form.errors.profile_photo" />
+
+                            <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 mt-2 text-center truncate w-full">Terdaftar: {{ formatDate(currentUser.created_at) }}</span>
+                        </div>
+
+                        <!-- Form Inputs Profil (Grid 2 Kolom) -->
+                        <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                            <!-- Nama Lengkap -->
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Nama Lengkap <span class="text-red-400">*</span>
+                                </label>
+                                <input
+                                    v-model="form.name"
+                                    type="text"
+                                    required
+                                    class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Masukkan Nama Lengkap..."
+                                />
+                                <InputError class="mt-1" :message="form.errors.name" />
+                            </div>
+
+                            <!-- NIP -->
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    NIP / Pegawai ID <span class="text-red-400">*</span>
+                                </label>
+                                <input
+                                    v-model="form.nip"
+                                    type="text"
+                                    required
+                                    @input="form.nip = form.nip.replace(/\D/g, '')"
+                                    maxlength="18"
+                                    class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Masukkan NIP..."
+                                />
+                                <InputError class="mt-1" :message="form.errors.nip" />
+                            </div>
+
+                            <!-- Username -->
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Username <span class="text-red-400">*</span>
+                                </label>
+                                <input
+                                    v-model="form.username"
+                                    type="text"
+                                    required
+                                    class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Masukkan Username..."
+                                />
+                                <InputError class="mt-1" :message="form.errors.username" />
+                            </div>
+
+                            <!-- Email -->
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Email <span class="text-red-400">*</span>
+                                </label>
+                                <input
+                                    v-model="form.email"
+                                    type="email"
+                                    required
+                                    class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="Masukkan Email..."
+                                />
+                                <InputError class="mt-1" :message="form.errors.email" />
+                            </div>
+
+                            <!-- Nomor Telepon / WhatsApp -->
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Nomor Telepon / WhatsApp
+                                </label>
+                                <input
+                                    v-model="form.phone_number"
+                                    type="text"
+                                    @input="form.phone_number = form.phone_number.replace(/\D/g, '')"
+                                    maxlength="15"
+                                    class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    placeholder="08xxxxxxxxxx"
+                                />
+                                <InputError class="mt-1" :message="form.errors.phone_number" />
+                            </div>
+
+                            <!-- Peran Spesifik (Role) - Read Only Terkunci -->
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Peran Akses Sistem
+                                    </label>
+                                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                        <Lock class="h-3 w-3" />
+                                        Terkunci
+                                    </span>
+                                </div>
+                                <div class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-xs font-bold flex items-center">
+                                    {{ currentUser.role ? __('roles.' + currentUser.role.name) : 'User' }}
+                                </div>
+                            </div>
+
+                            <!-- Unit Penunjang (EDITABLE BY USER) -->
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Unit Penunjang
+                                </label>
+                                <SearchableSelect
+                                    v-model="form.supporting_unit_id"
+                                    :options="unitOptions"
+                                    :searchable="true"
+                                    :absolute="false"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Tanpa Unit Penunjang"
+                                    search-placeholder="Cari unit penunjang..."
+                                />
+                                <InputError class="mt-1" :message="form.errors.supporting_unit_id" />
+                            </div>
+
+                            <!-- Penempatan Ruangan (EDITABLE BY USER) -->
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Penempatan Ruangan
+                                </label>
+                                <SearchableSelect
+                                    v-model="form.room_id"
+                                    :options="roomOptions"
+                                    :searchable="true"
+                                    :absolute="false"
+                                    value-key="id"
+                                    label-key="name"
+                                    subtitle-key="location_floor"
+                                    placeholder="Tanpa Ruangan"
+                                    search-placeholder="Cari nama ruangan..."
+                                />
+                                <InputError class="mt-1" :message="form.errors.room_id" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email verification notice -->
+                <div v-if="mustVerifyEmail && currentUser.email_verified_at === null" class="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs">
+                    <p class="text-amber-800 dark:text-amber-300">
+                        {{ __('pages.profile.email_unverified') }}
+                        <Link
+                            :href="route('verification.send')"
+                            method="post"
+                            as="button"
+                            class="rounded-md font-bold text-amber-900 dark:text-amber-200 underline hover:text-amber-700 ml-1"
                         >
-                            {{ __('pages.profile.change_photo') || 'Pilih Foto' }}
-                        </SecondaryButton>
-                        <SecondaryButton 
-                            v-if="!isPhotoDeleted && (photoPreview || currentUser.profile_photo_path)"
-                            type="button" 
-                            class="!px-3 !py-2 !text-xs !text-red-600 dark:!text-red-400 !border-red-200 dark:!border-red-950/40 hover:!bg-red-50 dark:hover:!bg-red-950/20"
-                            @click="deletePhoto"
-                        >
-                            {{ __('pages.profile.delete_photo') || 'Hapus Foto' }}
-                        </SecondaryButton>
-                    </div>
-                    <InputError class="mt-1" :message="form.errors.profile_photo" />
-                </div>
-            </div>
-
-            <!-- 2. Grid Data Profil -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Nama Lengkap (Editable) -->
-                <div>
-                    <InputLabel for="name" :value="__('global.name') || 'Nama Lengkap'" />
-                    <TextInput
-                        id="name"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="form.name"
-                        required
-                        autocomplete="name"
-                    />
-                    <InputError class="mt-2" :message="form.errors.name" />
-                </div>
-
-                <!-- NIP (Editable) -->
-                <div>
-                    <InputLabel for="nip" :value="__('pages.profile.nip') || 'NIP'" />
-                    <TextInput
-                        id="nip"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="form.nip"
-                        @input="form.nip = form.nip.replace(/\D/g, '')"
-                        maxlength="18"
-                        required
-                        autocomplete="off"
-                    />
-                    <InputError class="mt-2" :message="form.errors.nip" />
-                </div>
-
-                <!-- Nama Pengguna / Username (Editable) -->
-                <div>
-                    <InputLabel for="username" :value="__('pages.profile.username') || 'Nama Pengguna'" />
-                    <TextInput
-                        id="username"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="form.username"
-                        required
-                        autocomplete="username"
-                    />
-                    <InputError class="mt-2" :message="form.errors.username" />
-                </div>
-
-                <!-- Email (Editable) -->
-                <div>
-                    <InputLabel for="email" :value="__('global.email') || 'Email'" />
-                    <TextInput
-                        id="email"
-                        type="email"
-                        class="mt-1 block w-full"
-                        v-model="form.email"
-                        required
-                        autocomplete="username"
-                    />
-                    <InputError class="mt-2" :message="form.errors.email" />
-                </div>
-
-                <!-- Nomor HP / WhatsApp (Editable) -->
-                <div>
-                    <InputLabel for="phone_number" :value="__('pages.profile.phone') || 'Nomor HP'" />
-                    <TextInput
-                        id="phone_number"
-                        type="text"
-                        class="mt-1 block w-full"
-                        v-model="form.phone_number"
-                        @input="form.phone_number = form.phone_number.replace(/\D/g, '')"
-                        maxlength="15"
-                        autocomplete="tel"
-                    />
-                    <InputError class="mt-2" :message="form.errors.phone_number" />
-                </div>
-
-                <!-- Peran Spesifik (Role) - TERKUNCI -->
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <InputLabel for="role" value="Peran Spesifik (Role)" class="!mb-0" />
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                            <Lock class="h-3 w-3" />
-                            Terkunci
-                        </span>
-                    </div>
-                    <TextInput
-                        id="role"
-                        type="text"
-                        class="block w-full opacity-70 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/60"
-                        :model-value="currentUser.role?.name || 'User'"
-                        disabled
-                        readonly
-                    />
-                </div>
-
-                <!-- Unit Penunjang - TERKUNCI -->
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <InputLabel for="supporting_unit" value="Unit Penunjang" class="!mb-0" />
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                            <Lock class="h-3 w-3" />
-                            Terkunci
-                        </span>
-                    </div>
-                    <TextInput
-                        id="supporting_unit"
-                        type="text"
-                        class="block w-full opacity-70 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/60"
-                        :model-value="currentUser.supporting_unit?.name || currentUser.supportingUnit?.name || '-'"
-                        disabled
-                        readonly
-                    />
-                </div>
-
-                <!-- Ruangan - TERKUNCI -->
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <InputLabel for="room" value="Ruangan" class="!mb-0" />
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                            <Lock class="h-3 w-3" />
-                            Terkunci
-                        </span>
-                    </div>
-                    <TextInput
-                        id="room"
-                        type="text"
-                        class="block w-full opacity-70 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/60"
-                        :model-value="currentUser.room?.name || '-'"
-                        disabled
-                        readonly
-                    />
-                </div>
-            </div>
-
-            <!-- Email verification notice -->
-            <div v-if="mustVerifyEmail && currentUser.email_verified_at === null">
-                <p class="mt-2 text-xs text-slate-800 dark:text-slate-200">
-                    {{ __('pages.profile.email_unverified') }}
-                    <Link
-                        :href="route('verification.send')"
-                        method="post"
-                        as="button"
-                        class="rounded-md text-xs text-slate-500 underline hover:text-slate-900 focus:outline-none dark:text-slate-400 dark:hover:text-slate-100"
-                    >
-                        {{ __('pages.profile.resend_verification') }}
-                    </Link>
-                </p>
-
-                <div
-                    v-show="status === 'verification-link-sent'"
-                    class="mt-2 text-xs font-semibold text-emerald-600 dark:text-white"
-                >
-                    {{ __('pages.profile.verification_sent') }}
-                </div>
-            </div>
-
-            <!-- Save Button -->
-            <div class="flex items-center justify-end gap-4 pt-2">
-                <Transition
-                    enter-active-class="transition ease-in-out"
-                    enter-from-class="opacity-0"
-                    leave-active-class="transition ease-in-out"
-                    leave-to-class="opacity-0"
-                >
-                    <p
-                        v-if="form.recentlySuccessful"
-                        class="text-xs font-semibold text-emerald-600 dark:text-white"
-                    >
-                        {{ __('pages.profile.saved') }}
+                            {{ __('pages.profile.resend_verification') }}
+                        </Link>
                     </p>
-                </Transition>
 
-                <PrimaryButton :disabled="form.processing">{{ __('pages.profile.btn_save') }}</PrimaryButton>
+                    <div
+                        v-show="status === 'verification-link-sent'"
+                        class="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                    >
+                        {{ __('pages.profile.verification_sent') }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER ACTION CONTAINER (EXACTLY MATCHING USER MANAGEMENT EDIT) -->
+            <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span class="text-xs font-medium text-slate-400 dark:text-slate-500">
+                    {{ isProfileDirty ? 'Ada perubahan data profil yang belum disimpan.' : 'Tidak ada perubahan pada data profil.' }}
+                </span>
+                <button
+                    type="submit"
+                    :disabled="!isProfileDirty || form.processing"
+                    :class="[
+                        'px-6 py-2.5 inline-flex items-center justify-center gap-2 font-bold text-xs rounded-xl transition duration-150 shadow-sm border-0 cursor-pointer w-full sm:w-auto',
+                        isProfileDirty && !form.processing
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 opacity-50 cursor-not-allowed'
+                    ]"
+                >
+                    <Save class="h-4 w-4 shrink-0" />
+                    <span>{{ form.processing ? 'Menyimpan...' : 'Simpan Profil & Akun' }}</span>
+                </button>
             </div>
         </form>
     </section>
 </template>
+

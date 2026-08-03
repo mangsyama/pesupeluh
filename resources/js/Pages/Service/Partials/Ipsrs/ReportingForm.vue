@@ -17,7 +17,6 @@ import {
     Search,
     Check,
     Flame,
-    Siren,
     AlertTriangle,
     Clock,
     Zap
@@ -98,11 +97,28 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutsideRoomDropdown);
 });
 
+const formatRoomDetails = (room) => {
+    if (!room) return '';
+    const b = room.building_name ? (/^gedung/i.test(room.building_name.trim()) ? room.building_name.trim() : `Gedung ${room.building_name.trim()}`) : null;
+    const f = room.location_floor ? (/^lantai/i.test(room.location_floor.trim()) || /^lt\./i.test(room.location_floor.trim()) ? room.location_floor.trim() : `Lantai ${room.location_floor.trim()}`) : null;
+    return [b, f].filter(Boolean).join(' - ');
+};
+
+const formattedRooms = computed(() => {
+    return (props.rooms || []).map(r => {
+        return {
+            ...r,
+            location_floor: formatRoomDetails(r)
+        };
+    });
+});
+
 const filteredRooms = computed(() => {
     const q = roomSearchQuery.value.trim().toLowerCase();
     if (!q) return props.rooms;
     return props.rooms.filter(r => 
         (r.name && r.name.toLowerCase().includes(q)) || 
+        (r.building_name && r.building_name.toLowerCase().includes(q)) ||
         (r.location_floor && r.location_floor.toLowerCase().includes(q))
     );
 });
@@ -110,7 +126,9 @@ const filteredRooms = computed(() => {
 const selectedRoomLabel = computed(() => {
     if (!form.room_id) return '';
     const selected = props.rooms.find(r => r.id === form.room_id);
-    return selected ? `${selected.name} (${selected.location_floor})` : '';
+    if (!selected) return '';
+    const details = formatRoomDetails(selected);
+    return details ? `${selected.name} (${details})` : selected.name;
 });
 
 const toggleRoomDropdown = (event) => {
@@ -356,7 +374,9 @@ const submitReport = () => {
                     <div v-if="userAssignedRoom" class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-4">
                         <div>
                             <div class="text-xs font-bold text-slate-800 dark:text-white uppercase leading-none">{{ userAssignedRoom.name }}</div>
-                            <div class="text-[10px] text-slate-400 dark:text-slate-505 font-medium mt-1.5 leading-none">{{ userAssignedRoom.location_floor || 'Lokasi Ruangan Penempatan Anda' }}</div>
+                            <div class="text-[10px] text-slate-400 dark:text-slate-505 font-medium mt-1.5 leading-none">
+                                {{ formatRoomDetails(userAssignedRoom) || 'Lokasi Ruangan Penempatan Anda' }}
+                            </div>
                         </div>
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-200/70 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-slate-700/50 shrink-0">
                             <Lock class="h-3 w-3 text-slate-500" />
@@ -370,9 +390,9 @@ const submitReport = () => {
                         <SearchableSelect
                             v-else
                             v-model="form.room_id"
-                            :options="rooms"
+                            :options="formattedRooms"
                             :placeholder="__('pages.services.pilih_ruangan_default')"
-                            :search-placeholder="__('Cari nama ruangan atau lantai...')"
+                            :search-placeholder="__('Cari nama ruangan, gedung, atau lantai...')"
                             :not-found-text="__('Ruangan tidak ditemukan')"
                             value-key="id"
                             label-key="name"
@@ -382,21 +402,21 @@ const submitReport = () => {
                     <div v-if="form.errors.room_id" class="text-[10px] text-red-500 font-semibold">{{ form.errors.room_id }}</div>
                 </div>
 
-                <!-- Tingkat Urgensi / Emergency Selector -->
+                <!-- Tingkat Urgensi Pelaporan Selector -->
                 <div class="space-y-2">
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         {{ __('Tingkat Urgensi Pelaporan') }} <span class="text-red-400">*</span>
                     </label>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <!-- ROUTINE -->
                         <button
                             type="button"
                             @click="form.priority = 'ROUTINE'"
                             :class="[
-                                'p-3.5 rounded-xl border transition-all duration-150 text-left select-none relative flex items-center justify-between gap-2 focus:outline-none outline-none shadow-none',
+                                'p-3.5 rounded-xl border transition-all duration-150 text-left select-none relative flex items-center justify-between gap-2 focus:outline-none outline-none shadow-none cursor-pointer',
                                 form.priority === 'ROUTINE'
-                                    ? 'border-emerald-600 bg-emerald-600 text-white font-extrabold'
-                                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
+                                    ? 'border-emerald-600 bg-emerald-600 text-white font-extrabold shadow-sm'
+                                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:border-emerald-300 dark:hover:border-emerald-800'
                             ]"
                         >
                             <div class="space-y-0.5 min-w-0">
@@ -404,7 +424,7 @@ const submitReport = () => {
                                     ROUTINE (STANDAR)
                                 </div>
                                 <div :class="['text-[10px] font-medium truncate', form.priority === 'ROUTINE' ? 'text-emerald-100' : 'text-slate-500 dark:text-slate-400']">
-                                    penanganan normal
+                                    Penanganan normal / biasa
                                 </div>
                             </div>
                             <Clock :class="['h-5 w-5 shrink-0 transition-colors', form.priority === 'ROUTINE' ? 'text-white' : 'text-emerald-600 dark:text-emerald-400']" />
@@ -415,55 +435,52 @@ const submitReport = () => {
                             type="button"
                             @click="form.priority = 'URGENT'"
                             :class="[
-                                'p-3.5 rounded-xl border transition-all duration-150 text-left select-none relative flex items-center justify-between gap-2 focus:outline-none outline-none shadow-none',
+                                'p-3.5 rounded-xl border transition-all duration-150 text-left select-none relative flex items-center justify-between gap-2 focus:outline-none outline-none shadow-none cursor-pointer',
                                 form.priority === 'URGENT'
-                                    ? 'border-amber-500 bg-amber-500 text-white font-extrabold'
-                                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-900/50'
+                                    ? 'border-red-600 bg-red-600 text-white font-extrabold shadow-sm'
+                                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:border-red-300 dark:hover:border-red-900/50'
                             ]"
                         >
                             <div class="space-y-0.5 min-w-0">
                                 <div :class="['text-xs font-black uppercase tracking-wide truncate', form.priority === 'URGENT' ? 'text-white' : 'text-slate-800 dark:text-slate-200']">
                                     URGENT (MENDESAK)
                                 </div>
-                                <div :class="['text-[10px] font-medium truncate', form.priority === 'URGENT' ? 'text-amber-100' : 'text-slate-500 dark:text-slate-400']">
+                                <div :class="['text-[10px] font-medium truncate', form.priority === 'URGENT' ? 'text-red-100' : 'text-slate-500 dark:text-slate-400']">
                                     Prioritas penanganan cepat
                                 </div>
                             </div>
-                            <Zap :class="['h-5 w-5 shrink-0 transition-colors', form.priority === 'URGENT' ? 'text-white' : 'text-amber-500 dark:text-amber-400']" />
-                        </button>
-
-                        <!-- EMERGENCY -->
-                        <button
-                            type="button"
-                            @click="form.priority = 'EMERGENCY'"
-                            :class="[
-                                'p-3.5 rounded-xl border transition-all duration-150 text-left select-none relative flex items-center justify-between gap-2 focus:outline-none outline-none shadow-none',
-                                form.priority === 'EMERGENCY'
-                                    ? 'border-red-600 bg-red-600 text-white font-black'
-                                    : 'border-red-200 dark:border-red-900/40 bg-red-50/30 text-slate-600 dark:text-slate-400 hover:border-red-400'
-                            ]"
-                        >
-                            <div class="space-y-0.5 min-w-0">
-                                <div :class="['text-xs font-black uppercase tracking-wide truncate', form.priority === 'EMERGENCY' ? 'text-white' : 'text-red-600 dark:text-red-400']">
-                                    EMERGENCY (DARURAT)
-                                </div>
-                                <div :class="['text-[10px] font-medium truncate', form.priority === 'EMERGENCY' ? 'text-red-100' : 'text-slate-500 dark:text-slate-400']">
-                                    Bypass disposisi langsung
-                                </div>
-                            </div>
-                            <Siren :class="['h-5 w-5 shrink-0 transition-colors', form.priority === 'EMERGENCY' ? 'text-white' : 'text-red-600 dark:text-red-400']" />
+                            <AlertTriangle :class="['h-5 w-5 shrink-0 transition-colors', form.priority === 'URGENT' ? 'text-white' : 'text-red-600 dark:text-red-400']" />
                         </button>
                     </div>
 
-                    <!-- Emergency Warning Box -->
+                    <!-- Priority Info / Explanation Box -->
                     <div 
-                        v-if="form.priority === 'EMERGENCY'" 
-                        class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-300 text-xs flex gap-3 items-start animate-fade-in"
+                        v-if="form.priority === 'ROUTINE'" 
+                        class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex gap-3 items-start animate-fade-in"
                     >
-                        <Siren class="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-                        <div class="leading-relaxed">
-                            <strong class="font-extrabold block text-red-600 dark:text-red-400 uppercase tracking-wide">Mode Darurat (Code Red / Fire Bypass)</strong>
-                            Laporan ini akan <strong>otomatis didisposisikan</strong> langsung ke seluruh teknisi piket & tim K3RS tanpa menunggu approval Ka. Unit. Gunakan hanya untuk kondisi darurat nyata!
+                        <Clock class="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                        <div class="leading-relaxed space-y-0.5">
+                            <strong class="font-extrabold block text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
+                                Kategori Routine (Standar)
+                            </strong>
+                            <span>
+                                Untuk kerusakan fasilitas umum / non-kritikal yang tidak mengganggu pelayanan medis pasien secara langsung (contoh: AC kurang dingin, lampu redup, kran air menetes, engsel pintu rusak). Penanganan dilakukan sesuai antrean jam operasional.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div 
+                        v-if="form.priority === 'URGENT'" 
+                        class="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-800 dark:text-red-300 text-xs flex gap-3 items-start animate-fade-in"
+                    >
+                        <AlertTriangle class="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                        <div class="leading-relaxed space-y-0.5">
+                            <strong class="font-extrabold block text-red-700 dark:text-red-300 uppercase tracking-wide">
+                                Kategori Urgent (Mendesak)
+                            </strong>
+                            <span>
+                                Untuk kerusakan vital/kritikal yang mengganggu operasional pelayanan medis pasien atau berpotensi membahayakan keselamatan (contoh: kebocoran gas/air deras, mati listrik di ruang perawatan/ICU, konsleting/stopkontak vital alat medis). Penanganan diprioritaskan cepat.
+                            </span>
                         </div>
                     </div>
                 </div>

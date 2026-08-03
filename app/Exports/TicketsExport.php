@@ -25,17 +25,16 @@ class TicketsExport implements FromCollection, WithHeadings, WithMapping, WithSt
         ->whereNull('deleted_at');
 
         if ($this->user) {
-            $roleId = (int) ($this->user->role_id ?? 8);
             $userId = (int) $this->user->id;
 
-            if ($roleId === 8 || ($this->user->role && $this->user->role->name === 'REPORTER')) {
+            if ($this->user->isReportOnly()) {
                 $query->where('reporter_id', $userId);
-            } elseif (in_array($roleId, [5, 6]) && $this->user->supporting_unit_id) {
+            } elseif ($this->user->canDisposisi() && $this->user->supporting_unit_id) {
                 $unitId = $this->user->supporting_unit_id;
                 $query->whereHas('category', function ($q) use ($unitId) {
                     $q->where('supporting_unit_id', $unitId);
                 });
-            } elseif ($roleId === 7 && $this->user->room_id) {
+            } elseif ((int) $this->user->role_id === \App\Models\Role::PJ_RUANGAN && $this->user->room_id) {
                 $query->where('room_id', $this->user->room_id);
             }
         }

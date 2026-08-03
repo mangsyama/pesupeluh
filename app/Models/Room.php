@@ -9,7 +9,7 @@ class Room extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'location_floor'];
+    protected $fillable = ['name', 'building_name', 'location_floor'];
 
     protected $casts = [
         'created_at' => 'datetime',

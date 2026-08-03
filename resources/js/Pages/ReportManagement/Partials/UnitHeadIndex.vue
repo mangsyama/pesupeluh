@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, getCurrentInstance } from 'vue';
-import { router, Link } from '@inertiajs/vue3';
-import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, ShieldAlert, ArrowRight, Wrench } from '@lucide/vue';
+import { router, Link, usePage } from '@inertiajs/vue3';
+import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, ShieldAlert, ArrowRight, Wrench, Trash2 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
 
@@ -16,11 +16,40 @@ const props = defineProps({
     },
 });
 
+const user = computed(() => usePage().props.auth.user);
+const isAdmin = computed(() => Number(user.value?.role_id) === 1);
+
+const confirmDelete = (ticket) => {
+    if (!ticket) return;
+    proxy.$swal({
+        title: proxy.__('Apakah Anda yakin?'),
+        text: `Laporan #${ticket.ticket_number} akan dihapus dari antrean!`,
+        icon: 'error',
+        iconColor: '#ef4444',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Hapus Laporan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route('reports-management.destroy', ticket.uuid));
+        }
+    });
+};
+
 const searchQuery = ref(props.filters.search || '');
 // Set default tab to '' (Semua Tugas) if status not set
 const currentTab = ref(props.filters.status || ''); 
 const isFiltering = ref(false);
 const isLoading = computed(() => isFiltering.value || !props.tickets?.data);
+
+const formatRoomDetails = (room) => {
+    if (!room) return '';
+    const b = room.building_name ? (/^gedung/i.test(room.building_name.trim()) ? room.building_name.trim() : `Gedung ${room.building_name.trim()}`) : null;
+    const f = room.location_floor ? (/^lantai/i.test(room.location_floor.trim()) || /^lt\./i.test(room.location_floor.trim()) ? room.location_floor.trim() : `Lantai ${room.location_floor.trim()}`) : null;
+    return [b, f].filter(Boolean).join(' - ');
+};
 
 // Debounce search
 let searchTimeout = null;
@@ -76,9 +105,8 @@ const statusConfig = {
 const getStatus = (status) => statusConfig[status] ?? { label: status, badge: 'bg-slate-100 text-slate-600 border border-slate-200' };
 
 const priorityConfig = {
-    EMERGENCY: { label: 'EMERGENCY', badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
-    URGENT:    { label: 'URGENT',  badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50' },
-    ROUTINE:   { label: 'ROUTINE',  badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
+    URGENT:    { label: 'URGENT',  badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-900/50' },
+    ROUTINE:   { label: 'RUTIN',   badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' },
 };
 
 const getPriority = (target) => {
@@ -87,7 +115,7 @@ const getPriority = (target) => {
     const priority = typeof target === 'string' ? target : target?.priority;
     const status = typeof target === 'object' ? target?.status : null;
 
-    if (status === 'PENDING_VALIDATION' && priority !== 'EMERGENCY') {
+    if (status === 'PENDING_VALIDATION') {
         return { label: '-', badge: '', isPending: true };
     }
 
@@ -274,7 +302,6 @@ const formatDate = (dateStr) => {
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                                                 <MapPin class="h-3.5 w-3.5 text-slate-400" />
                                                 <span>{{ ticket.room?.name ?? '-' }}</span>
-                                                <span v-if="ticket.room?.location_floor" class="opacity-75">({{ ticket.room.location_floor }})</span>
                                             </div>
                                         </td>
                                         <!-- Desc -->
@@ -296,7 +323,7 @@ const formatDate = (dateStr) => {
                                         </td>
                                         <!-- Actions -->
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex justify-center">
+                                            <div class="flex items-center justify-center gap-2">
                                                 <Link
                                                     :href="route('reports-management.show', ticket.uuid)"
                                                     :class="[
@@ -309,6 +336,15 @@ const formatDate = (dateStr) => {
                                                     <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Disposisi' : 'Pantau' }}</span>
                                                     <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                                 </Link>
+                                                <button
+                                                    v-if="isAdmin"
+                                                    type="button"
+                                                    @click="confirmDelete(ticket)"
+                                                    title="Hapus Laporan (Soft Delete)"
+                                                    class="p-2 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 border border-red-200/80 dark:border-red-900/50 transition cursor-pointer"
+                                                >
+                                                    <Trash2 class="h-4 w-4" />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -385,11 +421,11 @@ const formatDate = (dateStr) => {
                                         </div>
                                     </div>
 
-                                    <div class="flex justify-end pt-1 border-t border-slate-100 dark:border-slate-800/50">
+                                    <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/50">
                                         <Link
                                             :href="route('reports-management.show', ticket.uuid)"
                                             :class="[
-                                                'w-full py-2.5 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-all duration-150',
+                                                'flex-1 py-2.5 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-all duration-150',
                                                 ticket.status === 'PENDING_VALIDATION'
                                                     ? 'bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 font-extrabold border-transparent'
                                                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
@@ -398,6 +434,15 @@ const formatDate = (dateStr) => {
                                             <span>{{ ticket.status === 'PENDING_VALIDATION' ? 'Lakukan Disposisi' : 'Detail Pemantauan' }}</span>
                                             <ArrowRight class="h-3.5 w-3.5 flex-shrink-0" />
                                         </Link>
+                                        <button
+                                            v-if="isAdmin"
+                                            type="button"
+                                            @click="confirmDelete(ticket)"
+                                            title="Hapus Laporan (Soft Delete)"
+                                            class="p-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl border border-red-200 dark:border-red-900/50 transition cursor-pointer shrink-0"
+                                        >
+                                            <Trash2 class="h-4 w-4" />
+                                        </button>
                                     </div>
                                  </div>
                             </template>
@@ -429,7 +474,7 @@ const formatDate = (dateStr) => {
                     </button>
                 </div>
             </div>
-        </div>
+            </div>
         </div>
     </div>
 </template>

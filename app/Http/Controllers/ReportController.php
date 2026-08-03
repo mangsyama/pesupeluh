@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\ServiceTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,7 @@ class ReportController extends Controller
 
         // Ambil data master untuk dropdown
         $supportingUnits = \App\Models\SupportingUnit::with('issueCategories')->get();
-        $rooms = \App\Models\Room::select(['id', 'name', 'location_floor'])->orderBy('name')->get();
+        $rooms = \App\Models\Room::select(['id', 'name', 'building_name', 'location_floor'])->orderBy('name')->get();
         $reporters = \App\Models\User::select(['id', 'name', 'room_id'])->orderBy('name')->get();
 
         return Inertia::render('ReportExport/Index', [
@@ -44,7 +45,7 @@ class ReportController extends Controller
             'tickets'         => Inertia::defer(function () use ($user, $request) {
                 $query = ServiceTicket::with([
                     'reporter:id,name',
-                    'room:id,name',
+                    'room:id,name,building_name,location_floor',
                     'category:id,name,supporting_unit_id',
                     'category.supportingUnit:id,name',
                 ])
@@ -103,7 +104,7 @@ class ReportController extends Controller
         ])
         ->with([
             'reporter:id,name,phone_number',
-            'room:id,name',
+            'room:id,name,building_name,location_floor',
             'category:id,name,supporting_unit_id',
             'category.supportingUnit:id,name',
         ])
@@ -153,14 +154,15 @@ class ReportController extends Controller
      */
     public function show(Request $request, ServiceTicket $ticket)
     {
+        /** @var \App\Models\User $user */
         $user = $request->user();
         
-        // Authorization check: only let the reporter, room head of the ticket's room, or admins/unit heads view it
+        // Authorization check: only let the reporter, PJ Ruangan of the ticket's room, or admins/disposisi roles view it
         if ($ticket->reporter_id !== $user->id) {
-            if ($user->role_id === 7 && $ticket->room_id === $user->room_id) {
-                // Room head of the ticket's room
-            } elseif (in_array((int)$user->role_id, [1, 2, 3, 4, 5])) {
-                // Admin, unit heads, directors can view
+            if ((int) $user->role_id === Role::PJ_RUANGAN && $ticket->room_id === $user->room_id) {
+                // PJ Ruangan of the ticket's room
+            } elseif ($user->isAdmin() || $user->isDirector() || $user->canDisposisi()) {
+                // Admin, disposisi roles, directors can view
             } else {
                 abort(403, 'Unauthorized action.');
             }
@@ -170,7 +172,7 @@ class ReportController extends Controller
             'ticket' => Inertia::defer(fn() => $ticket->load([
                 'reporter:id,name,nip,phone_number',
                 'validator:id,name,nip',
-                'room:id,name,location_floor',
+                'room:id,name,building_name,location_floor',
                 'category.supportingUnit',
                 'assignments.technician:id,name,nip',
                 'attachments.user:id,name',
@@ -189,7 +191,7 @@ class ReportController extends Controller
         
         $query = ServiceTicket::with([
             'reporter:id,name',
-            'room:id,name',
+            'room:id,name,building_name,location_floor',
             'category:id,name,supporting_unit_id',
             'category.supportingUnit:id,name',
             'assignments.technician:id,name',
@@ -257,18 +259,18 @@ class ReportController extends Controller
      */
     private function applyFilters($query, Request $request, $user, $ignoreStatus = false)
     {
-        $roleId = (int) ($user->role_id ?? 8);
+        /** @var \App\Models\User $user */
         $userId = (int) $user->id;
 
         // Scoping data berdasarkan peran
-        if ($roleId === 8 || ($user->role && $user->role->name === 'REPORTER')) {
+        if ($user->isReportOnly()) {
             $query->where('reporter_id', $userId);
-        } elseif (in_array($roleId, [5, 6]) && $user->supporting_unit_id) {
+        } elseif ($user->canDisposisi() && $user->supporting_unit_id) {
             $unitId = $user->supporting_unit_id;
             $query->whereHas('category', function ($q) use ($unitId) {
                 $q->where('supporting_unit_id', $unitId);
             });
-        } elseif ($roleId === 7 && $user->room_id) {
+        } elseif ((int) $user->role_id === Role::PJ_RUANGAN && $user->room_id) {
             $query->where('room_id', $user->room_id);
         }
 

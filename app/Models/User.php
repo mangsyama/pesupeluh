@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'face_descriptor', 'role_id', 'room_id', 'supporting_unit_id', 'phone_number', 'telegram_chat_id', 'is_active', 'nip', 'username', 'profile_photo_path', 'approved_by', 'approved_at', 'page_permissions', 'is_on_duty', 'duty_status', 'specialties', 'current_location'])]
+#[Fillable(['name', 'email', 'password', 'face_descriptor', 'role_id', 'room_id', 'supporting_unit_id', 'phone_number', 'telegram_chat_id', 'is_active', 'nip', 'username', 'profile_photo_path', 'approved_by', 'approved_at', 'page_permissions', 'system_notify_enabled', 'wa_notify_enabled', 'is_on_duty', 'duty_status', 'specialties', 'current_location'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -45,6 +45,8 @@ class User extends Authenticatable
             'approved_at' => 'datetime',
             'is_active' => 'boolean',
             'is_on_duty' => 'boolean',
+            'system_notify_enabled' => 'boolean',
+            'wa_notify_enabled' => 'boolean',
             'role_id' => 'integer',
             'room_id' => 'integer',
             'supporting_unit_id' => 'integer',
@@ -80,7 +82,7 @@ class User extends Authenticatable
         }
 
         // 2. Default Administrator role permissions if no override
-        if ((int) $this->role_id === 1) {
+        if ($this->isAdmin()) {
             return $this->memoizedPermissions = [
                 'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index',
                 'technicians.position', 'service-management.working-hours',
@@ -96,6 +98,46 @@ class User extends Authenticatable
         }
 
         return $this->memoizedPermissions = [];
+    }
+
+    /**
+     * Role Helper Methods
+     */
+    public function isAdmin(): bool
+    {
+        return (int) $this->role_id === Role::ADMINISTRATOR;
+    }
+
+    public function isDirector(): bool
+    {
+        return (int) $this->role_id === Role::DIREKTUR;
+    }
+
+    public function canDisposisi(): bool
+    {
+        return $this->isAdmin()
+            || in_array((int) $this->role_id, [
+                Role::KEPALA_BIDANG,
+                Role::KEPALA_SEKSI,
+                Role::KEPALA_INSTALASI,
+                Role::SEKRETARIS_INSTALASI,
+                Role::PJ_RUANGAN,
+            ])
+            || $this->hasPageAccess('reports-management.index');
+    }
+
+    public function isReportOnly(): bool
+    {
+        return in_array((int) $this->role_id, [
+            Role::KEPALA_BAGIAN,
+            Role::KEPALA_SUB_BAGIAN,
+            Role::STAFF,
+        ]);
+    }
+
+    public function isTechnician(): bool
+    {
+        return (int) $this->role_id === Role::TEKNISI;
     }
 
     /**

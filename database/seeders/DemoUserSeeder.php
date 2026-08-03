@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -17,9 +18,9 @@ class DemoUserSeeder extends Seeder
         $defaultPassword = Hash::make('password123');
 
         $demoUsers = [
-            // 2. Director (DIRECTOR)
+            // 2. Director (DIREKTUR)
             [
-                'role_id' => 2,
+                'role_id' => Role::DIREKTUR,
                 'room_id' => null,
                 'supporting_unit_id' => null,
                 'nip' => '197003151998031002',
@@ -32,9 +33,9 @@ class DemoUserSeeder extends Seeder
                 'approved_at' => now(),
                 'approved_by' => 1,
             ],
-            // 3. Division Head - Medik (DIVISION_HEAD)
+            // 3. Division Head - Medik (KEPALA BIDANG)
             [
-                'role_id' => 3,
+                'role_id' => Role::KEPALA_BIDANG,
                 'room_id' => null,
                 'supporting_unit_id' => null,
                 'nip' => '197508202003121003',
@@ -47,9 +48,9 @@ class DemoUserSeeder extends Seeder
                 'approved_at' => now(),
                 'approved_by' => 1,
             ],
-            // 4. Division Head - Non Medik (DIVISION_HEAD)
+            // 4. Division Head - Non Medik (KEPALA BIDANG)
             [
-                'role_id' => 3,
+                'role_id' => Role::KEPALA_BIDANG,
                 'room_id' => null,
                 'supporting_unit_id' => null,
                 'nip' => '197811052005011004',
@@ -62,9 +63,9 @@ class DemoUserSeeder extends Seeder
                 'approved_at' => now(),
                 'approved_by' => 1,
             ],
-            // 5. Section Head - Sarpras (SECTION_HEAD)
+            // 5. Section Head - Sarpras (KEPALA SEKSI)
             [
-                'role_id' => 4,
+                'role_id' => Role::KEPALA_SEKSI,
                 'room_id' => null,
                 'supporting_unit_id' => null,
                 'nip' => '198204122008041005',
@@ -77,14 +78,14 @@ class DemoUserSeeder extends Seeder
                 'approved_at' => now(),
                 'approved_by' => 1,
             ],
-            // 6. Unit Head - IPSRS (UNIT_HEAD, supporting_unit_id = 8)
+            // 6. Unit Head - IPSRS (KEPALA INSTALASI, supporting_unit_id = 8)
             [
-                'role_id' => 5,
+                'role_id' => Role::KEPALA_INSTALASI,
                 'room_id' => null,
                 'supporting_unit_id' => 8,
                 'nip' => '198609252011011006',
-                'username' => 'kaunit_ipsrs',
-                'name' => 'Agus Setiawan, S.T. (Ka. Unit IPSRS)',
+                'username' => 'kainstal_ipsrs',
+                'name' => 'Agus Setiawan, S.T. (Ka. Instalasi IPSRS)',
                 'email' => 'kaunit.ipsrs@pesupeluh.rs',
                 'email_verified_at' => now(),
                 'password' => $defaultPassword,
@@ -92,9 +93,9 @@ class DemoUserSeeder extends Seeder
                 'approved_at' => now(),
                 'approved_by' => 1,
             ],
-            // 7. Technician 1 - IPSRS (TECHNICIAN, supporting_unit_id = 8)
+            // 7. Technician 1 - IPSRS (TEKNISI, supporting_unit_id = 8)
             [
-                'role_id' => 6,
+                'role_id' => Role::TEKNISI,
                 'room_id' => null,
                 'supporting_unit_id' => 8,
                 'nip' => '199002142014021007',
@@ -107,9 +108,9 @@ class DemoUserSeeder extends Seeder
                 'approved_at' => now(),
                 'approved_by' => 1,
             ],
-            // 8. Technician 2 - IPSRS (TECHNICIAN, supporting_unit_id = 8)
+            // 8. Technician 2 - IPSRS (TEKNISI, supporting_unit_id = 8)
             [
-                'role_id' => 6,
+                'role_id' => Role::TEKNISI,
                 'room_id' => null,
                 'supporting_unit_id' => 8,
                 'nip' => '199207302015031008',
@@ -122,14 +123,14 @@ class DemoUserSeeder extends Seeder
                 'approved_at' => now(),
                 'approved_by' => 1,
             ],
-            // 9. Room Head - IGD (ROOM_HEAD, room_id = 1)
+            // 9. Room Head - IGD (PJ RUANGAN, room_id = 1)
             [
-                'role_id' => 7,
+                'role_id' => Role::PJ_RUANGAN,
                 'room_id' => 1,
                 'supporting_unit_id' => null,
                 'nip' => '198805182012012009',
-                'username' => 'karu_igd',
-                'name' => 'Ns. Dewi Lestari, S.Kep (Karu IGD)',
+                'username' => 'pj_ruangan_igd',
+                'name' => 'Ns. Dewi Lestari, S.Kep (PJ Ruangan IGD)',
                 'email' => 'karu.igd@pesupeluh.rs',
                 'email_verified_at' => now(),
                 'password' => $defaultPassword,
@@ -137,9 +138,9 @@ class DemoUserSeeder extends Seeder
                 'approved_at' => now(),
                 'approved_by' => 1,
             ],
-            // 10. Reporter / Staff IGD (REPORTER, room_id = 1)
+            // 10. Reporter / Staff IGD (STAFF, room_id = 1)
             [
-                'role_id' => 8,
+                'role_id' => Role::STAFF,
                 'room_id' => 1,
                 'supporting_unit_id' => null,
                 'nip' => '199512102018012010',

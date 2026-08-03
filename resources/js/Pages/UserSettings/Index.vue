@@ -21,7 +21,8 @@ const designPages = [
     { label: 'Pengujian Notifikasi', routeName: 'design-system.notifications', icon: Bell, description: 'Simulasi notifikasi per role user ke Toast popup & Lonceng Dropdown Header.' },
 ];
 
-const notificationEnabled = ref(true);
+const systemNotifyEnabled = ref(user.value?.system_notify_enabled !== false);
+const waNotifyEnabled = ref(user.value?.wa_notify_enabled !== false);
 const defaultLang = ref(page.props.locale || 'id');
 const isDark = ref(false);
 
@@ -33,6 +34,28 @@ const languageOptions = [
 onMounted(() => {
     isDark.value = document.documentElement.classList.contains('dark');
 });
+
+const saveNotificationSettings = () => {
+    router.patch(route('profile.update-notifications'), {
+        system_notify_enabled: systemNotifyEnabled.value,
+        wa_notify_enabled: waNotifyEnabled.value,
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Updated successfully
+        }
+    });
+};
+
+const toggleSystemNotify = () => {
+    systemNotifyEnabled.value = !systemNotifyEnabled.value;
+    saveNotificationSettings();
+};
+
+const toggleWaNotify = () => {
+    waNotifyEnabled.value = !waNotifyEnabled.value;
+    saveNotificationSettings();
+};
 
 const toggleTheme = () => {
     isDark.value = !isDark.value;
@@ -139,21 +162,43 @@ const handleLangChange = (selected) => {
                         </div>
                         <span>{{ __('pages.settings.notifications') }}</span>
                     </h3>
-                    <div class="space-y-4">
+                    <div class="space-y-6">
+                        <!-- Notifikasi Dalam Sistem -->
                         <div class="flex items-center justify-between gap-4">
                             <div>
-                                <label class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ __('pages.settings.push_notifications') }}</label>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">{{ __('pages.settings.push_desc') }}</p>
+                                <label class="text-sm font-semibold text-slate-800 dark:text-slate-200">Notifikasi Dalam Sistem</label>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">Terima pemberitahuan lonceng di header, popup toast, dan riwayat notifikasi di dalam aplikasi.</p>
                             </div>
                             <button
-                                @click="notificationEnabled = !notificationEnabled"
+                                @click="toggleSystemNotify"
                                 type="button"
                                 class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-                                :class="notificationEnabled ? 'bg-emerald-600 dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'"
+                                :class="systemNotifyEnabled ? 'bg-emerald-600 dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'"
                             >
                                 <span
                                     class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-900 shadow ring-0 transition duration-200 ease-in-out"
-                                    :class="notificationEnabled ? 'translate-x-4' : 'translate-x-0'"
+                                    :class="systemNotifyEnabled ? 'translate-x-4' : 'translate-x-0'"
+                                />
+                            </button>
+                        </div>
+
+                        <div class="border-t border-slate-100 dark:border-slate-800"></div>
+
+                        <!-- Notifikasi WhatsApp -->
+                        <div class="flex items-center justify-between gap-4">
+                            <div>
+                                <label class="text-sm font-semibold text-slate-800 dark:text-slate-200">Notifikasi WhatsApp</label>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed">Kirimkan rincian tiket, disposisi, dan pembaruan status pengerjaan secara otomatis ke WhatsApp Anda.</p>
+                            </div>
+                            <button
+                                @click="toggleWaNotify"
+                                type="button"
+                                class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                :class="waNotifyEnabled ? 'bg-emerald-600 dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'"
+                            >
+                                <span
+                                    class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-900 shadow ring-0 transition duration-200 ease-in-out"
+                                    :class="waNotifyEnabled ? 'translate-x-4' : 'translate-x-0'"
                                 />
                             </button>
                         </div>

@@ -38,6 +38,8 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
             'phone_number' => ['nullable', 'regex:/^\d+$/', 'max:15'],
+            'supporting_unit_id' => ['nullable', 'exists:supporting_units,id'],
+            'room_id' => ['nullable', 'exists:rooms,id'],
             'profile_photo' => ['nullable', function ($attribute, $value, $fail) {
                 if (request()->hasFile('profile_photo')) {
                     $file = request()->file('profile_photo');

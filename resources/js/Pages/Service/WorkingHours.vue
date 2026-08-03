@@ -350,16 +350,6 @@ const executeSaveHours = () => {
                                 Saat laporan masuk di luar jam kerja (misal jam 16:00 atau saat hari di-uncheck / OFF), sistem <strong>otomatis mendisposisikan laporan</strong> ke seluruh teknisi piket unit tersebut tanpa perlu menunggu Kepala Unit.
                             </p>
                         </div>
-
-                        <div class="p-4 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/30 space-y-1.5">
-                            <div class="font-extrabold text-rose-900 dark:text-rose-300 flex items-center gap-2">
-                                <Zap class="h-4 w-4 text-rose-600 dark:text-rose-400" />
-                                <span>3. Laporan Darurat (Code Red / Emergency)</span>
-                            </div>
-                            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-normal">
-                                Khusus laporan berkategori <strong>EMERGENCY</strong> (misal kebakaran, mati listrik total, kebocoran gas), sistem akan <strong>selalu melompati disposisi manual</strong> secara otomatis kapan pun laporan dikirim.
-                            </p>
-                        </div>
                     </div>
 
                     <!-- Modal Footer -->
