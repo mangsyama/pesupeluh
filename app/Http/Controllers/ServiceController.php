@@ -171,6 +171,12 @@ class ServiceController extends Controller
             }
         }
 
+        try {
+            \App\Events\TicketRealtimeUpdated::dispatch($ticket, 'created');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal broadcast TicketRealtimeUpdated: ' . $e->getMessage());
+        }
+
         $successMsg = $isOffHours 
             ? '🌙 Laporan berhasil terbuat di luar jam operasional & otomatis didisposisikan ke teknisi piket.' 
             : 'Tiket pelaporan baru berhasil dibuat.';

@@ -499,6 +499,15 @@ const registerNotificationListeners = () => {
                 } else if (normalized.type === 'ticket' || (normalized.route && normalized.route.includes('reports-management'))) {
                     pendingReportsCount.value += 1;
                 }
+
+                // Auto-refresh active Inertia page data silently without page reload
+                router.reload({ preserveScroll: true });
+            });
+
+        window.Echo.channel('tickets')
+            .listen('.TicketRealtimeUpdated', (e) => {
+                // Auto-refresh active Inertia page data silently when ticket events occur
+                router.reload({ preserveScroll: true });
             });
     }
 };

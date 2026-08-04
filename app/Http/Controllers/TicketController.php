@@ -417,6 +417,12 @@ class TicketController extends Controller
                 Log::error('Gagal mengirim notifikasi status tiket: ' . $e->getMessage());
             }
         }
+
+        try {
+            \App\Events\TicketRealtimeUpdated::dispatch($ticket, 'status_changed');
+        } catch (\Throwable $e) {
+            Log::error('Gagal broadcast TicketRealtimeUpdated: ' . $e->getMessage());
+        }
     }
 
     /**
