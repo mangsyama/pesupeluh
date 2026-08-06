@@ -141,9 +141,19 @@ class ServiceController extends Controller
             $recipients = \App\Models\User::where('is_active', 1)
                 ->where('id', '!=', $ticket->reporter_id)
                 ->where(function ($query) use ($supportingUnitId, $ticket, $isOffHours) {
+                    $query->where('role_id', \App\Models\Role::ADMINISTRATOR)
+                        ->orWhere('role_id', \App\Models\Role::KEPALA_BIDANG);
+
                     if ($supportingUnitId) {
-                        $query->where(function ($q) use ($supportingUnitId) {
-                            $q->where('role_id', \App\Models\Role::KEPALA_INSTALASI)->where('supporting_unit_id', $supportingUnitId);
+                        $query->orWhere(function ($q) use ($supportingUnitId) {
+                            $q->whereIn('role_id', [
+                                \App\Models\Role::KEPALA_SEKSI,
+                                \App\Models\Role::KEPALA_INSTALASI,
+                                \App\Models\Role::SEKRETARIS_INSTALASI,
+                            ])->where(function ($q2) use ($supportingUnitId) {
+                                $q2->where('supporting_unit_id', $supportingUnitId)
+                                   ->orWhereNull('supporting_unit_id');
+                            });
                         });
 
                         // If Off-Hours, also notify Technicians directly!
@@ -153,7 +163,7 @@ class ServiceController extends Controller
                             });
                         }
                     }
-                    $query->orWhere('role_id', \App\Models\Role::ADMINISTRATOR); // Administrator
+
                     if ($ticket->room_id) {
                         $query->orWhere(function ($q) use ($ticket) {
                             $q->where('role_id', \App\Models\Role::PJ_RUANGAN)->where('room_id', $ticket->room_id); // PJ Ruangan

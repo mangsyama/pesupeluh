@@ -58,11 +58,19 @@ class CheckSlaWarningCommand extends Command
 
             $recipients = User::where('is_active', 1)
                 ->where(function ($query) use ($supportingUnitId) {
-                    $query->where('role_id', 1); // Admin
+                    $query->where('role_id', \App\Models\Role::ADMINISTRATOR)
+                        ->orWhere('role_id', \App\Models\Role::KEPALA_BIDANG);
 
                     if ($supportingUnitId) {
                         $query->orWhere(function ($q) use ($supportingUnitId) {
-                            $q->where('role_id', 5)->where('supporting_unit_id', $supportingUnitId); // Ka Unit
+                            $q->whereIn('role_id', [
+                                \App\Models\Role::KEPALA_SEKSI,
+                                \App\Models\Role::KEPALA_INSTALASI,
+                                \App\Models\Role::SEKRETARIS_INSTALASI,
+                            ])->where(function ($q2) use ($supportingUnitId) {
+                                $q2->where('supporting_unit_id', $supportingUnitId)
+                                   ->orWhereNull('supporting_unit_id');
+                            });
                         });
                     }
                 })

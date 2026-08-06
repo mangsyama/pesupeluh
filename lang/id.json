@@ -228,12 +228,12 @@
       "user_list_desc": "Lihat akun pengguna yang disetujui berdasarkan peran.",
       "tabs": {
         "all": "Semua",
-        "admin": "Admin",
+        "admin": "Administrator",
         "management": "Manajemen",
-        "unit_head": "Kepala Unit",
+        "unit_head": "Instalasi",
+        "room_head": "PJ Ruangan",
         "technician": "Teknisi",
-        "room_head": "Kepala Ruangan",
-        "reporter": "Pelapor"
+        "reporter": "Staff / Pelapor"
       },
       "suspend_account": "Suspend Akun",
       "activate_account": "Aktifkan Akun",

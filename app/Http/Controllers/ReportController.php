@@ -159,8 +159,10 @@ class ReportController extends Controller
         
         // Authorization check: only let the reporter, PJ Ruangan of the ticket's room, or admins/disposisi roles view it
         if ($ticket->reporter_id !== $user->id) {
-            if ((int) $user->role_id === Role::PJ_RUANGAN && $ticket->room_id === $user->room_id) {
-                // PJ Ruangan of the ticket's room
+            if ((int) $user->role_id === Role::PJ_RUANGAN) {
+                if ((int) $ticket->room_id !== (int) $user->room_id) {
+                    abort(403, 'Akses ditolak. Sebagai Penanggung Jawab Ruangan, Anda hanya dapat melihat laporan dari ruangan Anda.');
+                }
             } elseif ($user->isAdmin() || $user->isDirector() || $user->canDisposisi()) {
                 // Admin, disposisi roles, directors can view
             } else {

@@ -22,13 +22,13 @@ const user = computed(() => usePage().props.auth.user);
 
 const activeComponent = computed(() => {
     const roleId = Number(user.value?.role_id);
-    if (roleId === 5 || roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4) {
-        return UnitHeadShow;
-    } else if (roleId === 6) {
+    if (roleId === 10) {
         return TechnicianShow;
-    } else {
-        // Room Head (Role 7) melihat detail pelapor biasa
+    } else if (roleId === 11) {
         return ReporterShow;
+    } else {
+        // Roles 1-9 (Admin, Direktur, Kabid, Kabag, Kaseksi, Kasubbag, Ka Instalasi, Sekr Instalasi, PJ Ruangan)
+        return UnitHeadShow;
     }
 });
 </script>

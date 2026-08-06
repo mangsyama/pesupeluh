@@ -60,19 +60,21 @@ class ReportManagementController extends Controller
         // Scoping data berdasarkan peran/role:
         if ($user->isAdmin() || $user->isDirector() || (int) $user->role_id === Role::KEPALA_BIDANG) {
             // Admin & Direktur & Kabid: melihat semua
+        } elseif ((int) $user->role_id === Role::PJ_RUANGAN && $user->room_id) {
+            // PJ Ruangan: melihat tiket dari ruangan mereka
+            $query->where('room_id', $user->room_id);
         } elseif ($user->canDisposisi() && $user->supporting_unit_id) {
-            // Kepala Instalasi & Disposisi Unit Penunjang: melihat tiket unit penunjang mereka
+            // Kepala Instalasi / Disposisi Unit Penunjang: melihat tiket unit penunjang mereka
             $query->whereHas('category', function ($q) use ($user) {
                 $q->where('supporting_unit_id', $user->supporting_unit_id);
             });
+        } elseif ($user->canDisposisi()) {
+            // Role disposisi lainnya tanpa pembatasan unit: melihat semua
         } elseif ($user->isTechnician()) {
             // Teknisi: melihat tiket yang ditugaskan kepada mereka
             $query->whereHas('assignments', function ($q) use ($userId) {
                 $q->where('technician_id', $userId);
             });
-        } elseif ((int) $user->role_id === Role::PJ_RUANGAN) {
-            // PJ Ruangan: melihat tiket dari ruangan mereka
-            $query->where('room_id', $user->room_id);
         } else {
             // Role lainnya: memfilter unit jika ada
             if ($user->supporting_unit_id) {
@@ -133,12 +135,15 @@ class ReportManagementController extends Controller
         // Otorisasi akses detail operasional
         if ($user->isAdmin() || $user->isDirector() || (int) $user->role_id === Role::KEPALA_BIDANG) {
             // Admin, Direktur, Kabid: bebas pantau
+        } elseif ((int) $user->role_id === Role::PJ_RUANGAN) {
+            // PJ Ruangan: KHUSUS melihat & mendisposisikan laporan dari ruangan sendiri
+            if ((int) $ticket->room_id !== (int) $user->room_id) {
+                abort(403, 'Akses ditolak. Sebagai Penanggung Jawab Ruangan, Anda hanya berwenang mengelola laporan dari ruangan Anda sendiri.');
+            }
         } elseif ($user->canDisposisi() && (int)$user->supporting_unit_id === $supportingUnitId) {
             // Kepala Instalasi / Disposisi unit penunjang terkait
         } elseif ($user->isTechnician() && $ticket->assignments()->where('technician_id', $user->id)->exists()) {
             // Teknisi yang ditugaskan
-        } elseif ((int) $user->role_id === Role::PJ_RUANGAN && $ticket->room_id === $user->room_id) {
-            // PJ Ruangan tempat kejadian
         } elseif ($user->canDisposisi()) {
             // Disposisi role lainnya
         } else {
@@ -156,10 +161,17 @@ class ReportManagementController extends Controller
                 'histories.user:id,name',
             ])),
             'technicians' => Inertia::defer(function() use ($user, $supportingUnitId) {
-                if (($user->canDisposisi() && (int) $user->supporting_unit_id === $supportingUnitId) || $user->isAdmin()) {
-                    return User::where('role_id', Role::TEKNISI) // TEKNISI
-                        ->where('is_active', 1)
-                        ->with('supportingUnit:id,name')
+                if ($user->canDisposisi() || $user->isAdmin()) {
+                    $techQuery = User::where('role_id', Role::TEKNISI)
+                        ->where('is_active', 1);
+
+                    if ($supportingUnitId > 0) {
+                        if ((clone $techQuery)->where('supporting_unit_id', $supportingUnitId)->exists()) {
+                            $techQuery->where('supporting_unit_id', $supportingUnitId);
+                        }
+                    }
+
+                    return $techQuery->with('supportingUnit:id,name')
                         ->orderBy('name')
                         ->get(['id', 'name', 'nip', 'supporting_unit_id']);
                 }

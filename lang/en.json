@@ -227,12 +227,12 @@
       "user_list_desc": "View approved user accounts grouped by role.",
       "tabs": {
         "all": "All",
-        "admin": "Admin",
+        "admin": "Administrator",
         "management": "Management",
-        "unit_head": "Unit Head",
+        "unit_head": "Installation",
+        "room_head": "Room Officer",
         "technician": "Technician",
-        "room_head": "Room Head",
-        "reporter": "Reporter"
+        "reporter": "Staff / Reporter"
       },
       "suspend_account": "Suspend Account",
       "activate_account": "Activate Account",

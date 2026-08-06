@@ -397,12 +397,12 @@ const contextLabel = computed(() => {
         return 'Laporan Saya';
     }
     const roleId = Number(user.value?.role_id);
-    if (roleId === 5 || roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4) {
-        return 'Tugas Unit';
-    } else if (roleId === 6) {
+    if (roleId === 10) {
         return 'Tugas Saya';
-    } else if (roleId === 7) {
+    } else if (roleId === 9) {
         return 'Laporan Ruangan';
+    } else if ([1, 2, 3, 4, 5, 6, 7, 8].includes(roleId)) {
+        return 'Tugas Unit';
     }
     return null;
 });

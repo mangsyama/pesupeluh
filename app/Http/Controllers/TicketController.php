@@ -42,6 +42,16 @@ class TicketController extends Controller
 
         $supportingUnitId = (int) ($ticket->category?->supporting_unit_id ?? 0);
 
+        // PJ Ruangan is strictly scoped to their assigned room
+        if ($roleId === Role::PJ_RUANGAN) {
+            if ((int) $user->room_id !== (int) $ticket->room_id) {
+                abort(403, 'Akses ditolak. Sebagai Penanggung Jawab Ruangan, Anda hanya dapat mengelola laporan dari ruangan Anda sendiri.');
+            }
+            if ($action === 'view' || $action === 'assign') {
+                return true;
+            }
+        }
+
         if ($action === 'view') {
             // Admin and Disposisi roles can view any ticket
             if ($user->isAdmin() || $user->canDisposisi()) {
@@ -53,18 +63,13 @@ class TicketController extends Controller
                 return true;
             }
 
-            // Room PJ can view if same room
-            if ((int) $user->role_id === Role::PJ_RUANGAN && (int) $user->room_id === (int) $ticket->room_id) {
-                return true;
-            }
-
             // Reporter can view if they submitted it
             if ($userId === (int) $ticket->reporter_id) {
                 return true;
             }
         } elseif ($action === 'assign') {
-            // Disposisi roles (Kepala Instalasi, etc.) of same unit can validate/assign
-            if (($user->canDisposisi() || $user->isAdmin()) && (int) $user->supporting_unit_id === $supportingUnitId) {
+            // Disposisi roles (Kepala Bidang, Kepala Seksi, Kepala Instalasi, Sekretaris Instalasi, Admin) can validate/assign
+            if ($user->canDisposisi() || $user->isAdmin()) {
                 return true;
             }
         } elseif ($action === 'execute') {
@@ -115,10 +120,17 @@ class TicketController extends Controller
             ])),
             'technicians' => Inertia::defer(function() use ($user, $supportingUnitId) {
                 /** @var \App\Models\User $user */
-                if (($user->canDisposisi() && (int) $user->supporting_unit_id === $supportingUnitId) || $user->isAdmin()) {
-                    return User::where('role_id', Role::TEKNISI) // TEKNISI
-                        ->where('is_active', 1)
-                        ->with('supportingUnit:id,name')
+                if ($user->canDisposisi() || $user->isAdmin()) {
+                    $techQuery = User::where('role_id', Role::TEKNISI)
+                        ->where('is_active', 1);
+
+                    if ($supportingUnitId > 0) {
+                        if ((clone $techQuery)->where('supporting_unit_id', $supportingUnitId)->exists()) {
+                            $techQuery->where('supporting_unit_id', $supportingUnitId);
+                        }
+                    }
+
+                    return $techQuery->with('supportingUnit:id,name')
                         ->orderBy('name')
                         ->get(['id', 'name', 'nip', 'supporting_unit_id']);
                 }

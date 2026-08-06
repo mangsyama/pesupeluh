@@ -24,34 +24,31 @@ const user = computed(() => usePage().props.auth.user);
 
 const activeComponent = computed(() => {
     const roleId = Number(user.value?.role_id);
-    if (roleId === 5 || roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4) {
-        return UnitHeadIndex;
-    } else if (roleId === 6) {
+    if (roleId === 10) {
         return TechnicianIndex;
-    } else {
-        // Room Head (Role 7) melihat daftar laporan ruangan mereka
+    } else if (roleId === 11) {
         return ReporterIndex;
+    } else {
+        // Roles 1-9 (Admin, Direktur, Kabid, Kabag, Kaseksi, Kasubbag, Ka Instalasi, Sekr Instalasi, PJ Ruangan)
+        return UnitHeadIndex;
     }
 });
 
 const title = computed(() => {
     const roleId = Number(user.value?.role_id);
-    if (roleId === 5) return 'Tugas Unit Kerja';
-    if (roleId === 6) return 'Daftar Tugas Saya';
-    if (roleId === 7) return 'Laporan Ruangan';
+    if (roleId === 10) return 'Daftar Tugas Saya';
+    if (roleId === 9) return 'Laporan & Disposisi Ruangan';
+    if ([1, 2, 3, 4, 5, 6, 7, 8].includes(roleId)) return 'Manajemen & Disposisi Laporan';
     return 'Manajemen Laporan';
 });
 
 const subtitle = computed(() => {
     const roleId = Number(user.value?.role_id);
-    if (roleId === 5 || roleId === 1 || roleId === 2 || roleId === 3 || roleId === 4) {
-        return 'Laci validasi, prioritas, dan disposisi tiket penunjang.';
-    }
-    if (roleId === 6) {
+    if (roleId === 10) {
         return 'Papan tugas operasional, respon kedatangan, dan pelaporan bukti kerja.';
     }
-    if (roleId === 7) {
-        return 'Daftar pemantauan status kerusakan aktif di dalam ruangan Anda.';
+    if ([1, 2, 3, 4, 5, 6, 7, 8, 9].includes(roleId)) {
+        return 'Laci validasi, prioritas, dan disposisi tiket penunjang.';
     }
     return 'Manajemen operasional tiket pelaporan.';
 });

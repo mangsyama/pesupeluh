@@ -218,57 +218,103 @@ defineExpose({
 
 <template>
     <div class="space-y-4">
-        <div class="overflow-x-auto bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                        <th class="px-6 py-4">{{ __('pages.service_management.categories.table_category') }}</th>
-                        <th class="px-6 py-4">{{ __('pages.service_management.categories.table_description') }}</th>
-                        <th class="px-6 py-4 text-center">Unit Penunjang</th>
-                        <th class="px-6 py-4 text-right">{{ __('pages.service_management.categories.table_actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
-                    <tr v-if="filteredCategories.length === 0">
-                        <td colspan="4" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.categories.empty_data') }}</td>
-                    </tr>
-                    <tr 
-                        v-else
-                        v-for="cat in paginatedCategories" 
-                        :key="cat.id"
-                        class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
-                    >
-                        <td class="px-6 py-4">
-                            <div class="font-semibold text-slate-955 dark:text-white">{{ cat.name }}</div>
-                        </td>
-                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400 max-w-xs truncate">{{ cat.description || '-' }}</td>
-                        <td class="px-6 py-4 text-center">
-                            <span v-if="cat.supporting_unit" class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
-                                {{ cat.supporting_unit.name }}
-                            </span>
-                            <span v-else class="text-slate-400">-</span>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-1.5">
-                                <button 
-                                    @click="openEditCategoryModal(cat)" 
-                                    class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
-                                    :title="__('Edit')"
-                                >
-                                    <Edit2 class="h-3.5 w-3.5" />
-                                </button>
-                                <button 
-                                    @click="deleteCategory(cat)" 
-                                    class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
-                                    :title="__('global.delete')"
-                                >
-                                    <Trash2 class="h-3.5 w-3.5" />
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <!-- Desktop Table View (>= md) -->
+            <div class="hidden md:block overflow-x-auto rounded-b-2xl">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                            <th class="px-6 py-4">{{ __('pages.service_management.categories.table_category') }}</th>
+                            <th class="px-6 py-4">{{ __('pages.service_management.categories.table_description') }}</th>
+                            <th class="px-6 py-4 text-center">Unit Penunjang</th>
+                            <th class="px-6 py-4 text-right">{{ __('pages.service_management.categories.table_actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-sm text-slate-800 dark:text-slate-300">
+                        <tr v-if="filteredCategories.length === 0">
+                            <td colspan="4" class="px-6 py-10 text-center text-slate-400 dark:text-slate-500">{{ __('pages.service_management.categories.empty_data') }}</td>
+                        </tr>
+                        <tr 
+                            v-else
+                            v-for="cat in paginatedCategories" 
+                            :key="cat.id"
+                            class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150"
+                        >
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-slate-955 dark:text-white">{{ cat.name }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-slate-500 dark:text-slate-400 leading-relaxed break-words max-w-md">{{ cat.description || '-' }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <span v-if="cat.supporting_unit" class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
+                                    {{ cat.supporting_unit.name }}
+                                </span>
+                                <span v-else class="text-slate-400">-</span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button 
+                                        @click="openEditCategoryModal(cat)" 
+                                        class="p-2 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 transition duration-150"
+                                        :title="__('Edit')"
+                                    >
+                                        <Edit2 class="h-3.5 w-3.5" />
+                                    </button>
+                                    <button 
+                                        @click="deleteCategory(cat)" 
+                                        class="p-2 rounded-md bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 transition duration-150"
+                                        :title="__('global.delete')"
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Card View (< md) -->
+            <div class="md:hidden p-4 space-y-3 bg-slate-50/30 dark:bg-slate-950/10">
+                <div v-if="filteredCategories.length === 0" class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 p-10 text-center rounded-2xl text-slate-400 dark:text-slate-500 text-xs font-medium">
+                    {{ __('pages.service_management.categories.empty_data') }}
+                </div>
+                <div
+                    v-else
+                    v-for="cat in paginatedCategories"
+                    :key="'mobile-cat-' + cat.id"
+                    class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 transition-all duration-150"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="font-extrabold text-sm text-slate-900 dark:text-white leading-snug">
+                            {{ cat.name }}
+                        </div>
+                        <span v-if="cat.supporting_unit" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 shrink-0">
+                            {{ cat.supporting_unit.name }}
+                        </span>
+                    </div>
+
+                    <div v-if="cat.description" class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50 leading-relaxed">
+                        {{ cat.description }}
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2 pt-1">
+                        <button 
+                            @click="openEditCategoryModal(cat)" 
+                            class="flex-1 py-2 px-3 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 text-xs font-bold flex items-center justify-center gap-1.5 transition duration-150 cursor-pointer"
+                        >
+                            <Edit2 class="h-3.5 w-3.5" />
+                            <span>Edit</span>
+                        </button>
+                        <button 
+                            @click="deleteCategory(cat)" 
+                            class="flex-1 py-2 px-3 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 text-xs font-bold flex items-center justify-center gap-1.5 transition duration-150 cursor-pointer"
+                        >
+                            <Trash2 class="h-3.5 w-3.5" />
+                            <span>Hapus</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <!-- Pagination -->
             <div v-if="lastPage > 1" class="px-6 py-4 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

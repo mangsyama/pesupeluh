@@ -67,15 +67,15 @@ const __ = (key) => {
     return current;
 };
 
-const roleTabs = [
-    { key: 'all', label: __('pages.user_management.tabs.all'), icon: Users },
-    { key: 'admin', label: __('pages.user_management.tabs.admin'), icon: Shield },
-    { key: 'management', label: __('pages.user_management.tabs.management'), icon: Wrench },
-    { key: 'unit_head', label: __('pages.user_management.tabs.unit_head'), icon: MapPin },
-    { key: 'technician', label: __('pages.user_management.tabs.technician'), icon: Wrench },
-    { key: 'room_head', label: __('pages.user_management.tabs.room_head'), icon: Layers },
-    { key: 'reporter', label: __('pages.user_management.tabs.reporter'), icon: User },
-];
+const roleTabs = computed(() => [
+    { key: 'all', label: proxy.__('pages.user_management.tabs.all') || 'Semua', icon: Users },
+    { key: 'admin', label: proxy.__('pages.user_management.tabs.admin') || 'Administrator', icon: Shield },
+    { key: 'management', label: proxy.__('pages.user_management.tabs.management') || 'Manajemen', icon: Wrench },
+    { key: 'unit_head', label: proxy.__('pages.user_management.tabs.unit_head') || 'Instalasi', icon: MapPin },
+    { key: 'room_head', label: proxy.__('pages.user_management.tabs.room_head') || 'PJ Ruangan', icon: Layers },
+    { key: 'technician', label: proxy.__('pages.user_management.tabs.technician') || 'Teknisi', icon: Wrench },
+    { key: 'reporter', label: proxy.__('pages.user_management.tabs.reporter') || 'Staff / Pelapor', icon: User },
+]);
 
 const filteredUsers = computed(() => {
     return props.users.filter(user => {
@@ -83,8 +83,8 @@ const filteredUsers = computed(() => {
         if (currentTab.value === 'admin') matchesTab = user.role_id === 1;
         else if (currentTab.value === 'management') matchesTab = [2, 3, 4, 5, 6].includes(user.role_id);
         else if (currentTab.value === 'unit_head') matchesTab = [7, 8].includes(user.role_id);
-        else if (currentTab.value === 'technician') matchesTab = user.role_id === 10;
         else if (currentTab.value === 'room_head') matchesTab = user.role_id === 9;
+        else if (currentTab.value === 'technician') matchesTab = user.role_id === 10;
         else if (currentTab.value === 'reporter') matchesTab = user.role_id === 11;
 
         if (!matchesTab) return false;
@@ -419,10 +419,23 @@ const deleteUser = (user) => {
                 </div>
 
                 <!-- Table Card Container -->
-                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden mb-4">
+                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm mb-4 relative z-20">
                     <!-- Filter Tabs & Search Header (ALWAYS VISIBLE) -->
-                    <div class="flex flex-col gap-4 p-5 border-b border-slate-100 dark:border-slate-800/60">
-                        <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-2 bg-slate-100/80 dark:bg-slate-950/45 p-1 rounded-xl">
+                    <div class="flex flex-col gap-4 p-5 border-b border-slate-100 dark:border-slate-800/60 relative z-30">
+                        <!-- Mobile Role Filter Dropdown (< xl) -->
+                        <div class="xl:hidden w-full relative z-40">
+                            <SearchableSelect
+                                v-model="currentTab"
+                                :options="roleTabs"
+                                value-key="key"
+                                label-key="label"
+                                :searchable="false"
+                                placeholder="Pilih Filter Peran..."
+                            />
+                        </div>
+
+                        <!-- Desktop Role Filter Tabs (>= xl) -->
+                        <div class="hidden xl:grid grid-cols-7 gap-2 bg-slate-100/80 dark:bg-slate-950/45 p-1 rounded-xl">
                             <button
                                 v-for="tab in roleTabs"
                                 :key="tab.key"
@@ -444,8 +457,8 @@ const deleteUser = (user) => {
                         </div>
                     </div>
 
-                    <!-- Table Rows Scoped Deferred Skeleton Loading -->
-                    <div class="overflow-x-auto">
+                    <!-- Desktop Table View (>= md) -->
+                    <div class="hidden md:block overflow-x-auto rounded-b-2xl">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
@@ -525,6 +538,89 @@ const deleteUser = (user) => {
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Mobile Card View (< md) -->
+                    <div class="md:hidden p-4 space-y-3 bg-slate-50/30 dark:bg-slate-950/10 border-t border-slate-100 dark:border-slate-800/60">
+                        <div v-if="filteredUsers.length === 0" class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/60 p-10 text-center rounded-2xl">
+                            <Users class="h-10 w-10 mx-auto text-slate-300 dark:text-slate-700 mb-2" />
+                            <span class="text-xs text-slate-400 font-medium">
+                                {{ __('pages.user_management.table.empty_role').replace('{role}', __('pages.user_management.user_list_title')) }}
+                            </span>
+                        </div>
+                        <div
+                            v-else
+                            v-for="user in paginatedUsers"
+                            :key="'mobile-user-' + user.id"
+                            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 transition-all duration-150"
+                        >
+                            <div class="flex items-center gap-3 w-full">
+                                <div class="h-10 w-10 shrink-0 aspect-square rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                                    <img v-if="user.profile_photo_path" :src="user.profile_photo_path" class="h-full w-full object-cover" />
+                                    <User v-else class="h-5 w-5" />
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-bold text-sm text-slate-900 dark:text-white truncate">{{ user.name }}</div>
+                                    <div class="text-xs text-slate-400 dark:text-slate-500 truncate">{{ user.email }}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                                    {{ user.role?.name ? __('roles.' + user.role.name) : '-' }}
+                                </span>
+                                <span :class="['px-2.5 py-1 rounded-lg text-xs font-bold uppercase border', getStatusBadge(user.is_active)]">
+                                    {{ user.is_active ? __('global.verified') : __('global.suspended') }}
+                                </span>
+                            </div>
+
+                            <div class="text-[11px] space-y-1.5 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-slate-400 dark:text-slate-500">NIP:</span>
+                                    <span class="font-bold text-slate-800 dark:text-slate-200">{{ user.nip || '-' }}</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-slate-400 dark:text-slate-500">No. HP:</span>
+                                    <span class="font-semibold text-slate-800 dark:text-slate-200">{{ user.phone_number || '-' }}</span>
+                                </div>
+                                <div class="flex justify-between items-start gap-2">
+                                    <span class="font-medium text-slate-400 dark:text-slate-500 shrink-0">Penempatan:</span>
+                                    <span class="font-semibold text-slate-800 dark:text-slate-200 text-right truncate">
+                                        <template v-if="user.supporting_unit">{{ user.supporting_unit.name }}</template>
+                                        <template v-if="user.room"><span v-if="user.supporting_unit"> - </span>{{ user.room.name }}</template>
+                                        <template v-if="!user.supporting_unit && !user.room">-</template>
+                                    </span>
+                                </div>
+                                <div v-if="user.telegram_chat_id" class="flex justify-between items-center pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                                    <span class="font-medium text-slate-400 dark:text-slate-500">Telegram ID:</span>
+                                    <span class="font-bold text-violet-600 dark:text-violet-400">{{ user.telegram_chat_id }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 pt-1">
+                                <Link
+                                    :href="route('users.show', user.uuid || user.id)"
+                                    class="flex-1 py-2 px-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition duration-150"
+                                >
+                                    <Eye class="h-3.5 w-3.5" />
+                                    <span>Detail</span>
+                                </Link>
+                                <Link
+                                    :href="route('users.edit', user.uuid || user.id)"
+                                    class="flex-1 py-2 px-3 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/60 border border-emerald-200/50 dark:border-emerald-900/40 text-xs font-bold flex items-center justify-center gap-1.5 transition duration-150"
+                                >
+                                    <Edit2 class="h-3.5 w-3.5" />
+                                    <span>Edit</span>
+                                </Link>
+                                <button
+                                    @click="deleteUser(user)"
+                                    class="flex-1 py-2 px-3 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:hover:bg-rose-900/60 border border-rose-200/50 dark:border-rose-900/40 text-xs font-bold flex items-center justify-center gap-1.5 transition duration-150 cursor-pointer"
+                                >
+                                    <Trash2 class="h-3.5 w-3.5" />
+                                    <span>Hapus</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <!-- Pagination -->
                     <div v-if="lastPage > 1" class="px-6 py-4 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
