@@ -229,6 +229,13 @@ class ReportController extends Controller
             $reporterName = \App\Models\User::find($request->input('reporter_id'))?->name;
         }
 
+        $logoPath = public_path('images/logo-sidebar.png');
+        $logoBase64 = null;
+        if (file_exists($logoPath)) {
+            $ext = pathinfo($logoPath, PATHINFO_EXTENSION);
+            $logoBase64 = 'data:image/' . ($ext === 'jpg' ? 'jpeg' : $ext) . ';base64,' . base64_encode(file_get_contents($logoPath));
+        }
+
         $pdf = Pdf::loadView('exports.tickets_pdf', [
             'tickets'      => $tickets,
             'exportedAt'   => now()->format('d F Y H:i'),
@@ -238,8 +245,16 @@ class ReportController extends Controller
             'categoryName' => $categoryName,
             'roomName'     => $roomName,
             'reporterName' => $reporterName,
-            'logoPath'     => public_path('images/logo-sidebar.png'),
-        ])->setPaper('a4', 'landscape');
+            'logoBase64'   => $logoBase64,
+            'logoPath'     => $logoPath,
+        ])
+        ->setPaper('a4', 'landscape')
+        ->setOptions([
+            'isRemoteEnabled' => true,
+            'isFontSubsettingEnabled' => true,
+            'isHtml5ParserEnabled' => true,
+            'chroot' => [public_path(), storage_path()],
+        ]);
 
         return $pdf->download('laporan_tiket_' . now()->format('Ymd_His') . '.pdf');
     }

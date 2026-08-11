@@ -5,101 +5,189 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Laporan Tiket Layanan — PESU PELUH</title>
     <style>
-        @page { margin: 16px 20px; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', 'DejaVu Sans', sans-serif; font-size: 8px; color: #1e293b; background: #fff; }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+        
+        /* ── MARGIN FISIK MULTI-PAGE DOMPDF ── */
+        @page {
+            margin: 8mm 10mm 8mm 10mm;
+        }
 
-        /* ── HEADER ── */
-        .header { padding: 12px 0 10px; border-bottom: 2px solid #059669; margin-bottom: 12px; }
-        .header table { width: 100%; border: none; }
-        .header td { border: none; padding: 0; vertical-align: middle; }
-        .logo-cell { width: 42px; padding-right: 8px; }
-        .logo-cell img { width: 38px; height: 38px; }
-        .brand-title { font-size: 14px; font-weight: 700; color: #059669; letter-spacing: 2px; text-transform: uppercase; line-height: 1; }
-        .brand-sub { font-size: 7px; color: #64748b; line-height: 1.35; margin-top: 2px; font-weight: 500; letter-spacing: 0.2px; }
-        .header-right { text-align: right; font-size: 7px; color: #94a3b8; line-height: 1.5; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            font-size: 6px;
+            color: #0f172a;
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
 
-        /* ── DATA TABLE ── */
-        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-        .data-table thead tr { background: #059669; }
-        .data-table th {
-            padding: 5px 4px;
-            text-align: left;
+        /* ── HEADER IDENTITAS DOKUMEN (KIRI ATAS TABEL) ── */
+        .pdf-header {
+            margin-bottom: 8px;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            border: none;
+            padding: 0;
+            vertical-align: middle;
+        }
+
+        .logo-cell {
+            width: 46px;
+            padding-right: 10px;
+        }
+
+        .logo-cell img {
+            width: 38px;
+            height: 38px;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .brand-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #059669;
+            line-height: 0.95;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .brand-sub {
             font-size: 6.5px;
+            color: #059669;
+            font-weight: 600;
+            margin-top: 0px;
+            line-height: 1.0;
+            padding: 0;
+        }
+
+        .meta-info {
+            font-size: 6px;
+            color: #64748b;
+            margin-top: 0px;
+            line-height: 1.0;
+            font-weight: 400;
+            padding: 0;
+        }
+
+        /* ── PENGATURAN REPEAT HEADER DI SETIAP HALAMAN ── */
+        thead {
+            display: table-header-group;
+        }
+
+        tr {
+            page-break-inside: avoid;
+        }
+
+        /* ── DATA TABLE (GARIS ABU-ABU NETRAL TIPIS & RAPI) ── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background-color: #059669;
+            color: #ffffff;
+            font-size: 6px;
             font-weight: 700;
             text-transform: uppercase;
-            color: #ffffff;
-            letter-spacing: 0.3px;
-            border-bottom: 2px solid #047857;
+            padding: 5px 4px;
+            border: 0.25pt solid #cbd5e1;
+            text-align: center;
+            vertical-align: middle;
             white-space: nowrap;
         }
-        .data-table th.center { text-align: center; }
+
         .data-table td {
+            font-size: 6px;
             padding: 4px 4px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 7px;
-            vertical-align: top;
-            line-height: 1.35;
+            border: 0.25pt solid #e2e8f0;
+            vertical-align: middle;
+            color: #1e293b;
+            line-height: 1.3;
         }
-        .data-table tr:nth-child(even) { background: #f8fafc; }
-        .data-table tr:last-child td { border-bottom: none; }
 
-        .ticket-num { font-weight: 700; color: #059669; }
-        .col-no { width: 20px; text-align: center; }
-        .col-kode { width: 68px; }
-        .col-tgl { width: 58px; white-space: nowrap; }
-        .col-unit { width: 105px; }
-        .col-pelapor { width: 68px; }
+        .data-table tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        .data-table tr:nth-child(odd) td {
+            background-color: #ffffff;
+        }
+
+        /* Lebar Kolom */
+        .col-no { width: 18px; text-align: center; }
+        .col-kode { width: 75px; white-space: nowrap; font-weight: 600; color: #059669; text-align: center; }
+        .col-tgl { width: 56px; white-space: nowrap; text-align: center; }
+        .col-unit { width: 62px; text-align: center; }
+        .col-ruangan { width: 62px; text-align: center; }
+        .col-pelapor { width: 65px; }
         .col-masalah { width: auto; }
-        .col-prioritas { width: 44px; text-align: center; }
-        .col-disposisi { width: 68px; }
-        .col-respon { width: 55px; white-space: nowrap; }
-        .col-hasil { width: 50px; text-align: center; }
-        .col-ket { width: 95px; }
-        .col-lampiran { width: 70px; }
+        .col-prioritas { width: 42px; text-align: center; }
+        .col-disposisi { width: 70px; }
+        .col-respon { width: 54px; white-space: nowrap; }
+        .col-hasil { width: 48px; text-align: center; }
+        .col-ket { width: 85px; }
+        .col-lampiran { width: 45px; text-align: center; }
 
-        /* ── BADGES ── */
-        .badge { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2px; }
-        .badge-selesai { background: #d1fae5; color: #065f46; }
-        .badge-menunggu { background: #fef3c7; color: #92400e; }
-        .badge-tertunda { background: #fef3c7; color: #92400e; }
-        .badge-progres { background: #ede9fe; color: #5b21b6; }
-        .badge-ditugaskan { background: #dbeafe; color: #1e40af; }
-        .badge-batal { background: #fee2e2; color: #991b1b; }
-        .badge-normal { background: #dbeafe; color: #1e40af; }
-        .badge-urgent { background: #fee2e2; color: #991b1b; }
+        /* Akses Warna Teks Status & Prioritas (Semua Bold) */
+        .text-green { color: #059669; font-weight: 700; }
+        .text-blue { color: #2563eb; font-weight: 700; }
+        .text-amber { color: #d97706; font-weight: 700; }
+        .text-purple { color: #7c3aed; font-weight: 700; }
+        .text-red { color: #dc2626; font-weight: 700; }
+        .text-dash { text-align: center !important; color: #94a3b8; font-weight: 400; }
 
-        /* ── PHOTOS ── */
-        .photo-thumb { width: 30px; height: 30px; object-fit: cover; border-radius: 3px; border: 1px solid #e2e8f0; margin: 1px; }
-        .photo-count { font-size: 6.5px; color: #64748b; font-style: italic; }
+        /* Photos Thumbnails */
+        .photo-thumb {
+            width: 24px;
+            height: 24px;
+            object-fit: cover;
+            border-radius: 2px;
+            border: 0.5px solid #cbd5e1;
+            margin: 0 auto;
+            display: block;
+        }
 
-        /* ── FOOTER ── */
-        .footer { padding: 6px 0; border-top: 1px solid #e2e8f0; font-size: 7px; color: #94a3b8; text-align: center; margin-top: 6px; }
-
-        /* ── EMPTY STATE ── */
-        .empty-state { text-align: center; padding: 24px; color: #94a3b8; font-style: italic; font-size: 9px; }
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: #64748b;
+            font-style: italic;
+            font-size: 8.5px;
+            border: 0.25pt solid #cbd5e1;
+        }
     </style>
 </head>
 <body>
 
-{{-- ═══════ HEADER ═══════ --}}
-<div class="header">
-    <table>
+{{-- ═══════ HEADER IDENTITAS PESU PELUH (KIRI ATAS TABEL) ═══════ --}}
+<div class="pdf-header">
+    <table class="header-table">
         <tr>
             <td class="logo-cell">
-                @if(isset($logoPath) && file_exists($logoPath))
+                @if(isset($logoBase64) && $logoBase64)
+                    <img src="{{ $logoBase64 }}" alt="Logo">
+                @elseif(isset($logoPath) && file_exists($logoPath))
                     <img src="{{ $logoPath }}" alt="Logo">
                 @endif
             </td>
             <td>
                 <div class="brand-title">Pesu Peluh</div>
-                <div class="brand-sub">
-                    Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
+                <div class="brand-sub">Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan</div>
+                <div class="meta-info">
+                    Laporan Tiket Layanan &mdash; @if(isset($unitName) && $unitName){{ $unitName }}@else Semua Data @endif
+                    &nbsp;|&nbsp; Generated at: {{ $exportedAt }}
                 </div>
-            </td>
-            <td class="header-right">
-                Dicetak pada: {{ $exportedAt }}<br>
-                Total data: {{ $tickets->count() }} tiket
             </td>
         </tr>
     </table>
@@ -112,16 +200,17 @@
 <table class="data-table">
     <thead>
         <tr>
-            <th class="col-no center">No</th>
+            <th class="col-no">No</th>
             <th class="col-kode">Kode Tiket</th>
             <th class="col-tgl">Tanggal</th>
-            <th class="col-unit">Unit — Ruangan</th>
+            <th class="col-unit">Unit</th>
+            <th class="col-ruangan">Ruangan</th>
             <th class="col-pelapor">Pelapor</th>
             <th class="col-masalah">Permasalahan</th>
-            <th class="col-prioritas center">Prioritas</th>
+            <th class="col-prioritas">Prioritas</th>
             <th class="col-disposisi">Disposisi Petugas</th>
             <th class="col-respon">Waktu Respon</th>
-            <th class="col-hasil center">Hasil</th>
+            <th class="col-hasil">Status</th>
             <th class="col-ket">Keterangan</th>
             <th class="col-lampiran">Lampiran</th>
         </tr>
@@ -129,20 +218,21 @@
     <tbody>
         @foreach($tickets as $i => $ticket)
         @php
-            $unitLabel = $ticket->category?->supportingUnit?->name ?? '-';
-            $roomLabel = $ticket->room?->name ?? '-';
+            $unitLabel = $ticket->category?->supportingUnit?->name;
+            $roomLabel = $ticket->room?->name;
 
             $techNames = $ticket->assignments->map(fn($a) => $a->technician?->name)->filter()->implode(', ');
 
+            // HASIL SELALU HURUF KAPITAL
             $statusMap = [
-                'COMPLETED'          => ['label' => 'Selesai',    'class' => 'badge-selesai'],
-                'ASSIGNED'           => ['label' => 'Ditugaskan', 'class' => 'badge-ditugaskan'],
-                'IN_PROGRESS'        => ['label' => 'Progres',    'class' => 'badge-progres'],
-                'PENDING_VALIDATION' => ['label' => 'Menunggu',   'class' => 'badge-menunggu'],
-                'PENDING'            => ['label' => 'Tertunda',   'class' => 'badge-tertunda'],
-                'CANCEL'             => ['label' => 'Batal',      'class' => 'badge-batal'],
+                'COMPLETED'          => ['label' => 'SELESAI',    'class' => 'text-green'],
+                'ASSIGNED'           => ['label' => 'DITUGASKAN', 'class' => 'text-blue'],
+                'IN_PROGRESS'        => ['label' => 'PROGRES',    'class' => 'text-purple'],
+                'PENDING_VALIDATION' => ['label' => 'MENUNGGU',   'class' => 'text-amber'],
+                'PENDING'            => ['label' => 'TERTUNDA',   'class' => 'text-amber'],
+                'CANCEL'             => ['label' => 'BATAL',      'class' => 'text-red'],
             ];
-            $st = $statusMap[$ticket->status] ?? ['label' => $ticket->status, 'class' => ''];
+            $st = $statusMap[$ticket->status] ?? ['label' => strtoupper($ticket->status), 'class' => ''];
 
             $keterangan = '';
             if ($ticket->status === 'COMPLETED' && $ticket->completion_notes) {
@@ -150,42 +240,109 @@
             } elseif ($ticket->status === 'PENDING' && $ticket->pending_reason) {
                 $keterangan = $ticket->pending_reason;
             }
+
+            $respondedAtStr = $ticket->responded_at ? $ticket->responded_at->format('d/m/Y H:i') : null;
         @endphp
         <tr>
-            <td class="col-no" style="text-align:center;">{{ $i + 1 }}</td>
-            <td class="col-kode"><span class="ticket-num">{{ $ticket->ticket_number }}</span></td>
+            {{-- 1. No --}}
+            <td class="col-no">{{ $i + 1 }}</td>
+
+            {{-- 2. Kode Tiket --}}
+            <td class="col-kode">{{ $ticket->ticket_number }}</td>
+
+            {{-- 3. Tanggal --}}
             <td class="col-tgl">{{ $ticket->created_at->format('d/m/Y H:i') }}</td>
-            <td class="col-unit">{{ $unitLabel }} — {{ $roomLabel }}</td>
-            <td class="col-pelapor">{{ $ticket->reporter?->name ?? '-' }}</td>
-            <td class="col-masalah">{{ $ticket->problem_description }}</td>
-            <td class="col-prioritas" style="text-align:center;">
+
+            {{-- 4. Unit (Pisah Kolom) --}}
+            @if($unitLabel)
+                <td class="col-unit">{{ $unitLabel }}</td>
+            @else
+                <td class="col-unit text-dash">-</td>
+            @endif
+
+            {{-- 5. Ruangan (Pisah Kolom) --}}
+            @if($roomLabel)
+                <td class="col-ruangan">{{ $roomLabel }}</td>
+            @else
+                <td class="col-ruangan text-dash">-</td>
+            @endif
+
+            {{-- 6. Pelapor --}}
+            @if($ticket->reporter?->name)
+                <td class="col-pelapor">{{ $ticket->reporter->name }}</td>
+            @else
+                <td class="col-pelapor text-dash">-</td>
+            @endif
+
+            {{-- 7. Permasalahan --}}
+            @if($ticket->problem_description)
+                <td class="col-masalah">{{ $ticket->problem_description }}</td>
+            @else
+                <td class="col-masalah text-dash">-</td>
+            @endif
+
+            {{-- 8. Prioritas (RUTIN hijau / URGENT merah) --}}
+            <td class="col-prioritas">
                 @if($ticket->priority === 'URGENT')
-                    <span class="badge badge-urgent">URGENT</span>
+                    <span class="text-red">URGENT</span>
                 @else
-                    <span class="badge badge-normal">NORMAL</span>
+                    <span class="text-green">RUTIN</span>
                 @endif
             </td>
-            <td class="col-disposisi">{{ $techNames ?: '-' }}</td>
-            <td class="col-respon">{{ $ticket->responded_at ? $ticket->responded_at->format('d/m/Y H:i') : '-' }}</td>
-            <td class="col-hasil" style="text-align:center;">
-                <span class="badge {{ $st['class'] }}">{{ $st['label'] }}</span>
+
+            {{-- 9. Disposisi Petugas --}}
+            @if($techNames)
+                <td class="col-disposisi">{{ $techNames }}</td>
+            @else
+                <td class="col-disposisi text-dash">-</td>
+            @endif
+
+            {{-- 10. Waktu Respon --}}
+            @if($respondedAtStr)
+                <td class="col-respon">{{ $respondedAtStr }}</td>
+            @else
+                <td class="col-respon text-dash">-</td>
+            @endif
+
+            {{-- 11. Status (Huruf Kapital Semua) --}}
+            <td class="col-hasil">
+                <span class="{{ $st['class'] }}">{{ $st['label'] }}</span>
             </td>
-            <td class="col-ket">{{ Str::limit($keterangan, 80) ?: '-' }}</td>
+
+            {{-- 12. Keterangan --}}
+            @if($keterangan)
+                <td class="col-ket">{{ Str::limit($keterangan, 80) }}</td>
+            @else
+                <td class="col-ket text-dash">-</td>
+            @endif
+
+            {{-- 13. Lampiran (Maksimal 1 Foto) --}}
             <td class="col-lampiran">
-                @if($ticket->attachments->count() > 0)
-                    @foreach($ticket->attachments->take(3) as $att)
-                        @php
-                            $filePath = storage_path('app/public/' . str_replace('storage/', '', $att->file_path));
-                        @endphp
-                        @if(file_exists($filePath))
-                            <img src="{{ $filePath }}" class="photo-thumb" alt="foto">
-                        @endif
-                    @endforeach
-                    @if($ticket->attachments->count() > 3)
-                        <span class="photo-count">+{{ $ticket->attachments->count() - 3 }} lainnya</span>
+                @if($firstAtt = $ticket->attachments->first())
+                    @php
+                        $cleanPath = ltrim(str_replace(['storage/', 'public/'], '', $firstAtt->file_path), '/');
+                        $filePath = storage_path('app/public/' . $cleanPath);
+                        if (!file_exists($filePath)) {
+                            $filePath = public_path('storage/' . $cleanPath);
+                        }
+                        $imgBase64 = null;
+                        if (file_exists($filePath)) {
+                            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                                $imgContent = @file_get_contents($filePath);
+                                if ($imgContent) {
+                                    $imgBase64 = 'data:image/' . ($ext === 'jpg' ? 'jpeg' : $ext) . ';base64,' . base64_encode($imgContent);
+                                }
+                            }
+                        }
+                    @endphp
+                    @if($imgBase64)
+                        <img src="{{ $imgBase64 }}" class="photo-thumb" alt="foto">
+                    @else
+                        <span class="text-dash">-</span>
                     @endif
                 @else
-                    <span style="color:#94a3b8;">-</span>
+                    <span class="text-dash">-</span>
                 @endif
             </td>
         </tr>
@@ -193,11 +350,6 @@
     </tbody>
 </table>
 @endif
-
-{{-- ═══════ FOOTER ═══════ --}}
-<div class="footer">
-    Dokumen ini digenerate secara otomatis oleh sistem PESU PELUH &mdash; {{ $exportedAt }}
-</div>
 
 </body>
 </html>
