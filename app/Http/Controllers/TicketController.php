@@ -118,21 +118,23 @@ class TicketController extends Controller
                 'attachments.user:id,name',
                 'histories.user:id,name',
             ])),
-            'technicians' => Inertia::defer(function() use ($user, $supportingUnitId) {
+            'technicians' => Inertia::defer(function() use ($user) {
                 /** @var \App\Models\User $user */
                 if ($user->canDisposisi() || $user->isAdmin()) {
-                    $techQuery = User::where('role_id', Role::TEKNISI)
-                        ->where('is_active', 1);
-
-                    if ($supportingUnitId > 0) {
-                        if ((clone $techQuery)->where('supporting_unit_id', $supportingUnitId)->exists()) {
-                            $techQuery->where('supporting_unit_id', $supportingUnitId);
-                        }
-                    }
-
-                    return $techQuery->with('supportingUnit:id,name')
+                    return User::where('role_id', Role::TEKNISI)
+                        ->where('is_active', 1)
+                        ->with('supportingUnit:id,name')
                         ->orderBy('name')
                         ->get(['id', 'name', 'nip', 'supporting_unit_id']);
+                }
+                return [];
+            }),
+            'categories' => Inertia::defer(function() use ($user) {
+                /** @var \App\Models\User $user */
+                if ($user->canDisposisi() || $user->isAdmin()) {
+                    return \App\Models\IssueCategory::with('supportingUnit:id,name')
+                        ->orderBy('name')
+                        ->get(['id', 'name', 'supporting_unit_id']);
                 }
                 return [];
             }),
@@ -148,18 +150,25 @@ class TicketController extends Controller
         $this->authorizeTicket($ticket, 'assign');
 
         $validated = $request->validate([
+            'category_id' => 'nullable|exists:issue_categories,id',
             'priority' => 'required|in:URGENT,ROUTINE',
             'technician_ids' => 'required|array|min:1',
             'technician_ids.*' => 'required|exists:users,id',
         ]);
 
-        // Update ticket
-        $ticket->update([
+        $updateData = [
             'validated_by' => $request->user()->id,
             'validated_at' => now(),
             'priority' => $validated['priority'],
             'status' => 'ASSIGNED',
-        ]);
+        ];
+
+        if (!empty($validated['category_id'])) {
+            $updateData['category_id'] = $validated['category_id'];
+        }
+
+        // Update ticket
+        $ticket->update($updateData);
 
         // Insert assignments
         foreach ($validated['technician_ids'] as $techId) {

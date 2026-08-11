@@ -60,6 +60,11 @@ class ReportManagementController extends Controller
         // Scoping data berdasarkan peran/role:
         if ($user->isAdmin() || $user->isDirector() || (int) $user->role_id === Role::KEPALA_BIDANG) {
             // Admin & Direktur & Kabid: melihat semua
+        } elseif ($user->isTechnician()) {
+            // Teknisi: HANYA melihat tiket yang ditugaskan kepada mereka
+            $query->whereHas('assignments', function ($q) use ($userId) {
+                $q->where('technician_id', $userId);
+            });
         } elseif ((int) $user->role_id === Role::PJ_RUANGAN && $user->room_id) {
             // PJ Ruangan: melihat tiket dari ruangan mereka
             $query->where('room_id', $user->room_id);
@@ -70,11 +75,6 @@ class ReportManagementController extends Controller
             });
         } elseif ($user->canDisposisi()) {
             // Role disposisi lainnya tanpa pembatasan unit: melihat semua
-        } elseif ($user->isTechnician()) {
-            // Teknisi: melihat tiket yang ditugaskan kepada mereka
-            $query->whereHas('assignments', function ($q) use ($userId) {
-                $q->where('technician_id', $userId);
-            });
         } else {
             // Role lainnya: memfilter unit jika ada
             if ($user->supporting_unit_id) {
@@ -105,7 +105,7 @@ class ReportManagementController extends Controller
         }
 
         return Inertia::render('ReportManagement/Index', [
-            'tickets'  => Inertia::defer(fn() => $query->paginate(15)),
+            'tickets'  => Inertia::defer(fn() => $query->paginate(10)),
             'filters'  => $filters,
         ]);
     }
@@ -160,20 +160,23 @@ class ReportManagementController extends Controller
                 'attachments.user:id,name',
                 'histories.user:id,name',
             ])),
-            'technicians' => Inertia::defer(function() use ($user, $supportingUnitId) {
+            'technicians' => Inertia::defer(function() use ($user) {
+                /** @var \App\Models\User $user */
                 if ($user->canDisposisi() || $user->isAdmin()) {
-                    $techQuery = User::where('role_id', Role::TEKNISI)
-                        ->where('is_active', 1);
-
-                    if ($supportingUnitId > 0) {
-                        if ((clone $techQuery)->where('supporting_unit_id', $supportingUnitId)->exists()) {
-                            $techQuery->where('supporting_unit_id', $supportingUnitId);
-                        }
-                    }
-
-                    return $techQuery->with('supportingUnit:id,name')
+                    return User::where('role_id', Role::TEKNISI)
+                        ->where('is_active', 1)
+                        ->with('supportingUnit:id,name')
                         ->orderBy('name')
                         ->get(['id', 'name', 'nip', 'supporting_unit_id']);
+                }
+                return [];
+            }),
+            'categories' => Inertia::defer(function() use ($user) {
+                /** @var \App\Models\User $user */
+                if ($user->canDisposisi() || $user->isAdmin()) {
+                    return \App\Models\IssueCategory::with('supportingUnit:id,name')
+                        ->orderBy('name')
+                        ->get(['id', 'name', 'supporting_unit_id']);
                 }
                 return [];
             }),

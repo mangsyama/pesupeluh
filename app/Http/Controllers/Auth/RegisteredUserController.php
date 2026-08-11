@@ -44,7 +44,7 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->whereNull('deleted_at')],
             'phone_number' => ['required', 'regex:/^\d+$/', 'max:15'],
             'supporting_unit_id' => 'nullable|exists:supporting_units,id',
-            'room_id' => 'nullable|exists:rooms,id',
+            'room_id' => 'required|exists:rooms,id',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'face_descriptor' => 'nullable|array',
             'profile_photo' => ['required', function ($attribute, $value, $fail) use ($request) {

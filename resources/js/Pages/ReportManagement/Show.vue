@@ -15,6 +15,10 @@ const props = defineProps({
     technicians: {
         type: Array,
         default: () => []
+    },
+    categories: {
+        type: Array,
+        default: () => []
     }
 });
 
@@ -41,6 +45,7 @@ const activeComponent = computed(() => {
             :is="activeComponent" 
             :ticket="ticket" 
             :technicians="technicians" 
+            :categories="categories"
             :personal="false"
         />
     </AuthenticatedLayout>

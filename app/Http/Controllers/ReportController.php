@@ -131,7 +131,7 @@ class ReportController extends Controller
         }
 
         return Inertia::render('Report/Index', [
-            'tickets'  => Inertia::defer(fn() => $query->paginate(15)),
+            'tickets'  => Inertia::defer(fn() => $query->paginate(10)),
             'filters'  => $filters,
             'personal' => true,
         ]);
@@ -267,6 +267,10 @@ class ReportController extends Controller
         // Scoping data berdasarkan peran
         if ($user->isReportOnly()) {
             $query->where('reporter_id', $userId);
+        } elseif ($user->isTechnician()) {
+            $query->whereHas('assignments', function ($q) use ($userId) {
+                $q->where('technician_id', $userId);
+            });
         } elseif ($user->canDisposisi() && $user->supporting_unit_id) {
             $unitId = $user->supporting_unit_id;
             $query->whereHas('category', function ($q) use ($unitId) {

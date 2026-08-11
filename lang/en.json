@@ -439,7 +439,7 @@
         "cancel_status": "Report Cancelled",
         "disposition_title": "Validation & Dispatch Form",
         "select_priority": "Select Priority",
-        "priority_routine": "ROUTINE (Routine)",
+        "priority_routine": "RUTIN",
         "priority_urgent": "URGENT (Urgent)",
         "select_technicians": "Select Field Technicians",
         "btn_assign": "Validate & Assign",

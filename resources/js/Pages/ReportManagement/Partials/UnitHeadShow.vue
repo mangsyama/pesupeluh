@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import { Head, Link, useForm, usePage, router } from '@inertiajs/vue3';
+import SearchableSelect from '@/Components/SearchableSelect.vue';
 import {
     Calendar,
     User,
@@ -65,6 +66,10 @@ const props = defineProps({
         default: () => null
     },
     technicians: {
+        type: Array,
+        default: () => []
+    },
+    categories: {
         type: Array,
         default: () => []
     },
@@ -181,13 +186,15 @@ const formatDateTime = (dateStr) => {
 };
 
 const assignForm = useForm({
+    category_id: props.ticket?.category_id || '',
     priority: props.ticket?.priority || 'ROUTINE',
     technician_ids: []
 });
 
 watch(() => props.ticket, (newTicket) => {
-    if (newTicket?.priority) {
-        assignForm.priority = newTicket.priority;
+    if (newTicket) {
+        if (newTicket.priority) assignForm.priority = newTicket.priority;
+        if (newTicket.category_id) assignForm.category_id = newTicket.category_id;
     }
 }, { immediate: true });
 
@@ -199,6 +206,19 @@ const submitAssign = () => {
         }
     });
 };
+
+const categoriesList = computed(() => {
+    if (props.categories && props.categories.length > 0) {
+        return props.categories.map(c => ({
+            id: c.id,
+            name: c.name
+        }));
+    }
+    return props.ticket?.category ? [{
+        id: props.ticket.category.id,
+        name: props.ticket.category.name
+    }] : [];
+});
 
 // Searchable technician dropdown
 const isTechDropdownOpen = ref(false);
@@ -440,7 +460,7 @@ const contextLabel = computed(() => {
 
                                         <div>
                                             <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
-                                                Kategori Kerusakan
+                                                Kategori Permasalahan
                                             </div>
                                             <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
                                                 {{ ticket.category?.name || '-' }}
@@ -562,11 +582,30 @@ const contextLabel = computed(() => {
                                 </div>
 
                                 <form @submit.prevent="submitAssign" class="space-y-4">
+                                    <!-- Kategori Permasalahan (Dapat Disesuaikan / Diubah saat Validasi) -->
+                                    <div class="space-y-1.5 relative">
+                                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                                            <span>Kategori Permasalahan <span class="text-red-400">*</span></span>
+                                            <span class="text-[10px] text-slate-400 font-normal normal-case">(Dapat disesuaikan)</span>
+                                        </label>
+                                        <SearchableSelect
+                                            v-model="assignForm.category_id"
+                                            :options="categoriesList"
+                                            placeholder="Pilih Kategori Permasalahan..."
+                                            search-placeholder="Cari kategori permasalahan..."
+                                            not-found-text="Kategori tidak ditemukan"
+                                            value-key="id"
+                                            label-key="name"
+                                            :absolute="false"
+                                        />
+                                        <div v-if="assignForm.errors.category_id" class="text-[10px] text-red-500 font-semibold">{{ assignForm.errors.category_id }}</div>
+                                    </div>
+
                                     <div class="space-y-1.5">
                                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                             {{ __('pages.tickets.detail.select_priority') }}
                                         </label>
-                                        <div class="grid grid-cols-2 gap-3">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <label 
                                                 class="rounded-xl p-3 flex items-center justify-between cursor-pointer select-none"
                                                 :class="[

@@ -58,6 +58,17 @@ const categoriesList = computed(() => props.unit?.issue_categories || props.acti
 const isCategoriesLoading = computed(() => !props.unit?.issue_categories && !props.activeFeature?.feature_categories);
 const isRoomsLoading = computed(() => !props.rooms);
 
+const categorySearchQuery = ref('');
+const filteredCategoriesList = computed(() => {
+    const list = categoriesList.value;
+    const q = categorySearchQuery.value.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(c => 
+        (c.name && c.name.toLowerCase().includes(q)) || 
+        (c.description && c.description.toLowerCase().includes(q))
+    );
+});
+
 const activeCategory = computed(() => {
     return categoriesList.value.find(c => c.id === selectedCategoryId.value) || null;
 });
@@ -144,8 +155,8 @@ const selectRoom = (roomId) => {
     isRoomDropdownOpen.value = false;
 };
 
-// Multi-file attachment state
-const MAX_FILES = 5;
+// Multi-file attachment state (UI max 1 attachment)
+const MAX_FILES = 1;
 const attachmentPreviews = ref([]);
 const dragOver = ref(false);
 const fileInputRef = ref(null);
@@ -174,34 +185,31 @@ const handleFileDrop = async (e) => {
 };
 
 const processFiles = async (files) => {
-    const remaining = MAX_FILES - attachmentPreviews.value.length;
-    const toProcess = files.slice(0, remaining);
-    
-    for (const file of toProcess) {
-        const isImage = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
-        if (!isImage && !isVideo) continue;
-        
-        let dataUrl;
-        if (isImage) {
-            try {
-                dataUrl = await compressImage(file);
-            } catch {
-                dataUrl = await readFileAsDataURL(file);
-            }
-        } else {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) return;
+
+    let dataUrl;
+    if (isImage) {
+        try {
+            dataUrl = await compressImage(file);
+        } catch {
             dataUrl = await readFileAsDataURL(file);
         }
-        
-        attachmentPreviews.value.push({
-            name: file.name,
-            size: file.size,
-            type: isImage ? 'image' : 'video',
-            preview: dataUrl,
-            data: dataUrl
-        });
+    } else {
+        dataUrl = await readFileAsDataURL(file);
     }
-    
+
+    attachmentPreviews.value = [{
+        name: file.name,
+        size: file.size,
+        type: isImage ? 'image' : 'video',
+        preview: dataUrl,
+        data: dataUrl
+    }];
+
     syncFormAttachments();
 };
 
@@ -261,11 +269,23 @@ const submitReport = () => {
             v-if="activeFeature" 
             class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4"
         >
-            <div>
-                <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                    {{ __('pages.services.kategori_di_bawah') }} {{ activeFeature.name }}
-                </h3>
-                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('pages.services.kategori_di_bawah_desc') }}</p>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                        {{ __('pages.services.kategori_di_bawah') }} {{ activeFeature.name }}
+                    </h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{{ __('pages.services.kategori_di_bawah_desc') }}</p>
+                </div>
+                <!-- Search input for categories when list is long -->
+                <div v-if="categoriesList.length > 3" class="relative min-w-[220px]">
+                    <Search class="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input 
+                        v-model="categorySearchQuery"
+                        type="text"
+                        placeholder="Cari kategori..."
+                        class="w-full h-9 pl-9 pr-3 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-white transition-all duration-150"
+                    />
+                </div>
             </div>
 
             <!-- Skeleton Loading Categories -->
@@ -283,43 +303,45 @@ const submitReport = () => {
                 </div>
             </div>
 
-            <!-- Categories Grid Data -->
-            <div v-else-if="categoriesList.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div 
-                    v-for="cat in categoriesList" 
-                    :key="cat.id"
-                    @click="selectCategory(cat.id)"
-                    :class="[
-                        'p-4 rounded-xl border text-left transition-all duration-200 select-none cursor-pointer relative group flex items-start justify-between gap-3 h-auto min-h-[84px]',
-                        selectedCategoryId === cat.id
-                            ? 'border-emerald-500 dark:border-white bg-emerald-50 dark:bg-white/10 text-emerald-950 dark:text-white'
-                            : 'border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 hover:bg-emerald-50/40 dark:hover:bg-white/5 hover:border-emerald-300 dark:hover:border-white/20'
-                    ]"
-                >
-                    <div class="flex-1 min-w-0">
-                        <h4 class="text-xs font-bold uppercase tracking-wide leading-tight group-hover:text-emerald-600 dark:group-hover:text-white transition-colors duration-150">
-                            {{ cat.name }}
-                        </h4>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-505 leading-relaxed mt-1.5 whitespace-normal break-words">
-                            {{ cat.description || __('Tidak ada deskripsi kategori.') }}
-                        </p>
-                    </div>
-                    <!-- Checkbox style indicator -->
+            <!-- Categories Grid Data (Scrollable Container) -->
+            <div v-else-if="filteredCategoriesList.length > 0" class="max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <div 
+                        v-for="cat in filteredCategoriesList" 
+                        :key="cat.id"
+                        @click="selectCategory(cat.id)"
                         :class="[
-                            'h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-150',
+                            'p-4 rounded-xl border text-left transition-all duration-200 select-none cursor-pointer relative group flex items-start justify-between gap-3 h-auto min-h-[84px]',
                             selectedCategoryId === cat.id
-                                ? 'border-emerald-500 dark:border-white bg-emerald-600 dark:bg-white text-white dark:text-slate-900'
-                                : 'border-slate-300 dark:border-slate-700 group-hover:border-emerald-400 dark:group-hover:border-white'
+                                ? 'border-emerald-500 dark:border-white bg-emerald-50 dark:bg-white/10 text-emerald-950 dark:text-white'
+                                : 'border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 text-slate-850 dark:text-slate-200 hover:bg-emerald-50/40 dark:hover:bg-white/5 hover:border-emerald-300 dark:hover:border-white/20'
                         ]"
                     >
-                        <CheckCircle2 v-if="selectedCategoryId === cat.id" class="h-3 w-3 text-white" />
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-xs font-bold uppercase tracking-wide leading-tight group-hover:text-emerald-600 dark:group-hover:text-white transition-colors duration-150">
+                                {{ cat.name }}
+                            </h4>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-505 leading-relaxed mt-1.5 whitespace-normal break-words">
+                                {{ cat.description || __('Tidak ada deskripsi kategori.') }}
+                            </p>
+                        </div>
+                        <!-- Checkbox style indicator -->
+                        <div 
+                            :class="[
+                                'h-4 w-4 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-150',
+                                selectedCategoryId === cat.id
+                                    ? 'border-emerald-500 dark:border-white bg-emerald-600 dark:bg-white text-white dark:text-slate-900'
+                                    : 'border-slate-300 dark:border-slate-700 group-hover:border-emerald-400 dark:group-hover:border-white'
+                            ]"
+                        >
+                            <CheckCircle2 v-if="selectedCategoryId === cat.id" class="h-3 w-3 text-white" />
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div v-else class="py-6 text-center text-slate-400 dark:text-slate-500 text-xs">
-                {{ __('pages.services.kategori_empty') }}
+                {{ categorySearchQuery ? __('Kategori yang Anda cari tidak ditemukan.') : __('pages.services.kategori_empty') }}
             </div>
         </div>
 
@@ -421,7 +443,7 @@ const submitReport = () => {
                         >
                             <div class="space-y-0.5 min-w-0">
                                 <div :class="['text-xs font-black uppercase tracking-wide truncate', form.priority === 'ROUTINE' ? 'text-white' : 'text-slate-800 dark:text-slate-200']">
-                                    ROUTINE (STANDAR)
+                                    RUTIN
                                 </div>
                                 <div :class="['text-[10px] font-medium truncate', form.priority === 'ROUTINE' ? 'text-emerald-100' : 'text-slate-500 dark:text-slate-400']">
                                     Penanganan normal / biasa
@@ -461,7 +483,7 @@ const submitReport = () => {
                         <Clock class="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                         <div class="leading-relaxed space-y-0.5">
                             <strong class="font-extrabold block text-emerald-700 dark:text-emerald-300 uppercase tracking-wide">
-                                Kategori Routine (Standar)
+                                Kategori Rutin
                             </strong>
                             <span>
                                 Untuk kerusakan fasilitas umum / non-kritikal yang tidak mengganggu pelayanan medis pasien secara langsung (contoh: AC kurang dingin, lampu redup, kran air menetes, engsel pintu rusak). Penanganan dilakukan sesuai antrean jam operasional.
@@ -500,74 +522,106 @@ const submitReport = () => {
                     <div v-if="form.errors.problem_description" class="text-[10px] text-red-500 font-semibold">{{ form.errors.problem_description }}</div>
                 </div>
 
-                <!-- Media Attachments (Required) -->
+                <!-- Media Attachments (Required - Single Attachment) -->
                 <div class="space-y-2.5">
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             {{ __('pages.services.lampiran_foto') }} <span class="text-red-400">*</span>
                         </label>
-                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{{ attachmentPreviews.length }}/{{ MAX_FILES }}</span>
+                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Maks. 1 Foto/Video</span>
                     </div>
 
                     <!-- Hidden inputs -->
-                    <input ref="fileInputRef" type="file" class="hidden" accept="image/*,video/*" multiple @change="handleFileSelect" />
+                    <input ref="fileInputRef" type="file" class="hidden" accept="image/*,video/*" @change="handleFileSelect" />
                     <input ref="cameraInputRef" type="file" class="hidden" accept="image/*" capture="environment" @change="handleFileSelect" />
 
-                    <!-- Previews Grid -->
-                    <div v-if="attachmentPreviews.length > 0" class="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                        <div 
-                            v-for="(att, idx) in attachmentPreviews" 
-                            :key="idx" 
-                            class="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 aspect-square bg-slate-50 dark:bg-slate-950"
-                        >
-                            <img v-if="att.type === 'image'" :src="att.preview" alt="Preview" class="w-full h-full object-cover" />
-                            <div v-else class="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-400">
-                                <Video class="h-6 w-6" />
-                                <span class="text-[9px] font-semibold truncate max-w-full px-1">{{ att.name }}</span>
+                    <!-- Single Attachment Preview Card -->
+                    <div v-if="attachmentPreviews.length > 0" class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 group shadow-sm transition-all duration-200">
+                        <div class="relative h-48 w-full flex items-center justify-center bg-black/40">
+                            <img v-if="attachmentPreviews[0].type === 'image'" :src="attachmentPreviews[0].preview" alt="Preview" class="w-full h-full object-cover" />
+                            <video v-else :src="attachmentPreviews[0].preview" controls class="w-full h-full object-cover"></video>
+
+                            <!-- Status Badge -->
+                            <div class="absolute top-3 left-3 flex items-center gap-1.5 bg-emerald-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-extrabold shadow-sm">
+                                <CheckCircle2 class="h-3.5 w-3.5" />
+                                <span>Foto Bukti Terpilih</span>
                             </div>
-                            <button
-                                type="button"
-                                @click="removeAttachment(idx)"
-                                class="absolute top-1 right-1 h-6 w-6 flex items-center justify-center rounded-md bg-black/50 hover:bg-black/70 text-white transition"
-                            >
-                                <X class="h-3.5 w-3.5" />
-                            </button>
-                            <div class="absolute bottom-0 inset-x-0 bg-black/40 px-1.5 py-0.5">
-                                <span class="text-[8px] text-white font-semibold truncate block">{{ (att.size / 1024).toFixed(0) }} KB</span>
+
+                            <!-- Hover Overlay Actions -->
+                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                                <button
+                                    type="button"
+                                    @click="fileInputRef?.click()"
+                                    class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                                >
+                                    <UploadCloud class="h-3.5 w-3.5 text-emerald-600" />
+                                    <span>Ganti Foto</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="clearAllAttachments()"
+                                    class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                                >
+                                    <X class="h-3.5 w-3.5" />
+                                    <span>Hapus</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer Details -->
+                        <div class="p-3 bg-white dark:bg-slate-900 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 text-xs">
+                            <div class="flex items-center gap-2 min-w-0 pr-2">
+                                <span class="font-bold text-slate-800 dark:text-slate-200 truncate">{{ attachmentPreviews[0].name }}</span>
+                                <span class="text-[10px] font-semibold text-slate-400 shrink-0">({{ (attachmentPreviews[0].size / 1024).toFixed(0) }} KB)</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    @click="fileInputRef?.click()"
+                                    class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                >
+                                    Ganti
+                                </button>
+                                <span class="text-slate-300 dark:text-slate-700">•</span>
+                                <button
+                                    type="button"
+                                    @click="clearAllAttachments()"
+                                    class="text-[11px] font-bold text-rose-500 hover:underline"
+                                >
+                                    Hapus
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Drop Zone + Action Buttons -->
-                    <div v-if="canAddMore" class="space-y-2">
+                    <!-- Dropzone Box when empty -->
+                    <div v-else class="space-y-2">
                         <div 
                             @dragover.prevent="dragOver = true"
                             @dragleave="dragOver = false"
                             @drop="handleFileDrop"
                             @click="fileInputRef?.click()"
                             :class="[
-                                'border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center',
-                                attachmentPreviews.length > 0 ? 'min-h-[80px]' : 'min-h-[120px]',
+                                'border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition flex flex-col items-center justify-center',
                                 dragOver 
-                                    ? 'border-emerald-400 dark:border-white bg-emerald-50/20 dark:bg-white/10'
-                                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/30 dark:bg-slate-950/20'
+                                    ? 'border-emerald-500 dark:border-white bg-emerald-50/20 dark:bg-white/10'
+                                    : 'border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-white/30 bg-slate-50/50 dark:bg-slate-950/20'
                             ]"
                         >
-                            <div class="h-9 w-9 rounded-full flex items-center justify-center mb-1.5 bg-emerald-50 dark:bg-white/10 text-emerald-500 dark:text-white">
-                                <UploadCloud class="h-4.5 w-4.5" />
+                            <div class="h-10 w-10 rounded-full flex items-center justify-center mb-2 bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
+                                <UploadCloud class="h-5 w-5" />
                             </div>
-                            <p class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">{{ __('pages.services.lampiran_upload_label') }}</p>
-                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{{ __('pages.services.lampiran_formats') }} ({{ __('pages.services.lampiran_max_size') }})</p>
+                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Unggah 1 Foto / Video Bukti</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Format PNG, JPG, WEBP, MP4 (Maks. 10MB)</p>
                         </div>
 
-                        <!-- Camera Button -->
                         <button
                             type="button"
                             @click="cameraInputRef?.click()"
-                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-white/20 text-emerald-600 dark:text-white hover:bg-emerald-50 dark:hover:bg-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition duration-150"
+                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-white/20 text-emerald-600 dark:text-white hover:bg-emerald-50 dark:hover:bg-white/10 text-xs font-bold flex items-center justify-center gap-2 transition duration-150"
                         >
                             <Camera class="h-4 w-4" />
-                            {{ __('pages.services.lampiran_kamera') }}
+                            Ambil Foto dari Kamera
                         </button>
                     </div>
 

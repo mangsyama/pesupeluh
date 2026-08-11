@@ -103,6 +103,9 @@ const toggleRoomDropdown = (event) => {
 
 const selectRoom = (roomId) => {
     form.room_id = roomId;
+    if (form.errors.room_id) {
+        delete form.errors.room_id;
+    }
     isRoomDropdownOpen.value = false;
 };
 
@@ -404,6 +407,10 @@ const closeFaceModal = () => {
 };
 
 const submit = () => {
+    if (!form.room_id) {
+        form.errors.room_id = 'Harap pilih ruangan / lokasi terlebih dahulu.';
+        return;
+    }
     form.post(route('register'));
 };
 
@@ -514,70 +521,10 @@ onBeforeUnmount(() => {
                 <InputError class="mt-1" :message="form.errors.phone_number" />
             </div>
 
-            <!-- Searchable Unit Penunjang Dropdown -->
-            <div class="space-y-1 relative" ref="unitDropdownRef">
-                <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">
-                    Unit Penunjang (Opsional)
-                </label>
-                <button 
-                    type="button"
-                    @click="toggleUnitDropdown"
-                    class="w-full border-b-2 border-slate-200 dark:border-slate-800 bg-transparent py-2.5 px-0 text-left flex items-center justify-between focus:border-emerald-600 dark:focus:border-white outline-none transition duration-150 text-base"
-                >
-                    <span v-if="selectedUnitLabel" class="text-slate-900 dark:text-white truncate font-medium">
-                        {{ selectedUnitLabel }}
-                    </span>
-                    <span v-else class="text-slate-400 dark:text-slate-500">
-                        Pilih Unit Penunjang
-                    </span>
-                    <ChevronDown :class="['h-4 w-4 text-slate-400 transition-transform duration-200 shrink-0 ml-2', isUnitDropdownOpen ? 'rotate-180 text-emerald-500 dark:text-white' : '']" />
-                </button>
-
-                <!-- Searchable Dropdown List -->
-                <div 
-                    v-if="isUnitDropdownOpen" 
-                    class="absolute left-0 right-0 mt-1 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 space-y-2 shadow-xl animate-spa-fade-in"
-                >
-                    <div class="relative">
-                        <Search class="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input 
-                            v-model="unitSearchQuery"
-                            type="text"
-                            placeholder="Cari unit penunjang..."
-                            class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:focus:ring-white"
-                            @click.stop
-                        />
-                    </div>
-
-                    <div class="max-h-52 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                        <div v-if="filteredSupportingUnits.length === 0" class="p-3 text-center text-xs text-slate-400 font-medium">
-                            Unit penunjang tidak ditemukan
-                        </div>
-                        <button
-                            v-else
-                            v-for="unit in filteredSupportingUnits"
-                            :key="unit.id"
-                            type="button"
-                            @click.stop="selectUnit(unit.id)"
-                            :class="[
-                                'w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between transition-colors duration-150',
-                                form.supporting_unit_id === unit.id 
-                                    ? 'bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white font-bold' 
-                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60'
-                            ]"
-                        >
-                            <span>{{ unit.name }} <span class="text-xs font-normal opacity-70">({{ unit.type === 'MEDIK' ? 'Penunjang Medik' : 'Penunjang Non-Medik' }})</span></span>
-                            <Check v-if="form.supporting_unit_id === unit.id" class="h-4 w-4 text-emerald-600 dark:text-white shrink-0" />
-                        </button>
-                    </div>
-                </div>
-                <InputError class="mt-1" :message="form.errors.supporting_unit_id" />
-            </div>
-
-            <!-- Searchable Ruangan / Lokasi Dropdown -->
+            <!-- Searchable Ruangan / Lokasi Dropdown (Required) -->
             <div class="space-y-1 relative" ref="roomDropdownRef">
                 <label class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">
-                    Ruangan / Lokasi (Opsional)
+                    Ruangan / Lokasi <span class="text-rose-500">*</span>
                 </label>
                 <button 
                     type="button"

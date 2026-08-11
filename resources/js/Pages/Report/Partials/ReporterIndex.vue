@@ -199,6 +199,7 @@ const formatDate = (dateStr) => {
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/55 dark:bg-slate-950/20 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                                        <th class="px-3 py-4 text-center w-12">NO</th>
                                         <th class="px-6 py-4">{{ __('pages.reports.history.table_id_date') }}</th>
                                         <th v-if="!filters.personal" class="px-6 py-4">Pelapor</th>
                                         <th class="px-6 py-4">Kategori / Ruangan</th>
@@ -211,6 +212,9 @@ const formatDate = (dateStr) => {
                                     <!-- Skeleton Loading Rows -->
                                     <template v-if="isLoading">
                                         <tr v-for="n in 5" :key="'skel-t-' + n" class="align-middle">
+                                            <td class="px-3 py-4 text-center">
+                                                <div class="h-3 w-4 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mx-auto"></div>
+                                            </td>
                                             <td class="px-6 py-4">
                                                 <div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
                                                 <div class="h-3 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse mt-1.5"></div>
@@ -237,7 +241,7 @@ const formatDate = (dateStr) => {
 
                                     <!-- Empty State -->
                                     <tr v-else-if="!tickets.data || tickets.data.length === 0">
-                                        <td :colspan="filters.personal ? 5 : 6" class="px-6 py-16 text-center">
+                                        <td :colspan="filters.personal ? 6 : 7" class="px-6 py-16 text-center">
                                             <div class="flex flex-col items-center gap-3 text-slate-400">
                                                 <svg class="h-12 w-12 text-slate-200 dark:text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -248,7 +252,11 @@ const formatDate = (dateStr) => {
                                     </tr>
 
                                     <!-- Real Data Rows -->
-                                    <tr v-else v-for="ticket in tickets.data" :key="'ticket-' + ticket.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
+                                    <tr v-else v-for="(ticket, idx) in tickets.data" :key="'ticket-' + ticket.id" class="hover:bg-slate-50/30 dark:hover:bg-slate-800/10 transition-colors duration-150">
+                                        <!-- No. -->
+                                        <td class="px-3 py-4 whitespace-nowrap text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
+                                            {{ (fromCount || 1) + idx }}
+                                        </td>
                                         <!-- ID / Date -->
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="font-bold text-slate-900 dark:text-white text-xs">#{{ ticket.ticket_number }}</div>

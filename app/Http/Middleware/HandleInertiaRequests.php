@@ -54,6 +54,10 @@ class HandleInertiaRequests extends Middleware
 
                     if ($user->isAdmin() || $user->isDirector() || (int) $user->role_id === \App\Models\Role::KEPALA_BIDANG) {
                         // Admin, Direktur & Kabid (Full/Dashboard)
+                    } elseif ($user->isTechnician()) {
+                        $query->whereHas('assignments', function ($q) use ($userId) {
+                            $q->where('technician_id', $userId);
+                        });
                     } elseif ((int) $user->role_id === \App\Models\Role::PJ_RUANGAN && $user->room_id) {
                         $query->where('room_id', $user->room_id);
                     } elseif ($user->canDisposisi() && $user->supporting_unit_id) {
@@ -62,10 +66,6 @@ class HandleInertiaRequests extends Middleware
                         });
                     } elseif ($user->canDisposisi()) {
                         // Role disposisi lainnya tanpa pembatasan unit
-                    } elseif ($user->isTechnician()) {
-                        $query->whereHas('assignments', function ($q) use ($userId) {
-                            $q->where('technician_id', $userId);
-                        });
                     } else {
                         return 0;
                     }

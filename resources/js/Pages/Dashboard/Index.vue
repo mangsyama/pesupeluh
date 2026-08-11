@@ -37,6 +37,11 @@ const isLoading = computed(() => !props.dashboardStats);
 const recentTicketsData = computed(() => props.dashboardStats?.recentTickets ?? []);
 const breakdownDataData = computed(() => props.dashboardStats?.breakdownData ?? []);
 
+const isReporter = computed(() => {
+    const roleInStats = props.dashboardStats?.role;
+    return roleInStats === 'REPORTER' || props.userRole === 'REPORTER' || props.userRole === 'STAFF';
+});
+
 const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
@@ -60,6 +65,17 @@ const formatDate = (dateStr) => {
         return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ', ' + timeStr;
     }
 };
+
+const statusConfig = {
+    PENDING_VALIDATION: { label: 'Menunggu',     badge: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50' },
+    ASSIGNED:           { label: 'Ditugaskan',   badge: 'bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200/50' },
+    IN_PROGRESS:        { label: 'Dikerjakan',   badge: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 border border-violet-200/50' },
+    PENDING:            { label: 'Tertunda',     badge: 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-200/50' },
+    COMPLETED:          { label: 'Selesai',      badge: 'bg-emerald-50 text-emerald-700 dark:bg-white/10 dark:text-white border border-emerald-200/50 dark:border-white/20' },
+    CANCEL:             { label: 'Dibatalkan',   badge: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200/50' },
+};
+
+const getStatus = (status) => statusConfig[status] ?? { label: status || '-', badge: 'bg-slate-100 text-slate-600 border border-slate-200' };
 
 const stats = computed(() => {
     const ds = props.dashboardStats;
@@ -105,47 +121,25 @@ const stats = computed(() => {
 
 const recentReports = computed(() => {
     return (recentTicketsData.value || []).map(ticket => {
-        // Supporting unit name formatted nicely
-        const rawUnitName = ticket.category?.supporting_unit?.name ?? ticket.category?.supportingUnit?.name ?? ticket.category?.name ?? '';
-        const unitName = rawUnitName ? rawUnitName.toUpperCase() : '-';
-        
-        // Map ticket status
-        const statusMap = ticket.status === 'COMPLETED' ? 'Verified' : 'Pending';
-
         return {
             id: ticket.ticket_number,
             date: formatDate(ticket.created_at),
             author: ticket.reporter?.name ?? '-',
-            category: unitName,
-            type: unitName,
+            category: ticket.category?.name ?? '-',
+            room: ticket.room?.name ?? '-',
             title: ticket.problem_description,
-            status: statusMap
+            status: ticket.status
         };
     });
 });
 
 const categoriesBreakdown = computed(() => {
     return (breakdownDataData.value || []).map(item => {
-        const divisionLabel = item.division_name.toLowerCase().includes('medik') && !item.division_name.toLowerCase().includes('non-medik')
-            ? proxy.__('pages.dashboard.medical_support').replace('Penunjang ', '')
-            : (item.division_name ? proxy.__('pages.dashboard.non_medical_support').replace('Penunjang ', '') : '');
-            
-        // Convert unit name (e.g. IPSRS) to a nice display name
-        const rawName = item.name;
-        let formattedName = rawName;
-        if (['IPSRS', 'CSSD', 'SIMRS'].includes(rawName.toUpperCase())) {
-            formattedName = rawName.toUpperCase();
-        } else {
-            formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
-        }
-
-        const displayName = divisionLabel ? `${formattedName} (${divisionLabel})` : formattedName;
-
         return {
-            name: displayName,
+            name: item.name,
             percentage: item.percentage,
             count: item.count,
-            color: 'bg-emerald-600 dark:bg-white'
+            color: item.color || 'bg-emerald-600 dark:bg-emerald-500'
         };
     });
 });
@@ -286,10 +280,12 @@ const categoriesBreakdown = computed(() => {
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                             
                             <!-- Left: Recent Reports Table -->
-                            <div :class="[userRole === 'REPORTER' ? 'lg:col-span-3' : 'lg:col-span-2', 'bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4']">
+                            <div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
                                 <div>
                                     <div class="flex items-start justify-between gap-3 mb-4">
-                                        <h4 class="text-base font-bold text-slate-900 dark:text-white leading-tight">{{ __('pages.dashboard.recent_activities') }}</h4>
+                                        <h4 class="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                                            {{ isReporter ? 'Aktivitas Laporan Saya Terbaru' : 'Aktivitas Laporan Terbaru' }}
+                                        </h4>
                                         <Link 
                                             :href="route('reports.history')" 
                                             prefetch
@@ -304,10 +300,11 @@ const categoriesBreakdown = computed(() => {
                                         <table class="w-full text-left border-collapse">
                                             <thead>
                                                 <tr class="border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                                                    <th class="pb-3 pr-4">{{ __('pages.dashboard.id_title') }}</th>
-                                                    <th class="pb-3 px-4">{{ __('pages.dashboard.reporter') }}</th>
-                                                    <th class="pb-3 px-4">{{ __('pages.dashboard.unit_category') }}</th>
-                                                    <th class="pb-3 pl-4 text-right">{{ __('pages.dashboard.status') }}</th>
+                                                    <th class="pb-3 pr-4">ID</th>
+                                                    <th v-if="!isReporter" class="pb-3 px-4">Pelapor</th>
+                                                    <th class="pb-3 px-4">Kategori</th>
+                                                    <th class="pb-3 px-4">Ruangan</th>
+                                                    <th class="pb-3 pl-4 text-right">STATUS</th>
                                                 </tr>
                                             </thead>
                                             <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs text-slate-700 dark:text-slate-300">
@@ -316,14 +313,16 @@ const categoriesBreakdown = computed(() => {
                                                     <tr v-for="n in 4" :key="'skel-rec-' + n" class="align-middle">
                                                         <td class="py-3.5 pr-4 space-y-1.5">
                                                             <div class="h-4 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
-                                                            <div class="h-3 w-44 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                            <div class="h-3 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
                                                         </td>
-                                                        <td class="py-3.5 px-4 space-y-1.5">
-                                                            <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
-                                                            <div class="h-3 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                        <td v-if="!isReporter" class="py-3.5 px-4">
+                                                            <div class="h-4 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
                                                         </td>
                                                         <td class="py-3.5 px-4">
-                                                            <div class="h-5 w-16 bg-slate-200/80 dark:bg-slate-800 rounded-md animate-pulse"></div>
+                                                            <div class="h-4 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                                        </td>
+                                                        <td class="py-3.5 px-4">
+                                                            <div class="h-4 w-20 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
                                                         </td>
                                                         <td class="py-3.5 pl-4 text-right">
                                                             <div class="h-5 w-20 bg-slate-200/80 dark:bg-slate-800 rounded-full animate-pulse ml-auto"></div>
@@ -333,29 +332,31 @@ const categoriesBreakdown = computed(() => {
 
                                                 <!-- Empty State -->
                                                 <tr v-else-if="recentReports.length === 0">
-                                                    <td colspan="4" class="py-8 text-center text-slate-400 dark:text-slate-500">
+                                                    <td :colspan="isReporter ? 4 : 5" class="py-8 text-center text-slate-400 dark:text-slate-500">
                                                         {{ __('Belum ada aktivitas laporan terbaru.') }}
                                                     </td>
                                                 </tr>
 
                                                 <!-- Data Rows -->
-                                                <tr v-else v-for="report in recentReports" :key="report.id" class="align-middle">
-                                                    <td class="py-3.5 pr-4">
-                                                        <div class="font-bold text-slate-900 dark:text-white">{{ report.id }}</div>
-                                                        <div class="text-[11px] text-slate-500 mt-0.5 truncate max-w-[240px]" :title="report.title">{{ report.title }}</div>
+                                                <tr v-else v-for="report in recentReports" :key="report.id" class="align-middle hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                    <td class="py-3.5 pr-4 whitespace-nowrap">
+                                                        <div class="font-bold text-slate-900 dark:text-white text-xs">#{{ report.id }}</div>
+                                                        <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{{ report.date }}</div>
+                                                    </td>
+                                                    <td v-if="!isReporter" class="py-3.5 px-4 whitespace-nowrap">
+                                                        <div class="font-semibold text-slate-800 dark:text-slate-200 text-xs">{{ report.author }}</div>
                                                     </td>
                                                     <td class="py-3.5 px-4 whitespace-nowrap">
-                                                        <div class="font-medium text-slate-800 dark:text-slate-200">{{ report.author }}</div>
-                                                        <div class="text-[10px] text-slate-500 mt-0.5">{{ report.date }}</div>
-                                                    </td>
-                                                    <td class="py-3.5 px-4 whitespace-nowrap">
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 dark:bg-white/10 text-emerald-700 dark:text-white">
-                                                            {{ report.type || '-' }}
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                                                            {{ report.category }}
                                                         </span>
                                                     </td>
+                                                    <td class="py-3.5 px-4 whitespace-nowrap text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                        {{ report.room }}
+                                                    </td>
                                                     <td class="py-3.5 pl-4 text-right whitespace-nowrap">
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-white/10 text-emerald-800 dark:text-white">
-                                                            {{ report.status === 'Verified' ? __('Verified') : __('Pending') }}
+                                                        <span :class="['inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border', getStatus(report.status).badge]">
+                                                            {{ getStatus(report.status).label }}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -365,14 +366,14 @@ const categoriesBreakdown = computed(() => {
                                 </div>
                             </div>
 
-                            <!-- Right: Unit volume breakdown (Hidden for REPORTER) -->
-                            <div v-if="userRole !== 'REPORTER'" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
+                            <!-- Right: Category Volume breakdown -->
+                            <div class="lg:col-span-1 bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4">
                                 <div>
-                                    <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4">{{ __('pages.dashboard.unit_volume') }}</h4>
+                                    <h4 class="text-base font-bold text-slate-900 dark:text-white mb-4">Volume Pelaporan</h4>
                                     <div class="space-y-4">
                                         <!-- Skeleton Loading Bars -->
                                         <template v-if="isLoading">
-                                            <div v-for="n in 3" :key="'skel-cat-' + n" class="space-y-1">
+                                            <div v-for="n in 4" :key="'skel-cat-' + n" class="space-y-1">
                                                 <div class="flex items-center justify-between">
                                                     <div class="h-4 w-28 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
                                                     <div class="h-4 w-14 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
@@ -385,7 +386,7 @@ const categoriesBreakdown = computed(() => {
 
                                         <!-- Empty State -->
                                         <div v-else-if="categoriesBreakdown.length === 0" class="text-center py-8 text-xs text-slate-400 dark:text-slate-500 font-semibold">
-                                            {{ __('Belum ada data volume pelaporan unit.') }}
+                                            {{ __('Belum ada data volume pelaporan.') }}
                                         </div>
 
                                         <!-- Real Breakdown Data -->

@@ -115,6 +115,10 @@ class User extends Authenticatable
 
     public function canDisposisi(): bool
     {
+        if ($this->isTechnician()) {
+            return false;
+        }
+
         return $this->isAdmin()
             || in_array((int) $this->role_id, [
                 Role::KEPALA_BIDANG,
@@ -122,8 +126,7 @@ class User extends Authenticatable
                 Role::KEPALA_INSTALASI,
                 Role::SEKRETARIS_INSTALASI,
                 Role::PJ_RUANGAN,
-            ])
-            || $this->hasPageAccess('reports-management.index');
+            ]);
     }
 
     public function isReportOnly(): bool

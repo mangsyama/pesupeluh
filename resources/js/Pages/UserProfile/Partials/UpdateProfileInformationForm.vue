@@ -3,7 +3,7 @@ import InputError from '@/Components/InputError.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed, getCurrentInstance } from 'vue';
-import { User, Lock, Save, Camera, Trash2 } from '@lucide/vue';
+import { User, Save, Camera, Trash2 } from '@lucide/vue';
 import { compressImage } from '@/Utils/imageCompressor';
 
 const props = defineProps({
@@ -315,39 +315,7 @@ const submit = () => {
                                 <InputError class="mt-1" :message="form.errors.phone_number" />
                             </div>
 
-                            <!-- Peran Spesifik (Role) - Read Only Terkunci -->
-                            <div class="space-y-1.5">
-                                <div class="flex items-center justify-between">
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                        Peran Akses Sistem
-                                    </label>
-                                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                                        <Lock class="h-3 w-3" />
-                                        Terkunci
-                                    </span>
-                                </div>
-                                <div class="w-full h-10 px-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-xs font-bold flex items-center">
-                                    {{ currentUser.role ? __('roles.' + currentUser.role.name) : 'User' }}
-                                </div>
-                            </div>
 
-                            <!-- Unit Penunjang (EDITABLE BY USER) -->
-                            <div class="space-y-1.5">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                    Unit Penunjang
-                                </label>
-                                <SearchableSelect
-                                    v-model="form.supporting_unit_id"
-                                    :options="unitOptions"
-                                    :searchable="true"
-                                    :absolute="false"
-                                    value-key="id"
-                                    label-key="name"
-                                    placeholder="Tanpa Unit Penunjang"
-                                    search-placeholder="Cari unit penunjang..."
-                                />
-                                <InputError class="mt-1" :message="form.errors.supporting_unit_id" />
-                            </div>
 
                             <!-- Penempatan Ruangan (EDITABLE BY USER) -->
                             <div class="space-y-1.5">

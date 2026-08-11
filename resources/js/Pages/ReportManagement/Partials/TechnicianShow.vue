@@ -197,26 +197,23 @@ const handleArriveFileSelect = async (e) => {
 };
 
 const processArriveFiles = async (files) => {
-    const remaining = 5 - arrivePreviews.value.length;
-    const toProcess = files.slice(0, remaining);
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (!file.type.startsWith('image/')) return;
 
-    for (const file of toProcess) {
-        if (!file.type.startsWith('image/')) continue;
-        
-        let dataUrl;
-        try {
-            dataUrl = await compressImage(file);
-        } catch {
-            dataUrl = await readFileAsDataURL(file);
-        }
-
-        arrivePreviews.value.push({
-            name: file.name,
-            size: file.size,
-            preview: dataUrl,
-            data: dataUrl
-        });
+    let dataUrl;
+    try {
+        dataUrl = await compressImage(file);
+    } catch {
+        dataUrl = await readFileAsDataURL(file);
     }
+
+    arrivePreviews.value = [{
+        name: file.name,
+        size: file.size,
+        preview: dataUrl,
+        data: dataUrl
+    }];
     arriveForm.attachments = arrivePreviews.value.map(p => p.data);
 };
 
@@ -280,26 +277,23 @@ const handleCompleteFileSelect = async (e) => {
 };
 
 const processCompleteFiles = async (files) => {
-    const remaining = 5 - completePreviews.value.length;
-    const toProcess = files.slice(0, remaining);
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (!file.type.startsWith('image/')) return;
 
-    for (const file of toProcess) {
-        if (!file.type.startsWith('image/')) continue;
-        
-        let dataUrl;
-        try {
-            dataUrl = await compressImage(file);
-        } catch {
-            dataUrl = await readFileAsDataURL(file);
-        }
-
-        completePreviews.value.push({
-            name: file.name,
-            size: file.size,
-            preview: dataUrl,
-            data: dataUrl
-        });
+    let dataUrl;
+    try {
+        dataUrl = await compressImage(file);
+    } catch {
+        dataUrl = await readFileAsDataURL(file);
     }
+
+    completePreviews.value = [{
+        name: file.name,
+        size: file.size,
+        preview: dataUrl,
+        data: dataUrl
+    }];
     resolveForm.attachments = completePreviews.value.map(p => p.data);
 };
 
@@ -1048,40 +1042,90 @@ const contextLabel = computed(() => {
             </div>
 
             <form @submit.prevent="submitArrive" class="space-y-4">
-                <!-- Proof Photo Attachments -->
-                <div class="space-y-2">
+                <!-- Proof Photo Attachments (Single Photo) -->
+                <div class="space-y-2.5">
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             Foto Bukti Kedatangan <span class="text-red-500">*</span>
                         </label>
-                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{{ arrivePreviews.length }}/5</span>
+                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Maks. 1 Foto</span>
                     </div>
 
-                    <input ref="arriveFileInput" type="file" accept="image/*" multiple class="hidden" @change="handleArriveFileSelect" />
+                    <input ref="arriveFileInput" type="file" accept="image/*" class="hidden" @change="handleArriveFileSelect" />
                     <input ref="arriveCameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="handleArriveFileSelect" />
 
-                    <div class="space-y-2">
-                        <!-- Drop Zone for Gallery -->
-                        <div
-                            @click="arriveFileInput?.click()"
-                            :class="[
-                                'border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center',
-                                arrivePreviews.length > 0 ? 'min-h-[80px]' : 'min-h-[100px]',
-                                'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/30 dark:bg-slate-950/20'
-                            ]"
-                        >
-                            <div class="h-9 w-9 rounded-full flex items-center justify-center mb-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 dark:text-emerald-400">
-                                <UploadCloud class="h-4.5 w-4.5" />
+                    <!-- Single Preview Card -->
+                    <div v-if="arrivePreviews.length > 0" class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 group shadow-sm transition-all duration-200">
+                        <div class="relative h-44 w-full flex items-center justify-center bg-black/40">
+                            <img :src="arrivePreviews[0].preview" alt="Arrive Preview" class="w-full h-full object-cover" />
+
+                            <div class="absolute top-3 left-3 flex items-center gap-1.5 bg-emerald-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-extrabold shadow-sm">
+                                <CheckCircle2 class="h-3.5 w-3.5" />
+                                <span>Foto Kedatangan Terpilih</span>
                             </div>
-                            <p class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Klik untuk pilih dari Galeri</p>
-                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG (max 5MB)</p>
+
+                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                                <button
+                                    type="button"
+                                    @click="arriveFileInput?.click()"
+                                    class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                                >
+                                    <UploadCloud class="h-3.5 w-3.5 text-emerald-600" />
+                                    <span>Ganti Foto</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="removeArriveAttachment(0)"
+                                    class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                                >
+                                    <X class="h-3.5 w-3.5" />
+                                    <span>Hapus</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Camera Button -->
+                        <div class="p-3 bg-white dark:bg-slate-900 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 text-xs">
+                            <div class="flex items-center gap-2 min-w-0 pr-2">
+                                <span class="font-bold text-slate-800 dark:text-slate-200 truncate">{{ arrivePreviews[0].name }}</span>
+                                <span class="text-[10px] font-semibold text-slate-400 shrink-0">({{ (arrivePreviews[0].size / 1024).toFixed(0) }} KB)</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    @click="arriveFileInput?.click()"
+                                    class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                >
+                                    Ganti
+                                </button>
+                                <span class="text-slate-300 dark:text-slate-700">•</span>
+                                <button
+                                    type="button"
+                                    @click="removeArriveAttachment(0)"
+                                    class="text-[11px] font-bold text-rose-500 hover:underline"
+                                >
+                                    Hapus
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dropzone Box when empty -->
+                    <div v-else class="space-y-2">
+                        <div 
+                            @click="arriveFileInput?.click()"
+                            class="border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-white/30 bg-slate-50/50 dark:bg-slate-950/20"
+                        >
+                            <div class="h-9 w-9 rounded-full flex items-center justify-center mb-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                                <UploadCloud class="h-4.5 w-4.5" />
+                            </div>
+                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Unggah 1 Foto Bukti Kedatangan</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG (Maks 5MB)</p>
+                        </div>
+
                         <button
                             type="button"
                             @click="arriveCameraInput?.click()"
-                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-xs font-semibold flex items-center justify-center gap-2 transition duration-150"
+                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-xs font-bold flex items-center justify-center gap-2 transition duration-150"
                         >
                             <Camera class="h-4 w-4" />
                             Ambil Foto dari Kamera
@@ -1089,19 +1133,6 @@ const contextLabel = computed(() => {
                     </div>
 
                     <div v-if="arriveForm.errors.attachments" class="text-[10px] text-red-500 font-semibold">{{ arriveForm.errors.attachments }}</div>
-
-                    <div v-if="arrivePreviews.length > 0" class="grid grid-cols-4 gap-2 pt-2">
-                        <div v-for="(item, idx) in arrivePreviews" :key="idx" class="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 group">
-                            <img :src="item.preview" class="w-full h-full object-cover" />
-                            <button
-                                type="button"
-                                @click="removeArriveAttachment(idx)"
-                                class="absolute top-1 right-1 h-5 w-5 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"
-                            >
-                                <X class="h-3 w-3" />
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -1145,58 +1176,97 @@ const contextLabel = computed(() => {
                     <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
                 </div>
 
-                <!-- Proof Photo Attachments -->
-                <div class="space-y-2">
+                <!-- Proof Photo Attachments (Single Photo) -->
+                <div class="space-y-2.5">
                     <div class="flex items-center justify-between">
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                             {{ __('pages.tickets.detail.upload_proof_label') }} <span class="text-red-400">*</span>
                         </label>
-                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{{ completePreviews.length }}/5</span>
+                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Maks. 1 Foto</span>
                     </div>
 
-                    <input ref="completeFileInput" type="file" accept="image/*" multiple class="hidden" @change="handleCompleteFileSelect" />
+                    <input ref="completeFileInput" type="file" accept="image/*" class="hidden" @change="handleCompleteFileSelect" />
                     <input ref="completeCameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="handleCompleteFileSelect" />
 
-                    <div class="space-y-2">
-                        <!-- Drop Zone for Gallery -->
-                        <div
-                            @click="completeFileInput?.click()"
-                            :class="[
-                                'border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center',
-                                completePreviews.length > 0 ? 'min-h-[80px]' : 'min-h-[100px]',
-                                'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/30 dark:bg-slate-950/20'
-                            ]"
-                        >
-                            <div class="h-9 w-9 rounded-full flex items-center justify-center mb-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 dark:text-emerald-400">
-                                <UploadCloud class="h-4.5 w-4.5" />
+                    <!-- Single Preview Card -->
+                    <div v-if="completePreviews.length > 0" class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 group shadow-sm transition-all duration-200">
+                        <div class="relative h-44 w-full flex items-center justify-center bg-black/40">
+                            <img :src="completePreviews[0].preview" alt="Complete Preview" class="w-full h-full object-cover" />
+
+                            <div class="absolute top-3 left-3 flex items-center gap-1.5 bg-emerald-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-extrabold shadow-sm">
+                                <CheckCircle2 class="h-3.5 w-3.5" />
+                                <span>Foto Selesai Pekerjaan Terpilih</span>
                             </div>
-                            <p class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Klik untuk pilih dari Galeri</p>
-                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG (max 5MB)</p>
+
+                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                                <button
+                                    type="button"
+                                    @click="completeFileInput?.click()"
+                                    class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                                >
+                                    <UploadCloud class="h-3.5 w-3.5 text-emerald-600" />
+                                    <span>Ganti Foto</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="removeCompleteAttachment(0)"
+                                    class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                                >
+                                    <X class="h-3.5 w-3.5" />
+                                    <span>Hapus</span>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Camera Button -->
+                        <div class="p-3 bg-white dark:bg-slate-900 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 text-xs">
+                            <div class="flex items-center gap-2 min-w-0 pr-2">
+                                <span class="font-bold text-slate-800 dark:text-slate-200 truncate">{{ completePreviews[0].name }}</span>
+                                <span class="text-[10px] font-semibold text-slate-400 shrink-0">({{ (completePreviews[0].size / 1024).toFixed(0) }} KB)</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    @click="completeFileInput?.click()"
+                                    class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                >
+                                    Ganti
+                                </button>
+                                <span class="text-slate-300 dark:text-slate-700">•</span>
+                                <button
+                                    type="button"
+                                    @click="removeCompleteAttachment(0)"
+                                    class="text-[11px] font-bold text-rose-500 hover:underline"
+                                >
+                                    Hapus
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dropzone Box when empty -->
+                    <div v-else class="space-y-2">
+                        <div 
+                            @click="completeFileInput?.click()"
+                            class="border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-white/30 bg-slate-50/50 dark:bg-slate-950/20"
+                        >
+                            <div class="h-9 w-9 rounded-full flex items-center justify-center mb-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                                <UploadCloud class="h-4.5 w-4.5" />
+                            </div>
+                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Unggah 1 Foto Bukti Hasil Pekerjaan</p>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG (Maks 5MB)</p>
+                        </div>
+
                         <button
                             type="button"
                             @click="completeCameraInput?.click()"
-                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-xs font-semibold flex items-center justify-center gap-2 transition duration-150"
+                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-xs font-bold flex items-center justify-center gap-2 transition duration-150"
                         >
                             <Camera class="h-4 w-4" />
                             Ambil Foto dari Kamera
                         </button>
                     </div>
 
-                    <div v-if="completePreviews.length > 0" class="grid grid-cols-4 gap-2 pt-2">
-                        <div v-for="(item, idx) in completePreviews" :key="idx" class="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 group">
-                            <img :src="item.preview" class="w-full h-full object-cover" />
-                            <button
-                                type="button"
-                                @click="removeCompleteAttachment(idx)"
-                                class="absolute top-1 right-1 h-5 w-5 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md"
-                            >
-                                <X class="h-3 w-3" />
-                            </button>
-                        </div>
-                    </div>
+                    <div v-if="resolveForm.errors.attachments" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.attachments }}</div>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
