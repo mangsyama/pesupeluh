@@ -57,4 +57,12 @@ Homestead.yaml
 /wa-gateway/auth_sessions/
 /wa-gateway/node_modules/
 
+# SSL & Certificates (SENSITIVE - JANGAN DI-PUSH TO GITHUB)
+/ssl/
+*.key
+*.crt
+*.pem
+*.csr
+
+
 

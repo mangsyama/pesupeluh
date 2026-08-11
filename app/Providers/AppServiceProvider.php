@@ -29,5 +29,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Vite::prefetch(concurrency: 3);
+
+        if (config('app.env') === 'production' || str_starts_with(config('app.url'), 'https://') || request()->header('X-Forwarded-Proto') === 'https') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }
