@@ -21,7 +21,11 @@ class NotificationController extends Controller
             $notification->markAsRead();
         }
 
-        return response()->json(['status' => 'success']);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json(['status' => 'success']);
+        }
+
+        return redirect()->back();
     }
 
     /**
@@ -31,7 +35,11 @@ class NotificationController extends Controller
     {
         $request->user()->unreadNotifications->markAsRead();
 
-        return response()->json(['status' => 'success']);
+        if ($request->wantsJson() && !$request->header('X-Inertia')) {
+            return response()->json(['status' => 'success']);
+        }
+
+        return redirect()->back();
     }
 
     /**

@@ -61,12 +61,12 @@ const styling = computed(() => {
         case 'urgent_warning':
             return {
                 iconComponent: AlertTriangle,
-                bgClass: 'bg-red-600 text-white shadow-sm border border-red-500',
-                badgeText: '🔴 URGENT',
-                badgeClass: 'bg-red-600 text-white font-extrabold tracking-wider animate-pulse',
-                cardBorderClass: 'border-l-4 border-l-red-600 bg-red-50/30 dark:bg-red-950/20 border-red-200 dark:border-red-900/60',
-                roleTag: 'Penting & Urgent',
-                roleTagClass: 'bg-red-600 text-white font-bold',
+                bgClass: 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/80 dark:border-red-900/60',
+                badgeText: 'URGENT',
+                badgeClass: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 font-bold tracking-wider',
+                cardBorderClass: 'border-l-4 border-l-red-500 bg-red-50/20 dark:bg-red-950/10 border-slate-200/60 dark:border-slate-800/80',
+                roleTag: 'Urgent',
+                roleTagClass: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 font-medium',
             };
         case 'user_registration':
             return {
