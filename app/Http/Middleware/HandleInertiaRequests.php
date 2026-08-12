@@ -73,7 +73,7 @@ class HandleInertiaRequests extends Middleware
                     return $query->count();
                 }) : 0,
             ],
-            'notifications' => $user ? \Inertia\Inertia::defer(fn() => $user->unreadNotifications()->take(15)->get()->map(function ($notification) {
+            'notifications' => $user ? $user->unreadNotifications()->take(15)->get()->map(function ($notification) {
                 return [
                     'id' => $notification->id,
                     'type' => $notification->data['type'] ?? 'user',
@@ -84,10 +84,16 @@ class HandleInertiaRequests extends Middleware
                     'priority' => $notification->data['priority'] ?? null,
                     'read_at' => $notification->read_at,
                     'created_at' => $notification->created_at,
-                    'time' => $notification->created_at ? $notification->created_at->diffForHumans() : null,
+                    'time' => $notification->created_at ? \Carbon\Carbon::parse($notification->created_at, 'UTC')->setTimezone(config('app.timezone', 'Asia/Makassar'))->diffForHumans() : null,
                 ];
-            })) : [],
-            'unread_notifications_count' => $user ? \Inertia\Inertia::defer(fn() => $user->unreadNotifications()->count()) : 0,
+            }) : [],
+            'unread_notifications_count' => $user ? $user->unreadNotifications()->count() : 0,
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error'   => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
+                'info'    => fn () => $request->session()->get('info'),
+            ],
             'locale' => app()->getLocale(),
             'translations' => $this->getTranslations(),
         ];

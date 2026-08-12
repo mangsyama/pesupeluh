@@ -385,7 +385,8 @@ watch(
         if (value && Array.isArray(value)) {
             notifications.value = value;
         }
-    }
+    },
+    { immediate: true, deep: true }
 );
 
 watch(
@@ -454,7 +455,7 @@ const normalizeNotificationPayload = (notification) => {
         user_id: notification.user_id ?? notification.data?.user_id ?? null,
         read_at: notification.read_at ?? null,
         created_at: notification.created_at ?? new Date().toISOString(),
-        time: notification.created_at ? new Date(notification.created_at).toLocaleString() : null,
+        time: notification.time ?? notification.data?.time ?? 'Baru saja',
     };
 };
 
@@ -481,6 +482,27 @@ const showNotificationToast = (normalized) => {
     }, 6000);
 };
 
+// Watch for Inertia flash session messages (e.g. from redirect()->back()->with('success', ...))
+watch(
+    () => page.props.flash,
+    (flash) => {
+        if (!flash) return;
+        if (flash.success) {
+            showNotificationToast({ title: 'Sukses', message: flash.success, type: 'success' });
+        }
+        if (flash.error) {
+            showNotificationToast({ title: 'Gagal', message: flash.error, type: 'error' });
+        }
+        if (flash.warning) {
+            showNotificationToast({ title: 'Peringatan', message: flash.warning, type: 'warning' });
+        }
+        if (flash.info) {
+            showNotificationToast({ title: 'Informasi', message: flash.info, type: 'info' });
+        }
+    },
+    { immediate: true, deep: true }
+);
+
 const registerNotificationListeners = () => {
     if (typeof window !== 'undefined' && window.Echo && page.props.auth?.user?.id) {
         const channelName = `App.Models.User.${page.props.auth.user.id}`;
@@ -500,14 +522,14 @@ const registerNotificationListeners = () => {
                     pendingReportsCount.value += 1;
                 }
 
-                // Auto-refresh active Inertia page data silently without page reload
-                router.reload({ preserveScroll: true });
+                // Auto-refresh active Inertia page data silently preserving state and scroll
+                router.reload({ preserveScroll: true, preserveState: true });
             });
 
         window.Echo.channel('tickets')
-            .listen('.TicketRealtimeUpdated', (e) => {
-                // Auto-refresh active Inertia page data silently when ticket events occur
-                router.reload({ preserveScroll: true });
+            .listen('.TicketRealtimeUpdated', () => {
+                // Auto-refresh active Inertia page data silently preserving state and scroll
+                router.reload({ preserveScroll: true, preserveState: true });
             });
     }
 };

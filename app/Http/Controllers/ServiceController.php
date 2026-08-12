@@ -77,26 +77,43 @@ class ServiceController extends Controller
 
         // Auto-assign technicians if Off-Hours
         if ($isOffHours) {
-            $onDutyTechnicians = \App\Models\User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
-                ->where('supporting_unit_id', $supportingUnitId)
+            $technicians = \App\Models\User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
                 ->where('is_active', 1)
-                ->where('is_on_duty', 1)
+                ->withCount(['assignments as active_tickets_count' => function ($query) {
+                    $query->whereHas('ticket', function ($q) {
+                        $q->whereIn('status', ['ASSIGNED', 'IN_PROGRESS', 'PENDING']);
+                    });
+                }])
                 ->get();
 
-            if ($onDutyTechnicians->isEmpty()) {
-                $onDutyTechnicians = \App\Models\User::where('role_id', \App\Models\Role::TEKNISI)
-                    ->where('supporting_unit_id', $supportingUnitId)
-                    ->where('is_active', 1)
-                    ->get();
-            }
+            $onDutyTechs = $technicians->where('is_on_duty', 1);
+            $candidatePool = $onDutyTechs->isNotEmpty() ? $onDutyTechs : $technicians;
 
-            foreach ($onDutyTechnicians as $tech) {
+            $selectedTech = $candidatePool->sort(function ($a, $b) use ($supportingUnitId) {
+                $workloadA = $a->active_tickets_count;
+                $workloadB = $b->active_tickets_count;
+
+                if ($workloadA !== $workloadB) {
+                    return $workloadA <=> $workloadB; // Lowest active workload first
+                }
+
+                // Tie-breaker: matching supporting unit first
+                $matchA = ($supportingUnitId && (int)$a->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
+                $matchB = ($supportingUnitId && (int)$b->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
+
+                return $matchA <=> $matchB;
+            })->first();
+
+            $onDutyTechnicians = collect();
+
+            if ($selectedTech) {
                 \App\Models\TicketAssignment::create([
                     'ticket_id' => $ticket->id,
-                    'technician_id' => $tech->id,
+                    'technician_id' => $selectedTech->id,
                     'assigned_by' => $request->user()->id,
                     'assigned_at' => now(),
                 ]);
+                $onDutyTechnicians->push($selectedTech);
             }
 
             \App\Models\TicketHistory::create([
@@ -107,13 +124,16 @@ class ServiceController extends Controller
                 'notes' => 'Disposisi otomatis di luar jam kerja operasional unit penunjang.',
             ]);
 
-            // Immediately send WA & App notification to assigned technicians for Off-Hours
+            // Immediately send WA & App notification to assigned technicians & reporter for Off-Hours
             if ($onDutyTechnicians->isNotEmpty()) {
                 try {
-                    $ticket->load(['room', 'category']);
+                    $ticket->load(['room', 'category', 'reporter']);
                     \Illuminate\Support\Facades\Notification::send($onDutyTechnicians, new \App\Notifications\TicketAssignedNotification($ticket));
+                    if ($ticket->reporter) {
+                        \Illuminate\Support\Facades\Notification::send($ticket->reporter, new \App\Notifications\TicketStatusUpdatedNotification($ticket, 'ASSIGNED', 'Disposisi otomatis di luar jam kerja operasional.'));
+                    }
                 } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::error('Gagal mengirim WA penugasan ke teknisi piket: ' . $e->getMessage());
+                    \Illuminate\Support\Facades\Log::error('Gagal mengirim WA/App penugasan ke teknisi/pelapor: ' . $e->getMessage());
                 }
             }
         }
@@ -156,12 +176,7 @@ class ServiceController extends Controller
                             });
                         });
 
-                        // If Off-Hours, also notify Technicians directly!
-                        if ($isOffHours) {
-                            $query->orWhere(function ($q) use ($supportingUnitId) {
-                                $q->where('role_id', \App\Models\Role::TEKNISI)->where('supporting_unit_id', $supportingUnitId);
-                            });
-                        }
+                        // Off-hours assigned technician is already notified specifically via TicketAssignedNotification
                     }
 
                     if ($ticket->room_id) {

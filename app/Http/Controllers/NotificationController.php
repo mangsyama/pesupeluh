@@ -61,7 +61,7 @@ class NotificationController extends Controller
                 'priority' => $notification->data['priority'] ?? null,
                 'read_at' => $notification->read_at,
                 'created_at' => $notification->created_at,
-                'time' => $notification->created_at ? $notification->created_at->diffForHumans() : null,
+                'time' => $notification->created_at ? \Carbon\Carbon::parse($notification->created_at, 'UTC')->setTimezone(config('app.timezone', 'Asia/Makassar'))->diffForHumans() : null,
             ];
         });
 
