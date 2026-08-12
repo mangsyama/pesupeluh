@@ -46,8 +46,8 @@ class TicketStatusUpdatedNotification extends Notification
     {
         $isManagement = $notifiable instanceof User && ($notifiable->isAdmin() || $notifiable->canDisposisi() || $notifiable->isDirector());
         $targetRoute = $isManagement 
-            ? route('reports-management.show', ['ticket' => $this->ticket->uuid])
-            : route('reports.show', ['ticket' => $this->ticket->uuid]);
+            ? route('reports-management.show', ['ticket' => $this->ticket->uuid], false)
+            : route('reports.show', ['ticket' => $this->ticket->uuid], false);
 
         $ticketNum = $this->ticket->ticket_number;
         $roomName = $this->ticket->room?->name ?? 'Ruangan';

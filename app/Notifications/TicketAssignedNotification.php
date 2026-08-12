@@ -49,7 +49,7 @@ class TicketAssignedNotification extends Notification implements ShouldQueue
             'title'     => $isUrgent ? '🔴 PENUGASAN TIKET URGENT' : 'Tugas Baru Diterima',
             'message'   => "Anda telah ditugaskan untuk menangani laporan #{$this->ticket->ticket_number}.",
             'ticket_id' => $this->ticket->id,
-            'route'     => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            'route'     => route('reports-management.show', ['ticket' => $this->ticket->uuid], false),
         ];
     }
 

@@ -46,7 +46,7 @@ class TicketAutoDispatchedNotification extends Notification
             'title'     => '⚡ Disposisi Otomatis Sistem (5 Menit)',
             'message'   => "Laporan #{$this->ticket->ticket_number} di {$roomName} terlewat 5 menit tanpa disposisi. Sistem telah mengalihkan secara otomatis ke Teknisi {$this->technician->name}.",
             'ticket_id' => $this->ticket->id,
-            'route'     => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            'route'     => route('reports-management.show', ['ticket' => $this->ticket->uuid], false),
         ];
     }
 
