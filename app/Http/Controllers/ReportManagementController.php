@@ -150,6 +150,17 @@ class ReportManagementController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        // Automatically mark unread notifications for this ticket as read for current user
+        if ($user instanceof User) {
+            $user->unreadNotifications()
+                ->where(function ($query) use ($ticket) {
+                    $query->where('data->ticket_id', $ticket->id)
+                          ->orWhere('data->route', 'like', "%{$ticket->uuid}%");
+                })
+                ->get()
+                ->each(fn ($notification) => $notification->markAsRead());
+        }
+
         return Inertia::render('ReportManagement/Show', [
             'ticket' => Inertia::defer(fn() => $ticket->load([
                 'reporter:id,name,nip,phone_number',

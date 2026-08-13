@@ -51,17 +51,26 @@ class NotificationController extends Controller
         $user = $request->user();
 
         $notifications = $user->notifications()->paginate(20)->through(function ($notification) {
+            $rawRoute = $notification->data['route'] ?? null;
+            $route = null;
+            if ($rawRoute && (str_starts_with($rawRoute, 'http://') || str_starts_with($rawRoute, 'https://'))) {
+                $parsed = parse_url($rawRoute);
+                $route = ($parsed['path'] ?? '/') . (isset($parsed['query']) ? '?' . $parsed['query'] : '') . (isset($parsed['fragment']) ? '#' . $parsed['fragment'] : '');
+            } else {
+                $route = $rawRoute;
+            }
+
             return [
                 'id' => $notification->id,
                 'type' => $notification->data['type'] ?? 'user',
                 'title' => $notification->data['title'] ?? null,
                 'message' => $notification->data['message'] ?? null,
-                'route' => $notification->data['route'] ?? null,
+                'route' => $route,
                 'user_id' => $notification->data['user_id'] ?? null,
                 'priority' => $notification->data['priority'] ?? null,
                 'read_at' => $notification->read_at,
                 'created_at' => $notification->created_at,
-                'time' => $notification->created_at ? $notification->created_at->diffForHumans() : null,
+                'time' => $notification->created_at ? \Carbon\Carbon::parse($notification->created_at, 'UTC')->setTimezone(config('app.timezone', 'Asia/Makassar'))->diffForHumans() : null,
             ];
         });
 

@@ -30,19 +30,33 @@ const paginationData = computed(() => {
 const notificationsList = computed(() => paginationData.value?.data ?? []);
 const unreadCount = computed(() => notificationsList.value.filter(n => !n.read_at).length);
 
+const normalizeRoute = (rawRoute) => {
+    if (!rawRoute || typeof rawRoute !== 'string') return null;
+    if (rawRoute.startsWith('http://') || rawRoute.startsWith('https://')) {
+        try {
+            const parsed = new URL(rawRoute);
+            return parsed.pathname + parsed.search + parsed.hash;
+        } catch (e) {
+            return rawRoute;
+        }
+    }
+    return rawRoute;
+};
+
 const handleNotificationClick = (notif) => {
+    const targetRoute = normalizeRoute(notif.route);
     if (!notif.read_at) {
         router.post(route('notifications.markAsRead', notif.id), {}, {
             preserveScroll: true,
             onFinish: () => {
-                if (notif.route) {
-                    router.visit(notif.route);
+                if (targetRoute) {
+                    router.visit(targetRoute);
                 }
             }
         });
     } else {
-        if (notif.route) {
-            router.visit(notif.route);
+        if (targetRoute) {
+            router.visit(targetRoute);
         }
     }
 };

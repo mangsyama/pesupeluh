@@ -59,14 +59,9 @@ class AutoDispoCheckCommand extends Command
 
         foreach ($pendingTickets as $ticket) {
             $supportingUnitId = $ticket->category?->supporting_unit_id;
-            if (!$supportingUnitId) {
-                $this->warn("Tiket #{$ticket->ticket_number}: Tidak memiliki unit penunjang.");
-                continue;
-            }
 
-            // Query active technicians for this supporting unit with active task counts
+            // Query all active technicians across all units with active task counts
             $technicians = User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
-                ->where('supporting_unit_id', $supportingUnitId)
                 ->where('is_active', 1)
                 ->withCount(['assignments as active_tickets_count' => function ($query) {
                     $query->whereHas('ticket', function ($q) {
@@ -76,7 +71,7 @@ class AutoDispoCheckCommand extends Command
                 ->get();
 
             if ($technicians->isEmpty()) {
-                $this->warn("Tiket #{$ticket->ticket_number}: Tidak ada teknisi aktif pada unit ID {$supportingUnitId}.");
+                $this->warn("Tiket #{$ticket->ticket_number}: Tidak ada teknisi aktif di sistem.");
                 continue;
             }
 
@@ -84,10 +79,22 @@ class AutoDispoCheckCommand extends Command
             $onDutyTechs = $technicians->where('is_on_duty', 1);
             $candidatePool = $onDutyTechs->isNotEmpty() ? $onDutyTechs : $technicians;
 
-            // Sort technicians by current active workload + in-memory batch additions (fewest first)
-            $selectedTech = $candidatePool->sortBy(function ($tech) use ($batchWorkloadAdditions) {
-                $added = $batchWorkloadAdditions[$tech->id] ?? 0;
-                return $tech->active_tickets_count + $added;
+            // Sort technicians: 
+            // 1. Primary: lowest active workload (active_tickets_count + batch additions)
+            // 2. Secondary: prefer technician matching ticket's supporting unit if tied
+            $selectedTech = $candidatePool->sort(function ($a, $b) use ($supportingUnitId, $batchWorkloadAdditions) {
+                $workloadA = $a->active_tickets_count + ($batchWorkloadAdditions[$a->id] ?? 0);
+                $workloadB = $b->active_tickets_count + ($batchWorkloadAdditions[$b->id] ?? 0);
+
+                if ($workloadA !== $workloadB) {
+                    return $workloadA <=> $workloadB; // Lowest active workload first
+                }
+
+                // Tie-breaker: matching supporting unit first
+                $matchA = ($supportingUnitId && (int)$a->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
+                $matchB = ($supportingUnitId && (int)$b->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
+
+                return $matchA <=> $matchB;
             })->first();
 
             if (!$selectedTech) {
@@ -163,6 +170,22 @@ class AutoDispoCheckCommand extends Command
                 }
             } catch (\Throwable $e) {
                 Log::error("Gagal mengirim notifikasi auto-dispo ke Ka.Unit/Admin: " . $e->getMessage());
+            }
+
+            // Also notify Reporter about the ticket status update (ASSIGNED)
+            try {
+                $ticket->load(['reporter']);
+                if ($ticket->reporter) {
+                    Notification::send($ticket->reporter, new \App\Notifications\TicketStatusUpdatedNotification($ticket, 'ASSIGNED', $reasonNote));
+                }
+            } catch (\Throwable $e) {
+                Log::error("Gagal mengirim notifikasi status penugasan ke Pelapor: " . $e->getMessage());
+            }
+
+            try {
+                \App\Events\TicketRealtimeUpdated::dispatch($ticket, 'status_changed');
+            } catch (\Throwable $e) {
+                Log::error('Gagal broadcast TicketRealtimeUpdated di auto-dispo command: ' . $e->getMessage());
             }
 
 

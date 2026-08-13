@@ -76,11 +76,7 @@ const submitApproval = () => {
         cancelButtonText: proxy.__('pages.user_management.alerts.cancel')
     }).then((result) => {
         if (result.isConfirmed) {
-            form.patch(route('users.approve', props.targetUser.uuid || props.targetUser.id), {
-                onSuccess: () => {
-                    proxy.$toast(proxy.__('pages.user_management.alerts.approve_success'), 'success');
-                }
-            });
+            form.patch(route('users.approve', props.targetUser.uuid || props.targetUser.id));
         }
     });
 };
@@ -97,11 +93,7 @@ const rejectUser = () => {
         cancelButtonText: proxy.__('pages.user_management.alerts.cancel')
     }).then((result) => {
         if (result.isConfirmed) {
-            router.delete(route('users.destroy', props.targetUser.uuid || props.targetUser.id), {
-                onSuccess: () => {
-                    proxy.$toast(proxy.__('pages.user_management.alerts.reject_success'), 'success');
-                }
-            });
+            router.delete(route('users.destroy', props.targetUser.uuid || props.targetUser.id));
         }
     });
 };

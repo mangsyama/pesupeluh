@@ -24,16 +24,18 @@ class TechnicianPositionController extends Controller
             ->with(['supportingUnit:id,name,slug'])
             ->with(['assignments' => function ($query) {
                 $query->whereHas('ticket', function ($q) {
-                    $q->where('status', 'IN_PROGRESS');
+                    $q->whereIn('status', ['ASSIGNED', 'IN_PROGRESS']);
                 })->with(['ticket:id,uuid,ticket_number,problem_description,status,room_id', 'ticket.room:id,name,building_name,location_floor']);
             }])
             ->withCount([
                 'assignments as active_tickets_count' => function ($query) {
                     $query->whereHas('ticket', function ($q) {
-                        $q->where('status', 'IN_PROGRESS');
+                        $q->whereIn('status', ['ASSIGNED', 'IN_PROGRESS']);
                     });
                 },
-                'assignments as total_tickets_count'
+                'assignments as total_tickets_count' => function ($query) {
+                    $query->whereHas('ticket');
+                }
             ])
             ->orderBy('is_on_duty', 'desc')
             ->get(['id', 'name', 'nip', 'phone_number', 'supporting_unit_id', 'is_on_duty', 'duty_status', 'specialties', 'current_location', 'profile_photo_path']);
@@ -62,7 +64,7 @@ class TechnicianPositionController extends Controller
                 'nip' => $t->nip,
                 'phone_number' => $t->phone_number,
                 'supporting_unit_id' => $t->supporting_unit_id,
-                'supporting_unit' => $t->supporting_unit,
+                'supporting_unit' => $t->supportingUnit,
                 'active_tickets_count' => $t->active_tickets_count,
                 'total_tickets_count' => $t->total_tickets_count,
                 'duty_status' => $computedDutyStatus,

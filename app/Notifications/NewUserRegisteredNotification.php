@@ -41,7 +41,7 @@ class NewUserRegisteredNotification extends Notification
             'title' => 'Pendaftaran Baru',
             'message' => "Pengguna {$this->registrant->name} telah mendaftar dan menunggu verifikasi.",
             'user_id' => $this->registrant->id,
-            'route' => route('users.approvals'),
+            'route' => route('users.approvals.show', $this->registrant->uuid ?? $this->registrant->id, false),
         ];
     }
 
@@ -52,7 +52,7 @@ class NewUserRegisteredNotification extends Notification
             'title' => 'Pendaftaran Baru',
             'message' => "Pengguna {$this->registrant->name} telah mendaftar dan menunggu verifikasi.",
             'user_id' => $this->registrant->id,
-            'route' => route('users.approvals'),
+            'route' => route('users.approvals.show', $this->registrant->uuid ?? $this->registrant->id, false),
         ]);
     }
 
@@ -64,12 +64,12 @@ class NewUserRegisteredNotification extends Notification
         return TelegramMessage::create()
             ->to($chatId)
             ->content("👤 *Pendaftaran User Baru*\n\nPengguna *{$this->registrant->name}* ({$this->registrant->email}) telah mendaftar dan membutuhkan verifikasi Anda.")
-            ->button('Verifikasi User', route('users.approvals'));
+            ->button('Verifikasi User', route('users.approvals.show', $this->registrant->uuid ?? $this->registrant->id));
     }
 
     public function toWaGateway($notifiable): ?string
     {
-        $link = route('users.approvals');
+        $link = route('users.approvals.show', $this->registrant->uuid ?? $this->registrant->id);
         $nip = $this->registrant->nip ?? '-';
         $phone = $this->registrant->phone_number ?? '-';
 

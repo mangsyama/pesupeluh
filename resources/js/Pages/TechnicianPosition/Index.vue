@@ -235,8 +235,8 @@ const toggleDutyStatus = (isOnDuty) => {
                                 <h3 class="text-sm font-extrabold text-slate-900 dark:text-white leading-snug group-hover:text-emerald-600 dark:group-hover:text-white transition-colors duration-200 break-words">
                                     {{ tech.name }}
                                 </h3>
-                                <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wide">
-                                    {{ tech.supporting_unit?.name || 'IPSRS' }}
+                                <div v-if="tech.supporting_unit?.name" class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wide">
+                                    {{ tech.supporting_unit.name }}
                                 </div>
                             </div>
                         </div>

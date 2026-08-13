@@ -14,11 +14,41 @@ use Inertia\Inertia;
 
 class UserManagementController extends Controller
 {
+    private function markRegistrationNotificationAsRead(User $user): void
+    {
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = Auth::user();
+        if ($currentUser instanceof User) {
+            $currentUser->unreadNotifications()
+                ->where(function ($query) use ($user) {
+                    $query->where('data->user_id', $user->id)
+                          ->orWhere('data->route', 'like', "%{$user->uuid}%")
+                          ->orWhere('data->route', 'like', "%{$user->id}%");
+                })
+                ->get()
+                ->each(fn ($notification) => $notification->markAsRead());
+        }
+    }
+
     /**
      * Display a listing of user registration approval requests.
      */
     public function indexApprovals()
     {
+        /** @var \App\Models\User|null $currentUser */
+        $currentUser = Auth::user();
+        if ($currentUser instanceof User) {
+            // Auto mark unread registration notifications for users that are already approved
+            $processedUserIds = User::whereNotNull('approved_by')->pluck('id');
+            if ($processedUserIds->isNotEmpty()) {
+                $currentUser->unreadNotifications()
+                    ->where('data->type', 'user')
+                    ->whereIn('data->user_id', $processedUserIds)
+                    ->get()
+                    ->each(fn ($notification) => $notification->markAsRead());
+            }
+        }
+
         return Inertia::render('UserManagement/Approval/Index', [
             'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
                 ->whereNull('approved_by')
@@ -38,15 +68,7 @@ class UserManagementController extends Controller
         }
 
         // Automatically mark unread registration notifications for this user as read for current admin
-        if (Auth::check()) {
-            Auth::user()->unreadNotifications()
-                ->where(function ($query) use ($user) {
-                    $query->where('data->user_id', $user->id)
-                          ->orWhere('data->route', route('users.approvals.show', $user->uuid));
-                })
-                ->get()
-                ->each(fn ($notification) => $notification->markAsRead());
-        }
+        $this->markRegistrationNotificationAsRead($user);
 
         return Inertia::render('UserManagement/Approval/Detail', [
             'targetUser' => $user->load(['role', 'room', 'supportingUnit']),
@@ -75,6 +97,8 @@ class UserManagementController extends Controller
             'approved_by' => Auth::id(),
             'approved_at' => now(),
         ]);
+
+        $this->markRegistrationNotificationAsRead($user);
 
         return redirect()->route('users.approvals')->with('success', 'Pendaftaran user berhasil disetujui.');
     }
@@ -350,6 +374,8 @@ class UserManagementController extends Controller
         if ((int) $user->id === (int) Auth::id()) {
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
+
+        $this->markRegistrationNotificationAsRead($user);
 
         $user->delete();
 

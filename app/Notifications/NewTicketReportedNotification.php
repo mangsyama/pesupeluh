@@ -56,7 +56,7 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
                 'title' => $isUrgent ? '🔴 PENUGASAN TIKET URGENT' : 'Tugas Baru Diterima (Disposisi Otomatis)',
                 'message' => "Anda menerima penugasan laporan #{$ticketNum} di {$roomName} (" . ($isUrgent ? 'Status URGENT' : 'Luar Jam Kerja') . ").",
                 'priority' => $isUrgent ? 'URGENT' : 'HIGH',
-                'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+                'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid], false),
             ];
         }
 
@@ -65,7 +65,7 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
                 'title' => $isUrgent ? '🔴 Laporan Urgent Diajukan Staf' : 'Laporan Diajukan Staf',
                 'message' => "Staf {$reporterName} di ruangan {$roomName} telah mengajukan laporan #{$ticketNum} ke unit {$unitName}.",
                 'priority' => $isUrgent ? 'URGENT' : 'NORMAL',
-                'route' => route('reports.show', ['ticket' => $this->ticket->uuid]),
+                'route' => route('reports.show', ['ticket' => $this->ticket->uuid], false),
             ];
         }
 
@@ -74,7 +74,7 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
             'title' => $isUrgent ? '🔴 Laporan Urgent Baru Masuk' : 'Laporan Baru Masuk',
             'message' => "Laporan baru #{$ticketNum} telah dibuat dan membutuhkan validasi Anda.",
             'priority' => $isUrgent ? 'URGENT' : 'NORMAL',
-            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid], false),
         ];
     }
 

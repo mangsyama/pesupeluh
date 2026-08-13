@@ -89,9 +89,20 @@ class TicketController extends Controller
     {
         $this->authorizeTicket($ticket, 'view');
 
+        /** @var \App\Models\User|null $user */
         $user = \Illuminate\Support\Facades\Auth::user();
-        $roleId = (int) $user->role_id;
+        $roleId = (int) ($user?->role_id ?? 0);
         $supportingUnitId = (int) ($ticket->category?->supporting_unit_id ?? 0);
+
+        if ($user instanceof User) {
+            $user->unreadNotifications()
+                ->where(function ($query) use ($ticket) {
+                    $query->where('data->ticket_id', $ticket->id)
+                          ->orWhere('data->route', 'like', "%{$ticket->uuid}%");
+                })
+                ->get()
+                ->each(fn ($notification) => $notification->markAsRead());
+        }
 
         if ($request->boolean('personal')) {
             return Inertia::render('Report/Show', [

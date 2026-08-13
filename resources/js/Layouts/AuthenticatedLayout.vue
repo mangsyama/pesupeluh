@@ -361,8 +361,8 @@ const showMobileNotifications = ref(false);
 const showDesktopNotifications = ref(false);
 const showMobileProfileDropdown = ref(false);
 const mobileNotificationsPanel = ref(null);
-const pendingApprovalsCount = ref(page.props.auth?.pending_approvals_count ?? 0);
-const pendingReportsCount = ref(page.props.auth?.pending_reports_count ?? 0);
+const pendingApprovalsCount = computed(() => page.props.auth?.pending_approvals_count ?? 0);
+const pendingReportsCount = computed(() => page.props.auth?.pending_reports_count ?? 0);
 const getCachedNotifications = () => {
     if (typeof window !== 'undefined') {
         const cached = sessionStorage.getItem('cached-notifications');
@@ -377,15 +377,18 @@ const getCachedNotifications = () => {
     return [];
 };
 
-const notifications = ref(page.props.notifications && Array.isArray(page.props.notifications) ? page.props.notifications : getCachedNotifications());
+const locallyReadIds = ref(new Set());
+
+const notifications = ref(page.props.notifications && Array.isArray(page.props.notifications) ? page.props.notifications.filter(n => !n.read_at && !locallyReadIds.value.has(n.id)) : getCachedNotifications());
 
 watch(
     () => page.props.notifications,
     (value) => {
         if (value && Array.isArray(value)) {
-            notifications.value = value;
+            notifications.value = value.filter(n => !n.read_at && !locallyReadIds.value.has(n.id));
         }
-    }
+    },
+    { immediate: true, deep: true }
 );
 
 watch(
@@ -400,23 +403,7 @@ watch(
     { deep: true }
 );
 
-watch(
-    () => page.props.auth?.pending_approvals_count,
-    (value) => {
-        if (value !== undefined && value !== null) {
-            pendingApprovalsCount.value = value;
-        }
-    }
-);
 
-watch(
-    () => page.props.auth?.pending_reports_count,
-    (value) => {
-        if (value !== undefined && value !== null) {
-            pendingReportsCount.value = value;
-        }
-    }
-);
 
 const unreadNotifications = computed(() => notifications.value.filter(notification => !notification.read_at));
 
@@ -454,7 +441,7 @@ const normalizeNotificationPayload = (notification) => {
         user_id: notification.user_id ?? notification.data?.user_id ?? null,
         read_at: notification.read_at ?? null,
         created_at: notification.created_at ?? new Date().toISOString(),
-        time: notification.created_at ? new Date(notification.created_at).toLocaleString() : null,
+        time: notification.time ?? notification.data?.time ?? 'Baru saja',
     };
 };
 
@@ -481,6 +468,39 @@ const showNotificationToast = (normalized) => {
     }, 6000);
 };
 
+// Watch for Inertia flash session messages (e.g. from redirect()->back()->with('success', ...))
+let lastProcessedFlashKey = null;
+
+watch(
+    () => page.props.flash,
+    (flash) => {
+        if (!flash) return;
+
+        const currentKey = `${flash.success || ''}|${flash.error || ''}|${flash.warning || ''}|${flash.info || ''}`;
+        if (!currentKey.replace(/\|/g, '')) {
+            lastProcessedFlashKey = null;
+            return;
+        }
+
+        if (currentKey === lastProcessedFlashKey) return;
+        lastProcessedFlashKey = currentKey;
+
+        if (flash.success) {
+            showNotificationToast({ title: 'Sukses', message: flash.success, type: 'success' });
+        }
+        if (flash.error) {
+            showNotificationToast({ title: 'Gagal', message: flash.error, type: 'error' });
+        }
+        if (flash.warning) {
+            showNotificationToast({ title: 'Peringatan', message: flash.warning, type: 'warning' });
+        }
+        if (flash.info) {
+            showNotificationToast({ title: 'Informasi', message: flash.info, type: 'info' });
+        }
+    },
+    { immediate: true, deep: true }
+);
+
 const registerNotificationListeners = () => {
     if (typeof window !== 'undefined' && window.Echo && page.props.auth?.user?.id) {
         const channelName = `App.Models.User.${page.props.auth.user.id}`;
@@ -494,20 +514,14 @@ const registerNotificationListeners = () => {
                 // Show real-time visual toast
                 showNotificationToast(normalized);
 
-                if (normalized.type === 'user' || (normalized.route && normalized.route.includes('users.approvals'))) {
-                    pendingApprovalsCount.value += 1;
-                } else if (normalized.type === 'ticket' || (normalized.route && normalized.route.includes('reports-management'))) {
-                    pendingReportsCount.value += 1;
-                }
-
-                // Auto-refresh active Inertia page data silently without page reload
-                router.reload({ preserveScroll: true });
+                // Auto-refresh active Inertia page data silently preserving state and scroll
+                router.reload({ preserveScroll: true, preserveState: true });
             });
 
         window.Echo.channel('tickets')
-            .listen('.TicketRealtimeUpdated', (e) => {
-                // Auto-refresh active Inertia page data silently when ticket events occur
-                router.reload({ preserveScroll: true });
+            .listen('.TicketRealtimeUpdated', () => {
+                // Auto-refresh active Inertia page data silently preserving state and scroll
+                router.reload({ preserveScroll: true, preserveState: true });
             });
     }
 };
@@ -515,20 +529,24 @@ const registerNotificationListeners = () => {
 const markAsRead = (notif) => {
     if (!notif.id) return;
 
-    // Mark locally first for instant UI feedback
-    const idx = notifications.value.findIndex(n => n.id === notif.id);
-    if (idx !== -1 && !notifications.value[idx].read_at) {
-        notifications.value[idx].read_at = new Date().toISOString();
-        totalUnreadCount.value = Math.max(0, totalUnreadCount.value - 1);
-    }
+    // Instantly add to locally read IDs and filter out from local state so it immediately disappears
+    locallyReadIds.value.add(notif.id);
+    notifications.value = notifications.value.filter(n => n.id !== notif.id);
+    totalUnreadCount.value = Math.max(0, totalUnreadCount.value - 1);
 
     showDesktopNotifications.value = false;
     showMobileNotifications.value = false;
 
     let targetRoute = notif.route;
     if (targetRoute && typeof targetRoute === 'string') {
-        // Fix any old notification payload created with 127.0.0.1:8000
-        targetRoute = targetRoute.replace('http://127.0.0.1:8000', window.location.origin);
+        if (targetRoute.startsWith('http://') || targetRoute.startsWith('https://')) {
+            try {
+                const parsed = new URL(targetRoute);
+                targetRoute = parsed.pathname + parsed.search + parsed.hash;
+            } catch (e) {
+                // Fallback to original
+            }
+        }
     }
 
     // Fire & forget markAsRead request so page navigation is never blocked
@@ -543,12 +561,13 @@ const markAsRead = (notif) => {
 };
 
 const markAllAsRead = () => {
-    // Mark all locally first
+    // Mark all locally first and filter them out
     notifications.value.forEach(n => {
-        if (!n.read_at) {
-            n.read_at = new Date().toISOString();
+        if (n.id) {
+            locallyReadIds.value.add(n.id);
         }
     });
+    notifications.value = [];
     totalUnreadCount.value = 0;
 
     // Send to server

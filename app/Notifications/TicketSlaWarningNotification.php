@@ -42,7 +42,7 @@ class TicketSlaWarningNotification extends Notification
             'title' => 'Peringatan Validasi Laporan',
             'message' => "Laporan #{$this->ticket->ticket_number} belum divalidasi melebihi 15 menit. Mohon segera lakukan validasi & penugasan teknisi.",
             'ticket_id' => $this->ticket->id,
-            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid], false),
         ];
     }
 
@@ -54,7 +54,7 @@ class TicketSlaWarningNotification extends Notification
             'title' => 'Peringatan Validasi Laporan',
             'message' => "Laporan #{$this->ticket->ticket_number} belum divalidasi melebihi 15 menit. Mohon segera lakukan validasi & penugasan teknisi.",
             'ticket_id' => $this->ticket->id,
-            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid]),
+            'route' => route('reports-management.show', ['ticket' => $this->ticket->uuid], false),
         ]);
     }
 
