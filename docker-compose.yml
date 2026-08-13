@@ -36,8 +36,9 @@ services:
     container_name: pesupeluh-nginx
     restart: unless-stopped
     ports:
-      - "8081:80"
+      - "80:80"
       - "443:443"
+      - "8081:80"
     volumes:
       - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/pesupeluh.conf:/etc/nginx/conf.d/default.conf:ro
