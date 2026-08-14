@@ -212,7 +212,6 @@ const submitProfileUpdate = () => {
                         is_active: profileForm.is_active,
                     };
                     profileForm.password = '';
-                    proxy.$toast('Data profil & akun pengguna berhasil diperbarui.', 'success');
                 }
             });
         }
@@ -236,11 +235,7 @@ const submitPermissionUpdate = () => {
             permissionForm.use_role_default = useRoleDefault.value;
             permissionForm.page_permissions = selectedPermissions.value;
 
-            permissionForm.put(route('users.update-permissions', props.targetUser.uuid || props.targetUser.id), {
-                onSuccess: () => {
-                    proxy.$toast('Hak akses halaman pengguna berhasil diperbarui.', 'success');
-                }
-            });
+            permissionForm.put(route('users.update-permissions', props.targetUser.uuid || props.targetUser.id));
         }
     });
 };
@@ -270,21 +265,9 @@ const formatDate = (dateStr) => {
                             <Edit2 class="h-6 w-6" />
                         </div>
                         <div class="space-y-0.5">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                                    Edit Data & Hak Akses Pengguna
-                                </h2>
-                                <span 
-                                    :class="[
-                                        'inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase leading-none border',
-                                        profileForm.is_active
-                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 border-emerald-200/50'
-                                            : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border-amber-200/50'
-                                    ]"
-                                >
-                                    {{ profileForm.is_active ? 'Aktif (Verified)' : 'Nonaktif / Suspended' }}
-                                </span>
-                            </div>
+                            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                                Edit Data Pengguna
+                            </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-2xl leading-relaxed">
                                 Kelola profil, peran akses, dan hak akses halaman pengguna.
                             </p>
@@ -525,8 +508,8 @@ const formatDate = (dateStr) => {
                 </div>
 
                 <!-- Footer Actions Card 1 -->
-                <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3">
-                    <span class="text-xs font-medium text-slate-400 dark:text-slate-500">
+                <div class="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <span class="text-xs font-medium text-slate-400 dark:text-slate-500 text-center sm:text-left">
                         {{ isProfileDirty ? 'Ada perubahan data profil yang belum disimpan.' : 'Tidak ada perubahan pada data profil.' }}
                     </span>
                     <button 
@@ -534,7 +517,7 @@ const formatDate = (dateStr) => {
                         @click="submitProfileUpdate" 
                         :disabled="!isProfileDirty || profileForm.processing"
                         :class="[
-                            'px-6 py-2.5 inline-flex items-center justify-center gap-2 font-bold text-xs rounded-xl transition duration-150 shadow-sm border-0 cursor-pointer',
+                            'w-full sm:w-auto h-11 sm:h-10 px-6 inline-flex items-center justify-center gap-2 font-bold text-xs rounded-xl transition duration-150 shadow-sm border-0 cursor-pointer shrink-0',
                             isProfileDirty && !profileForm.processing
                                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900'
                                 : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 opacity-50 cursor-not-allowed'
@@ -561,7 +544,7 @@ const formatDate = (dateStr) => {
                             type="button"
                             @click="resetToRoleDefault"
                             :class="[
-                                'px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition cursor-pointer border',
+                                'w-full sm:w-auto h-10 px-3.5 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer border shrink-0',
                                 useRoleDefault
                                     ? 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-transparent cursor-default'
                                     : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-white/10 dark:text-white border-emerald-200/50'
@@ -610,16 +593,16 @@ const formatDate = (dateStr) => {
                 </div>
 
                 <!-- Footer Actions Card 2 -->
-                <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between gap-3">
-                    <span class="text-xs font-medium text-slate-400 dark:text-slate-500">
+                <div class="px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <span class="text-xs font-medium text-slate-400 dark:text-slate-500 text-center sm:text-left">
                         {{ isPermissionDirty ? 'Ada perubahan hak akses yang belum disimpan.' : 'Tidak ada perubahan pada hak akses.' }}
                     </span>
-                    <div class="flex items-center gap-3">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
                         <button 
                             type="button" 
                             @click="resetToRoleDefault"
                             :disabled="useRoleDefault"
-                            class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            class="w-full sm:w-auto h-11 sm:h-10 px-4 inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-xs rounded-xl transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                         >
                             Reset
                         </button>
@@ -628,7 +611,7 @@ const formatDate = (dateStr) => {
                             @click="submitPermissionUpdate" 
                             :disabled="!isPermissionDirty || permissionForm.processing"
                             :class="[
-                                'px-6 py-2.5 inline-flex items-center justify-center gap-2 font-bold text-xs rounded-xl transition duration-150 shadow-sm border-0 cursor-pointer',
+                                'w-full sm:w-auto h-11 sm:h-10 px-6 inline-flex items-center justify-center gap-2 font-bold text-xs rounded-xl transition duration-150 shadow-sm border-0 cursor-pointer shrink-0',
                                 isPermissionDirty && !permissionForm.processing
                                     ? 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900'
                                     : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 opacity-50 cursor-not-allowed'

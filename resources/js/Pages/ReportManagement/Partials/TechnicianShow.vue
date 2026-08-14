@@ -367,7 +367,21 @@ const submitResolve = (status) => {
 
 const resumeTicket = () => {
     if (!props.ticket?.uuid) return;
-    router.post(route('tickets.resume', props.ticket.uuid));
+
+    proxy.$swal({
+        title: 'Konfirmasi Lanjutkan Pekerjaan',
+        text: 'Apakah Anda yakin ingin melanjutkan kembali penanganan pekerjaan tiket ini?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Ya, Lanjutkan',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post(route('tickets.resume', props.ticket.uuid));
+        }
+    });
 };
 
 // Lightbox state
@@ -1188,132 +1202,144 @@ const contextLabel = computed(() => {
 
     <!-- Modal 1: Complete Work -->
     <Modal :show="showCompleteModal" @close="showCompleteModal = false" max-width="lg">
-        <div class="p-6 space-y-4">
-            <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 class="h-5 w-5" />
-                </div>
-                <div>
-                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
-                        {{ __('pages.tickets.detail.complete_modal_title') }}
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {{ __('pages.tickets.detail.complete_modal_subtitle') }}
-                    </p>
+        <div class="flex flex-col h-full sm:h-auto min-h-screen sm:min-h-0 bg-white dark:bg-slate-900">
+            <!-- Colored Sticky Header -->
+            <div class="bg-emerald-600 dark:bg-emerald-950/90 text-white p-4 sm:p-5 flex items-center justify-between sticky top-0 z-10 shrink-0 border-b border-emerald-500/30 dark:border-emerald-800/50 shadow-sm">
+                <div class="flex items-center gap-3 pr-2">
+                    <div class="h-10 w-10 rounded-xl bg-white/15 backdrop-blur-md text-white flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 class="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 class="text-base font-extrabold text-white leading-tight">
+                            {{ __('pages.tickets.detail.complete_modal_title') }}
+                        </h3>
+                        <p class="text-xs text-emerald-100/90 dark:text-emerald-200/90 mt-0.5 font-medium">
+                            {{ __('pages.tickets.detail.complete_modal_subtitle') }}
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <form @submit.prevent="submitResolve('COMPLETED')" class="space-y-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {{ __('pages.tickets.detail.completion_notes_label') }} <span class="text-red-500">*</span>
-                    </label>
-                    <textarea
-                        v-model="resolveForm.notes"
-                        rows="3"
-                        :placeholder="__('pages.tickets.detail.completion_notes_placeholder')"
-                        class="w-full p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                    ></textarea>
-                    <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
-                </div>
+            <form @submit.prevent="submitResolve('COMPLETED')" class="flex flex-col flex-1 justify-between min-h-0">
+                <div class="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+                    <div class="p-3.5 border border-emerald-200/60 bg-emerald-50/40 dark:border-emerald-800/50 dark:bg-emerald-950/30 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 flex gap-2.5">
+                        <Info class="h-4.5 w-4.5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                        <p class="leading-relaxed">
+                            Pastikan Anda telah mengisi catatan penanganan dan melampirkan foto bukti hasil penanganan dengan jelas.
+                        </p>
+                    </div>
 
-                <!-- Proof Photo Attachments (Single Photo) -->
-                <div class="space-y-2.5">
-                    <div class="flex items-center justify-between">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            {{ __('pages.tickets.detail.upload_proof_label') }} <span class="text-red-400">*</span>
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            {{ __('pages.tickets.detail.completion_notes_label') }} <span class="text-red-500">*</span>
                         </label>
-                        <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Maks. 1 Foto</span>
+                        <textarea
+                            v-model="resolveForm.notes"
+                            rows="6"
+                            :placeholder="__('pages.tickets.detail.completion_notes_placeholder')"
+                            class="w-full p-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none min-h-[140px]"
+                        ></textarea>
+                        <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
                     </div>
 
-                    <input ref="completeFileInput" type="file" accept="image/*" class="hidden" @change="handleCompleteFileSelect" />
-                    <input ref="completeCameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="handleCompleteFileSelect" />
+                    <!-- Proof Photo Attachments (Single Photo) -->
+                    <div class="space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                {{ __('pages.tickets.detail.upload_proof_label') }} <span class="text-red-400">*</span>
+                            </label>
+                            <span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">Maks. 1 Foto</span>
+                        </div>
 
-                    <!-- Single Preview Card -->
-                    <div v-if="completePreviews.length > 0" class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 group shadow-sm transition-all duration-200">
-                        <div class="relative h-44 w-full flex items-center justify-center bg-black/40">
-                            <img :src="completePreviews[0].preview" alt="Complete Preview" class="w-full h-full object-cover" />
+                        <input ref="completeFileInput" type="file" accept="image/*" class="hidden" @change="handleCompleteFileSelect" />
+                        <input ref="completeCameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="handleCompleteFileSelect" />
 
-                            <div class="absolute top-3 left-3 flex items-center gap-1.5 bg-emerald-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-extrabold shadow-sm">
-                                <CheckCircle2 class="h-3.5 w-3.5" />
-                                <span>Foto Selesai Pekerjaan Terpilih</span>
+                        <!-- Single Preview Card -->
+                        <div v-if="completePreviews.length > 0" class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900 group shadow-sm transition-all duration-200">
+                            <div class="relative h-48 w-full flex items-center justify-center bg-black/40">
+                                <img :src="completePreviews[0].preview" alt="Complete Preview" class="w-full h-full object-cover" />
+
+                                <div class="absolute top-3 left-3 flex items-center gap-1.5 bg-emerald-600/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-extrabold shadow-sm">
+                                    <CheckCircle2 class="h-3.5 w-3.5" />
+                                    <span>Foto Selesai Penanganan Terpilih</span>
+                                </div>
+
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                                    <button
+                                        type="button"
+                                        @click="completeFileInput?.click()"
+                                        class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                                    >
+                                        <UploadCloud class="h-3.5 w-3.5 text-emerald-600" />
+                                        <span>Ganti Foto</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="removeCompleteAttachment(0)"
+                                        class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
+                                    >
+                                        <X class="h-3.5 w-3.5" />
+                                        <span>Hapus</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
-                                <button
-                                    type="button"
-                                    @click="completeFileInput?.click()"
-                                    class="px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
-                                >
-                                    <UploadCloud class="h-3.5 w-3.5 text-emerald-600" />
-                                    <span>Ganti Foto</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    @click="removeCompleteAttachment(0)"
-                                    class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5"
-                                >
-                                    <X class="h-3.5 w-3.5" />
-                                    <span>Hapus</span>
-                                </button>
+                            <div class="p-3 bg-white dark:bg-slate-900 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 text-xs">
+                                <div class="flex items-center gap-2 min-w-0 pr-2">
+                                    <span class="font-bold text-slate-800 dark:text-slate-200 truncate">{{ completePreviews[0].name }}</span>
+                                    <span class="text-[10px] font-semibold text-slate-400 shrink-0">({{ (completePreviews[0].size / 1024).toFixed(0) }} KB)</span>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button
+                                        type="button"
+                                        @click="completeFileInput?.click()"
+                                        class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                                    >
+                                        Ganti
+                                    </button>
+                                    <span class="text-slate-300 dark:text-slate-700">•</span>
+                                    <button
+                                        type="button"
+                                        @click="removeCompleteAttachment(0)"
+                                        class="text-[11px] font-bold text-rose-500 hover:underline"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="p-3 bg-white dark:bg-slate-900 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 text-xs">
-                            <div class="flex items-center gap-2 min-w-0 pr-2">
-                                <span class="font-bold text-slate-800 dark:text-slate-200 truncate">{{ completePreviews[0].name }}</span>
-                                <span class="text-[10px] font-semibold text-slate-400 shrink-0">({{ (completePreviews[0].size / 1024).toFixed(0) }} KB)</span>
+                        <!-- Dropzone Box when empty -->
+                        <div v-else class="space-y-2">
+                            <div 
+                                @click="completeFileInput?.click()"
+                                class="border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition flex flex-col items-center justify-center border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-white/30 bg-slate-50 dark:bg-slate-950/40"
+                            >
+                                <div class="h-10 w-10 rounded-full flex items-center justify-center mb-2 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                                    <UploadCloud class="h-5 w-5" />
+                                </div>
+                                <p class="text-xs font-bold text-slate-800 dark:text-slate-200">Unggah 1 Foto Bukti Hasil Penanganan</p>
+                                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG (Maks 5MB)</p>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <button
-                                    type="button"
-                                    @click="completeFileInput?.click()"
-                                    class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
-                                >
-                                    Ganti
-                                </button>
-                                <span class="text-slate-300 dark:text-slate-700">•</span>
-                                <button
-                                    type="button"
-                                    @click="removeCompleteAttachment(0)"
-                                    class="text-[11px] font-bold text-rose-500 hover:underline"
-                                >
-                                    Hapus
-                                </button>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Dropzone Box when empty -->
-                    <div v-else class="space-y-2">
-                        <div 
-                            @click="completeFileInput?.click()"
-                            class="border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition flex flex-col items-center justify-center border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 dark:hover:border-white/30 bg-slate-50/50 dark:bg-slate-950/20"
-                        >
-                            <div class="h-9 w-9 rounded-full flex items-center justify-center mb-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
-                                <UploadCloud class="h-4.5 w-4.5" />
-                            </div>
-                            <p class="text-xs font-bold text-slate-700 dark:text-slate-200">Unggah 1 Foto Bukti Hasil Pekerjaan</p>
-                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">JPG, PNG (Maks 5MB)</p>
+                            <button
+                                type="button"
+                                @click="completeCameraInput?.click()"
+                                class="w-full h-11 rounded-xl border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-xs font-bold flex items-center justify-center gap-2 transition duration-150"
+                            >
+                                <Camera class="h-4.5 w-4.5" />
+                                Ambil Foto dari Kamera
+                            </button>
                         </div>
 
-                        <button
-                            type="button"
-                            @click="completeCameraInput?.click()"
-                            class="w-full h-10 rounded-xl border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-xs font-bold flex items-center justify-center gap-2 transition duration-150"
-                        >
-                            <Camera class="h-4 w-4" />
-                            Ambil Foto dari Kamera
-                        </button>
+                        <div v-if="resolveForm.errors.attachments" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.attachments }}</div>
                     </div>
-
-                    <div v-if="resolveForm.errors.attachments" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.attachments }}</div>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <SecondaryButton type="button" @click="showCompleteModal = false">{{ __('Batal') }}</SecondaryButton>
-                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes" class="!bg-emerald-600 hover:!bg-emerald-500">
-                        {{ resolveForm.processing ? __('Menyimpan...') : __('Simpan Selesai') }}
+                <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
+                    <SecondaryButton type="button" @click="showCompleteModal = false" class="h-11 px-5">{{ __('Batal') }}</SecondaryButton>
+                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes" class="h-11 px-6 !bg-emerald-600 hover:!bg-emerald-500 font-bold">
+                        {{ resolveForm.processing ? __('Menyimpan...') : __('Selesai Penanganan') }}
                     </PrimaryButton>
                 </div>
             </form>
@@ -1322,38 +1348,50 @@ const contextLabel = computed(() => {
 
     <!-- Modal 2: Pause / Pending -->
     <Modal :show="showPendingModal" @close="showPendingModal = false" max-width="lg">
-        <div class="p-6 space-y-4">
-            <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <div class="h-10 w-10 rounded-xl bg-orange-50 dark:bg-orange-950/30 text-orange-600 flex items-center justify-center flex-shrink-0">
-                    <Pause class="h-5 w-5" />
-                </div>
-                <div>
-                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
-                        {{ __('pages.tickets.detail.pending_modal_title') }}
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {{ __('pages.tickets.detail.pending_modal_subtitle') }}
-                    </p>
+        <div class="flex flex-col h-full sm:h-auto min-h-screen sm:min-h-0 bg-white dark:bg-slate-900">
+            <!-- Colored Sticky Header -->
+            <div class="bg-amber-500 dark:bg-amber-950/90 text-white p-4 sm:p-5 flex items-center justify-between sticky top-0 z-10 shrink-0 border-b border-amber-400/30 dark:border-amber-800/50 shadow-sm">
+                <div class="flex items-center gap-3 pr-2">
+                    <div class="h-10 w-10 rounded-xl bg-white/15 backdrop-blur-md text-white flex items-center justify-center flex-shrink-0">
+                        <Pause class="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 class="text-base font-extrabold text-white leading-tight">
+                            {{ __('pages.tickets.detail.pending_modal_title') }}
+                        </h3>
+                        <p class="text-xs text-amber-100/90 dark:text-amber-200/90 mt-0.5 font-medium">
+                            {{ __('pages.tickets.detail.pending_modal_subtitle') }}
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <form @submit.prevent="submitResolve('PENDING')" class="space-y-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {{ __('pages.tickets.detail.pending_reason_label') }} <span class="text-red-500">*</span>
-                    </label>
-                    <textarea
-                        v-model="resolveForm.notes"
-                        rows="3"
-                        :placeholder="__('pages.tickets.detail.pending_reason_placeholder')"
-                        class="w-full p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                    ></textarea>
-                    <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
+            <form @submit.prevent="submitResolve('PENDING')" class="flex flex-col flex-1 justify-between min-h-0">
+                <div class="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+                    <div class="p-3.5 border border-amber-200/60 bg-amber-50/40 dark:border-amber-800/50 dark:bg-amber-950/30 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex gap-2.5">
+                        <Info class="h-4.5 w-4.5 flex-shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+                        <p class="leading-relaxed">
+                            Menangguhkan tugas akan menghentikan sementara perhitungan durasi Metrik Waktu Penanganan hingga Anda melanjutkan pekerjaan kembali.
+                        </p>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            {{ __('pages.tickets.detail.pending_reason_label') }} <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            v-model="resolveForm.notes"
+                            rows="6"
+                            :placeholder="__('pages.tickets.detail.pending_reason_placeholder')"
+                            class="w-full p-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none min-h-[140px]"
+                        ></textarea>
+                        <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
+                    </div>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <SecondaryButton type="button" @click="showPendingModal = false">{{ __('Batal') }}</SecondaryButton>
-                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes" class="!bg-orange-500 hover:!bg-orange-450">
+                <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
+                    <SecondaryButton type="button" @click="showPendingModal = false" class="h-11 px-5">{{ __('Batal') }}</SecondaryButton>
+                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes" class="h-11 px-6 !bg-amber-500 hover:!bg-amber-450 font-bold">
                         {{ resolveForm.processing ? __('Menangguhkan...') : __('Tangguhkan Tugas') }}
                     </PrimaryButton>
                 </div>
@@ -1363,38 +1401,50 @@ const contextLabel = computed(() => {
 
     <!-- Modal 3: Cancel Ticket -->
     <Modal :show="showCancelModal" @close="showCancelModal = false" max-width="lg">
-        <div class="p-6 space-y-4">
-            <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <div class="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 flex items-center justify-center flex-shrink-0">
-                    <XCircle class="h-5 w-5" />
-                </div>
-                <div>
-                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white leading-tight">
-                        {{ __('pages.tickets.detail.cancel_modal_title') }}
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {{ __('pages.tickets.detail.cancel_modal_subtitle') }}
-                    </p>
+        <div class="flex flex-col h-full sm:h-auto min-h-screen sm:min-h-0 bg-white dark:bg-slate-900">
+            <!-- Colored Sticky Header -->
+            <div class="bg-rose-600 dark:bg-rose-950/90 text-white p-4 sm:p-5 flex items-center justify-between sticky top-0 z-10 shrink-0 border-b border-rose-500/30 dark:border-rose-800/50 shadow-sm">
+                <div class="flex items-center gap-3 pr-2">
+                    <div class="h-10 w-10 rounded-xl bg-white/15 backdrop-blur-md text-white flex items-center justify-center flex-shrink-0">
+                        <XCircle class="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 class="text-base font-extrabold text-white leading-tight">
+                            {{ __('pages.tickets.detail.cancel_modal_title') }}
+                        </h3>
+                        <p class="text-xs text-rose-100/90 dark:text-rose-200/90 mt-0.5 font-medium">
+                            {{ __('pages.tickets.detail.cancel_modal_subtitle') }}
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            <form @submit.prevent="submitResolve('CANCEL')" class="space-y-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {{ __('pages.tickets.detail.cancel_reason_label') }} <span class="text-red-500">*</span>
-                    </label>
-                    <textarea
-                        v-model="resolveForm.notes"
-                        rows="3"
-                        :placeholder="__('pages.tickets.detail.cancel_reason_placeholder')"
-                        class="w-full p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
-                    ></textarea>
-                    <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
+            <form @submit.prevent="submitResolve('CANCEL')" class="flex flex-col flex-1 justify-between min-h-0">
+                <div class="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+                    <div class="p-3.5 border border-rose-200/60 bg-rose-50/40 dark:border-rose-800/50 dark:bg-rose-950/30 rounded-xl text-xs text-rose-800 dark:text-rose-300 flex gap-2.5">
+                        <Info class="h-4.5 w-4.5 flex-shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                        <p class="leading-relaxed">
+                            Perhatian: Pembatalan tiket ini akan menghentikan pengerjaan secara permanen. Pastikan alasan pembatalan telah diisi secara jelas.
+                        </p>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                            {{ __('pages.tickets.detail.cancel_reason_label') }} <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            v-model="resolveForm.notes"
+                            rows="6"
+                            :placeholder="__('pages.tickets.detail.cancel_reason_placeholder')"
+                            class="w-full p-3.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none min-h-[140px]"
+                        ></textarea>
+                        <div v-if="resolveForm.errors.notes" class="text-[10px] text-red-500 font-semibold">{{ resolveForm.errors.notes }}</div>
+                    </div>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <SecondaryButton type="button" @click="showCancelModal = false">{{ __('Batal') }}</SecondaryButton>
-                    <DangerButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes">
+                <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
+                    <SecondaryButton type="button" @click="showCancelModal = false" class="h-11 px-5">{{ __('Batal') }}</SecondaryButton>
+                    <DangerButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes" class="h-11 px-6 font-bold">
                         {{ resolveForm.processing ? __('Batalkan...') : __('Batalkan Tiket') }}
                     </DangerButton>
                 </div>

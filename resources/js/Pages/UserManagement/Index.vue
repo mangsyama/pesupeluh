@@ -2,6 +2,9 @@
 import { ref, computed, watch, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import { Head, useForm, usePage, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Modal from '@/Components/Modal.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, UserPlus, Plus, X, KeyRound, RotateCcw, ChevronLeft, ChevronRight, Eye } from '@lucide/vue';
 
@@ -653,172 +656,166 @@ const deleteUser = (user) => {
             </div>
         </div>
 
-        <Teleport to="body">
-            <div v-if="showModal" @click.self="showModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl bg-white dark:bg-slate-900 border-0 rounded-none sm:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col">
-                    <!-- Header Modal Warna Hijau -->
-                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 bg-emerald-600 dark:bg-emerald-700 text-white rounded-none sm:rounded-t-2xl shrink-0 shadow-sm">
-                        <h3 class="text-base font-bold text-white flex items-center gap-2.5">
-                            <div class="h-7 w-7 rounded-lg bg-white/15 dark:bg-white/20 flex items-center justify-center shrink-0">
-                                <UserPlus v-if="!isEditing" class="h-4 w-4 text-white" />
-                                <UserCheck v-else class="h-4 w-4 text-white" />
+        <!-- Modal Tambah / Edit Pengguna -->
+        <Modal :show="showModal" @close="showModal = false" max-width="2xl">
+            <div class="flex flex-col h-full sm:h-auto min-h-screen sm:min-h-0 bg-white dark:bg-slate-900">
+                <!-- Solid Emerald Sticky Header (No X button) -->
+                <div class="bg-emerald-600 dark:bg-emerald-950/90 text-white p-4 sm:p-5 flex items-center justify-between sticky top-0 z-10 shrink-0 border-b border-emerald-500/30 dark:border-emerald-800/50 shadow-sm">
+                    <div class="flex items-center gap-3 pr-2">
+                        <div class="h-10 w-10 rounded-xl bg-white/15 backdrop-blur-md text-white flex items-center justify-center flex-shrink-0">
+                            <UserPlus v-if="!isEditing" class="h-5 w-5 text-white" />
+                            <UserCheck v-else class="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-white leading-tight">
+                                {{ isEditing ? __('pages.user_management.edit_user_title') : __('pages.user_management.add_user_title') }}
+                            </h3>
+                            <p class="text-xs text-emerald-100/90 dark:text-emerald-200/90 mt-0.5 font-medium">
+                                {{ isEditing ? 'Perbarui data akun pengguna' : 'Isi data akun pengguna baru' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <form @submit.prevent="submitForm" class="flex flex-col flex-1 justify-between min-h-0">
+                    <div class="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- 1. Nama Lengkap -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.user_management.form.full_name') }} <span class="text-red-500">*</span></label>
+                                <input
+                                    v-model="form.name"
+                                    type="text"
+                                    required
+                                    class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    :placeholder="__('pages.user_management.form.full_name_placeholder')"
+                                />
+                                <div v-if="form.errors.name" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.name }}</div>
                             </div>
-                            <span>{{ isEditing ? __('pages.user_management.edit_user_title') : __('pages.user_management.add_user_title') }}</span>
-                        </h3>
-                        <button type="button" @click="showModal = false" class="p-1.5 text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors" aria-label="Tutup modal">
-                            <X class="h-5 w-5" />
-                        </button>
+
+                            <!-- 2. NIP -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.user_management.form.nip') }} <span class="text-red-500">*</span></label>
+                                <input
+                                    v-model="form.nip"
+                                    type="text"
+                                    required
+                                    class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    :placeholder="__('pages.user_management.form.nip_placeholder')"
+                                />
+                                <div v-if="form.errors.nip" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.nip }}</div>
+                            </div>
+
+                            <!-- 3. Nama Pengguna (Username) -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.user_management.form.username') }}</label>
+                                <input
+                                    v-model="form.username"
+                                    type="text"
+                                    class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    :placeholder="__('pages.user_management.form.username_placeholder')"
+                                />
+                                <div v-if="form.errors.username" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.username }}</div>
+                            </div>
+
+                            <!-- 4. Email -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.user_management.form.email') }} <span class="text-red-500">*</span></label>
+                                <input
+                                    v-model="form.email"
+                                    type="email"
+                                    required
+                                    class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    :placeholder="__('pages.user_management.form.email_placeholder')"
+                                />
+                                <div v-if="form.errors.email" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.email }}</div>
+                            </div>
+
+                            <!-- 5. Nomor HP -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.user_management.form.phone') }}</label>
+                                <input
+                                    v-model="form.phone_number"
+                                    type="text"
+                                    class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    :placeholder="__('pages.user_management.form.phone_placeholder')"
+                                />
+                                <div v-if="form.errors.phone_number" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.phone_number }}</div>
+                            </div>
+
+                            <!-- 6. Kata Sandi -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                                    {{ isEditing ? __('pages.user_management.form.password_optional') : __('pages.user_management.form.password') }}
+                                    <span v-if="!isEditing" class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="form.password"
+                                    type="password"
+                                    :required="!isEditing"
+                                    class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all duration-150"
+                                    :placeholder="isEditing ? __('pages.user_management.form.password_placeholder_edit') : __('pages.user_management.form.password_placeholder_add')"
+                                />
+                                <div v-if="form.errors.password" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.password }}</div>
+                            </div>
+
+                            <!-- 7. Peran Spesifik (Role) -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.user_management.form.specific_role') }}</label>
+                                <SearchableSelect
+                                    v-model="form.role_id"
+                                    :options="roleOptions"
+                                    :searchable="false"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Pilih Peran..."
+                                />
+                                <div v-if="form.errors.role_id" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.role_id }}</div>
+                            </div>
+
+                            <!-- 8. Unit Penunjang -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.user_management.form.supporting_unit') }}</label>
+                                <SearchableSelect
+                                    v-model="form.supporting_unit_id"
+                                    :options="unitOptions"
+                                    :searchable="true"
+                                    value-key="id"
+                                    label-key="name"
+                                    placeholder="Tanpa Unit Penunjang"
+                                    search-placeholder="Cari unit..."
+                                />
+                                <div v-if="form.errors.supporting_unit_id" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.supporting_unit_id }}</div>
+                            </div>
+
+                            <!-- 9. Ruangan -->
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.user_management.form.room') }}</label>
+                                <SearchableSelect
+                                    v-model="form.room_id"
+                                    :options="roomOptions"
+                                    :searchable="true"
+                                    value-key="id"
+                                    label-key="name"
+                                    subtitle-key="location_floor"
+                                    placeholder="Tanpa Ruangan"
+                                    search-placeholder="Cari ruangan..."
+                                />
+                                <div v-if="form.errors.room_id" class="text-[10px] text-red-500 font-semibold mt-1">{{ form.errors.room_id }}</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <form @submit.prevent="submitForm" class="flex flex-col flex-1 overflow-hidden min-h-0">
-                        <div class="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- 1. Nama Lengkap -->
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.full_name') }}</label>
-                                    <input
-                                        v-model="form.name"
-                                        type="text"
-                                        required
-                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                        :placeholder="__('pages.user_management.form.full_name_placeholder')"
-                                    />
-                                    <div v-if="form.errors.name" class="text-xs text-red-500 mt-1">{{ form.errors.name }}</div>
-                                </div>
-
-                                <!-- 2. NIP -->
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.nip') }}</label>
-                                    <input
-                                        v-model="form.nip"
-                                        type="text"
-                                        required
-                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                        :placeholder="__('pages.user_management.form.nip_placeholder')"
-                                    />
-                                    <div v-if="form.errors.nip" class="text-xs text-red-500 mt-1">{{ form.errors.nip }}</div>
-                                </div>
-
-                                <!-- 3. Nama Pengguna (Username) -->
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.username') }}</label>
-                                    <input
-                                        v-model="form.username"
-                                        type="text"
-                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                        :placeholder="__('pages.user_management.form.username_placeholder')"
-                                    />
-                                    <div v-if="form.errors.username" class="text-xs text-red-500 mt-1">{{ form.errors.username }}</div>
-                                </div>
-
-                                <!-- 4. Email -->
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.email') }}</label>
-                                    <input
-                                        v-model="form.email"
-                                        type="email"
-                                        required
-                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                        :placeholder="__('pages.user_management.form.email_placeholder')"
-                                    />
-                                    <div v-if="form.errors.email" class="text-xs text-red-500 mt-1">{{ form.errors.email }}</div>
-                                </div>
-
-                                <!-- 5. Nomor HP -->
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.phone') }}</label>
-                                    <input
-                                        v-model="form.phone_number"
-                                        type="text"
-                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                        :placeholder="__('pages.user_management.form.phone_placeholder')"
-                                    />
-                                    <div v-if="form.errors.phone_number" class="text-xs text-red-500 mt-1">{{ form.errors.phone_number }}</div>
-                                </div>
-
-                                <!-- 6. Kata Sandi -->
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                                        {{ isEditing ? __('pages.user_management.form.password_optional') : __('pages.user_management.form.password') }}
-                                    </label>
-                                    <input
-                                        v-model="form.password"
-                                        type="password"
-                                        :required="!isEditing"
-                                        class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition-all duration-150"
-                                        :placeholder="isEditing ? __('pages.user_management.form.password_placeholder_edit') : __('pages.user_management.form.password_placeholder_add')"
-                                    />
-                                    <div v-if="form.errors.password" class="text-xs text-red-500 mt-1">{{ form.errors.password }}</div>
-                                </div>
-
-                                <!-- 7. Peran Spesifik (Role) -->
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.specific_role') }}</label>
-                                    <SearchableSelect
-                                        v-model="form.role_id"
-                                        :options="roleOptions"
-                                        :searchable="false"
-                                        value-key="id"
-                                        label-key="name"
-                                        placeholder="Pilih Peran..."
-                                    />
-                                    <div v-if="form.errors.role_id" class="text-xs text-red-500 mt-1">{{ form.errors.role_id }}</div>
-                                </div>
-
-                                <!-- 8. Unit Penunjang -->
-                                <div>
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.supporting_unit') }}</label>
-                                    <SearchableSelect
-                                        v-model="form.supporting_unit_id"
-                                        :options="unitOptions"
-                                        :searchable="true"
-                                        value-key="id"
-                                        label-key="name"
-                                        placeholder="Tanpa Unit Penunjang"
-                                        search-placeholder="Cari unit..."
-                                    />
-                                    <div v-if="form.errors.supporting_unit_id" class="text-xs text-red-500 mt-1">{{ form.errors.supporting_unit_id }}</div>
-                                </div>
-
-                                <!-- 9. Ruangan -->
-                                <div class="md:col-span-2">
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.user_management.form.room') }}</label>
-                                    <SearchableSelect
-                                        v-model="form.room_id"
-                                        :options="roomOptions"
-                                        :searchable="true"
-                                        value-key="id"
-                                        label-key="name"
-                                        subtitle-key="location_floor"
-                                        placeholder="Tanpa Ruangan"
-                                        search-placeholder="Cari ruangan..."
-                                    />
-                                    <div v-if="form.errors.room_id" class="text-xs text-red-500 mt-1">{{ form.errors.room_id }}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Fixed Bottom Footer (pinned outside scrollable body) -->
-                        <div class="flex justify-end gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50 flex-shrink-0">
-                            <button
-                                type="button"
-                                @click="showModal = false"
-                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150"
-                            >
-                                {{ __('pages.user_management.alerts.cancel') }}
-                            </button>
-                            <button
-                                type="submit"
-                                :disabled="form.processing"
-                                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 disabled:opacity-50 border-0 shadow-sm"
-                            >
-                                {{ form.processing ? __('pages.user_management.alerts.saving') : __('Save') }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <!-- Sticky Action Footer -->
+                    <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
+                        <SecondaryButton type="button" @click="showModal = false" class="h-11 px-5">{{ __('pages.user_management.alerts.cancel') }}</SecondaryButton>
+                        <PrimaryButton type="submit" :disabled="form.processing" class="h-11 px-6 !bg-emerald-600 hover:!bg-emerald-500 font-bold">
+                            {{ form.processing ? __('pages.user_management.alerts.saving') : (isEditing ? __('Simpan Perubahan') : __('Tambah Pengguna')) }}
+                        </PrimaryButton>
+                    </div>
+                </form>
             </div>
-        </Teleport>
+        </Modal>
 
     </AuthenticatedLayout>
 </template>

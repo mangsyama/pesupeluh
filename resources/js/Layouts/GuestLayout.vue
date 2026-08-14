@@ -23,9 +23,24 @@ const removeToast = (id) => {
 };
 
 const showNotificationToast = (normalized) => {
-    const id = Date.now() + Math.random();
+    if (!normalized || (!normalized.message && !normalized.title)) return;
+
+    const titleStr = String(normalized.title || '').trim();
+    const msgStr = String(normalized.message || '').trim();
+    const now = Date.now();
+
+    const isDuplicate = toasts.value.some(t => {
+        const sameMsg = String(t.message || '').trim() === msgStr;
+        const recent = (now - (t.timestamp || 0)) < 1500;
+        return sameMsg && recent;
+    });
+
+    if (isDuplicate) return;
+
+    const id = now + Math.random();
     toasts.value.push({
         id,
+        timestamp: now,
         title: normalized.title,
         message: normalized.message,
         type: normalized.type,

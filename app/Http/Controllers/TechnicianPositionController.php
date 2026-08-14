@@ -55,7 +55,7 @@ class TechnicianPositionController extends Controller
                 $locParts = array_filter([$roomName]);
                 $autoLocation = !empty($locParts) ? implode(' - ', $locParts) : 'Lokasi Penugasan';
             } else {
-                $autoLocation = $t->current_location ?: 'Area Pos Standby';
+                $autoLocation = ($t->current_location && $t->current_location !== 'Area Pos Standby') ? $t->current_location : 'Standby';
             }
 
             return [

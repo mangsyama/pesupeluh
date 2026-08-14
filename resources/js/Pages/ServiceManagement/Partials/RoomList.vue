@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, watch, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
-import { Edit2, Trash2, X, ChevronLeft, ChevronRight } from '@lucide/vue';
+import Modal from '@/Components/Modal.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
+import { Edit2, Trash2, X, ChevronLeft, ChevronRight, MapPin } from '@lucide/vue';
 
 const props = defineProps({
     rooms: {
@@ -131,7 +134,6 @@ const submitRoomForm = () => {
         roomForm.put(route('service-management.rooms.update', roomForm.id), {
             onSuccess: () => {
                 showRoomModal.value = false;
-                proxy.$toast(proxy.__('pages.service_management.rooms.toast_updated'), 'success');
             }
         });
     } else {
@@ -139,7 +141,6 @@ const submitRoomForm = () => {
             onSuccess: () => {
                 showRoomModal.value = false;
                 roomForm.reset();
-                proxy.$toast(proxy.__('pages.service_management.rooms.toast_added'), 'success');
             }
         });
     }
@@ -299,61 +300,71 @@ defineExpose({
         </div>
 
         <!-- ROOM MODAL -->
-        <Teleport to="body">
-            <div v-if="showRoomModal" @click.self="showRoomModal = false" class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-slate-950/40 backdrop-blur-sm">
-                <div class="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md bg-white dark:bg-slate-900 border-0 rounded-none sm:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 flex flex-col">
-                    <!-- Header Modal Warna Hijau -->
-                    <div class="flex items-center justify-between px-5 sm:px-6 py-4 bg-emerald-600 dark:bg-emerald-700 text-white rounded-none sm:rounded-t-2xl shrink-0 shadow-sm">
-                        <h3 class="text-base font-bold text-white flex items-center gap-2">
-                            <span>{{ isEditingRoom ? __('pages.service_management.rooms.title_edit') : __('pages.service_management.rooms.title_add') }}</span>
-                        </h3>
-                        <button type="button" @click="showRoomModal = false" class="p-1.5 text-emerald-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors" aria-label="Tutup modal">
-                            <X class="h-5 w-5" />
-                        </button>
+        <Modal :show="showRoomModal" @close="showRoomModal = false" max-width="md">
+            <div class="flex flex-col h-full sm:h-auto min-h-screen sm:min-h-0 bg-white dark:bg-slate-900">
+                <!-- Solid Emerald Sticky Header (No X button) -->
+                <div class="bg-emerald-600 dark:bg-emerald-950/90 text-white p-4 sm:p-5 flex items-center justify-between sticky top-0 z-10 shrink-0 border-b border-emerald-500/30 dark:border-emerald-800/50 shadow-sm">
+                    <div class="flex items-center gap-3 pr-2">
+                        <div class="h-10 w-10 rounded-xl bg-white/15 backdrop-blur-md text-white flex items-center justify-center flex-shrink-0">
+                            <MapPin class="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 class="text-base font-extrabold text-white leading-tight">
+                                {{ isEditingRoom ? __('pages.service_management.rooms.title_edit') : __('pages.service_management.rooms.title_add') }}
+                            </h3>
+                            <p class="text-xs text-emerald-100/90 dark:text-emerald-200/90 mt-0.5 font-medium">
+                                {{ isEditingRoom ? 'Perbarui data lokasi ruangan' : 'Isi data lokasi ruangan baru' }}
+                            </p>
+                        </div>
                     </div>
-                    <form @submit.prevent="submitRoomForm" class="flex flex-col flex-1 overflow-hidden min-h-0">
-                        <div class="p-5 sm:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.rooms.label_name') }} <span class="text-red-400">*</span></label>
-                                <input 
-                                    v-model="roomForm.name"
-                                    type="text" 
-                                    required
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
-                                    :placeholder="__('pages.service_management.rooms.placeholder_name')"
-                                />
-                                <div v-if="roomForm.errors.name" class="text-xs text-red-500 mt-1">{{ roomForm.errors.name }}</div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Gedung</label>
-                                <input 
-                                    v-model="roomForm.building_name"
-                                    type="text" 
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
-                                    placeholder="Contoh: Gedung A / Gedung Utama"
-                                />
-                                <div v-if="roomForm.errors.building_name" class="text-xs text-red-500 mt-1">{{ roomForm.errors.building_name }}</div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{{ __('pages.service_management.rooms.label_floor') }}</label>
-                                <input 
-                                    v-model="roomForm.location_floor"
-                                    type="text" 
-                                    class="w-full px-4 py-2 text-sm border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:border-emerald-500 dark:focus:border-white focus:ring-0 focus:outline-none transition duration-150"
-                                    :placeholder="__('pages.service_management.rooms.placeholder_floor')"
-                                />
-                                <div v-if="roomForm.errors.location_floor" class="text-xs text-red-500 mt-1">{{ roomForm.errors.location_floor }}</div>
-                            </div>
+                </div>
+
+                <form @submit.prevent="submitRoomForm" class="flex flex-col flex-1 justify-between min-h-0">
+                    <div class="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.service_management.rooms.label_name') }} <span class="text-red-500">*</span></label>
+                            <input 
+                                v-model="roomForm.name"
+                                type="text" 
+                                required
+                                class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition duration-150"
+                                :placeholder="__('pages.service_management.rooms.placeholder_name')"
+                            />
+                            <div v-if="roomForm.errors.name" class="text-[10px] text-red-500 font-semibold mt-1">{{ roomForm.errors.name }}</div>
                         </div>
 
-                        <!-- Fixed Bottom Footer (pinned at bottom) -->
-                        <div class="flex justify-end gap-3 px-5 sm:px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/50 flex-shrink-0">
-                            <button type="button" @click="showRoomModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm rounded-xl transition duration-150">{{ __('global.cancel') }}</button>
-                            <button type="submit" :disabled="roomForm.processing" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 font-bold text-sm rounded-xl transition duration-150 border-0 shadow-sm disabled:opacity-50">{{ __('pages.service_management.rooms.btn_save') }}</button>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Gedung</label>
+                            <input 
+                                v-model="roomForm.building_name"
+                                type="text" 
+                                class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition duration-150"
+                                placeholder="Contoh: Gedung A / Gedung Utama"
+                            />
+                            <div v-if="roomForm.errors.building_name" class="text-[10px] text-red-500 font-semibold mt-1">{{ roomForm.errors.building_name }}</div>
                         </div>
-                    </form>
-                </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">{{ __('pages.service_management.rooms.label_floor') }}</label>
+                            <input 
+                                v-model="roomForm.location_floor"
+                                type="text" 
+                                class="w-full px-3.5 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none transition duration-150"
+                                :placeholder="__('pages.service_management.rooms.placeholder_floor')"
+                            />
+                            <div v-if="roomForm.errors.location_floor" class="text-[10px] text-red-500 font-semibold mt-1">{{ roomForm.errors.location_floor }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Sticky Action Footer -->
+                    <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
+                        <SecondaryButton type="button" @click="showRoomModal = false" class="h-11 px-5">{{ __('global.cancel') }}</SecondaryButton>
+                        <PrimaryButton type="submit" :disabled="roomForm.processing" class="h-11 px-6 !bg-emerald-600 hover:!bg-emerald-500 font-bold">
+                            {{ roomForm.processing ? __('pages.service_management.rooms.btn_saving') || 'Menyimpan...' : __('pages.service_management.rooms.btn_save') }}
+                        </PrimaryButton>
+                    </div>
+                </form>
             </div>
-        </Teleport>
+        </Modal>
     </div>
 </template>

@@ -105,21 +105,9 @@ const formatDate = (dateStr) => {
                             <User class="h-6 w-6" />
                         </div>
                         <div class="space-y-0.5">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                                    Detail Data & Hak Akses Pengguna
-                                </h2>
-                                <span 
-                                    :class="[
-                                        'inline-flex items-center justify-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase leading-none border',
-                                        targetUser.is_active
-                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300 border-emerald-200/50'
-                                            : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border-amber-200/50'
-                                    ]"
-                                >
-                                    {{ targetUser.is_active ? 'Aktif (Verified)' : 'Nonaktif / Suspended' }}
-                                </span>
-                            </div>
+                            <h2 class="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                                Detail Data Pengguna
+                            </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-2xl leading-relaxed">
                                 Ringkasan profil, peran akses, dan hak akses halaman pengguna.
                             </p>

@@ -58,12 +58,12 @@ const stats = computed(() => {
 
 const getStatusBadge = (dutyStatus, activeTicketsCount, isOnDuty) => {
     if (!isOnDuty) {
-        return { label: 'Tidak Hadir / Off', class: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700', iconColor: 'bg-slate-400' };
+        return { label: 'TIDAK HADIR / OFF', textClass: 'text-slate-500 dark:text-slate-400', iconColor: 'bg-slate-400' };
     }
     if (dutyStatus === 'BUSY' || activeTicketsCount > 0) {
-        return { label: 'Sedang Penanganan', class: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/80', iconColor: 'bg-amber-500' };
+        return { label: 'SEDANG PENANGANAN', textClass: 'text-amber-600 dark:text-amber-400', iconColor: 'bg-amber-500' };
     }
-    return { label: 'Siap Bertugas (Ready)', class: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-white/10 dark:text-white dark:border-white/20', iconColor: 'bg-emerald-500 animate-pulse' };
+    return { label: 'SIAP BERTUGAS', textClass: 'text-emerald-600 dark:text-emerald-400', iconColor: 'bg-emerald-500 animate-pulse' };
 };
 
 const formatWaNumber = (phone) => {
@@ -249,8 +249,8 @@ const toggleDutyStatus = (isOnDuty) => {
                                     Status Kesiapan:
                                 </span>
                                 <span :class="[
-                                    'font-bold px-2 py-0.5 rounded-md text-[11px] uppercase tracking-wide text-right whitespace-normal leading-tight',
-                                    getStatusBadge(tech.duty_status, tech.active_tickets_count, tech.is_on_duty).class
+                                    'font-semibold text-right truncate max-w-[160px] uppercase tracking-wide',
+                                    getStatusBadge(tech.duty_status, tech.active_tickets_count, tech.is_on_duty).textClass
                                 ]">
                                     {{ getStatusBadge(tech.duty_status, tech.active_tickets_count, tech.is_on_duty).label }}
                                 </span>
@@ -261,8 +261,8 @@ const toggleDutyStatus = (isOnDuty) => {
                                     <MapPin class="h-3.5 w-3.5 text-emerald-500" />
                                     Lokasi Terakhir:
                                 </span>
-                                <span class="font-semibold truncate max-w-[160px] text-slate-800 dark:text-white" :title="tech.current_location">
-                                    {{ tech.current_location }}
+                                <span class="font-semibold truncate max-w-[160px] text-slate-800 dark:text-white" :title="tech.current_location === 'Area Pos Standby' ? 'Standby' : (tech.current_location || 'Standby')">
+                                    {{ tech.current_location === 'Area Pos Standby' ? 'Standby' : (tech.current_location || 'Standby') }}
                                 </span>
                             </div>
 
