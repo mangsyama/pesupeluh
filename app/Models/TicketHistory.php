@@ -41,6 +41,6 @@ class TicketHistory extends Model
     protected function serializeDate(\DateTimeInterface $date): string
     {
         $tz = config('app.timezone', 'Asia/Makassar');
-        return \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i:s', $date->format('Y-m-d H:i:s'), $tz)->format('Y-m-d\TH:i:sP');
+        return \Illuminate\Support\Carbon::instance($date)->setTimezone($tz)->format('Y-m-d\TH:i:sP');
     }
 }

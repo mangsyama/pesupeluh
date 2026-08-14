@@ -430,7 +430,7 @@ class TicketController extends Controller
         // Calculate paused duration
         $pausedDiff = 0;
         if ($ticket->last_paused_at) {
-            $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
+            $pausedDiff = (int) abs(now()->diffInSeconds($ticket->last_paused_at));
         }
 
         $currentPaused = (int) ($ticket->paused_duration_seconds ?? 0);
