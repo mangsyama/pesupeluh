@@ -342,7 +342,7 @@ class TicketController extends Controller
 
                     // Calculate pending duration if last_paused_at was active
                     if ($ticket->last_paused_at) {
-                        $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
+                        $pausedDiff = (int) abs(now()->diffInSeconds($ticket->last_paused_at));
                         $ticket->increment('paused_duration_seconds', $pausedDiff);
                         $ticket->update(['last_paused_at' => null]);
                     }
@@ -389,7 +389,7 @@ class TicketController extends Controller
 
                     // Clear any active pause
                     if ($ticket->last_paused_at) {
-                        $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
+                        $pausedDiff = (int) abs(now()->diffInSeconds($ticket->last_paused_at));
                         $ticket->increment('paused_duration_seconds', $pausedDiff);
                         $ticket->update(['last_paused_at' => null]);
                     }

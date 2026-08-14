@@ -36,6 +36,19 @@ class TicketHistory extends Model
     }
 
     /**
+     * Correct timezone on dates read from the database.
+     * SQL Server stores WITA time values but labels them as +00:00 (UTC).
+     */
+    protected function asDateTime($value)
+    {
+        $date = parent::asDateTime($value);
+        if ($date && in_array($date->timezone->getName(), ['UTC', '+00:00'])) {
+            return $date->shiftTimezone(config('app.timezone', 'Asia/Makassar'));
+        }
+        return $date;
+    }
+
+    /**
      * Prepare a date for array / JSON serialization.
      */
     protected function serializeDate(\DateTimeInterface $date): string
