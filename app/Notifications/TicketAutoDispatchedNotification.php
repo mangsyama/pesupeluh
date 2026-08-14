@@ -65,13 +65,13 @@ class TicketAutoDispatchedNotification extends Notification
         return TelegramMessage::create()
             ->to($chatId)
             ->content("⚡ *Disposisi Otomatis Sistem (5 Menit)*\n\nLaporan *#{$this->ticket->ticket_number}* di *{$roomName}* terlewat 5 menit tanpa disposisi petugas.\n\nSistem telah mengalihkan tiket secara otomatis ke *Teknisi {$this->technician->name}* (beban penugasan tersedikit).")
-            ->button('Lihat Tiket', route('reports-management.show', ['ticket' => $this->ticket->uuid]));
+            ->button('Lihat Tiket', url(route('reports-management.show', ['ticket' => $this->ticket->uuid], false)));
     }
 
     public function toWaGateway($notifiable): ?string
     {
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
-        $link = route('reports-management.show', ['ticket' => $this->ticket->uuid]);
+        $link = url(route('reports-management.show', ['ticket' => $this->ticket->uuid], false));
 
         return "⚡ *Disposisi Otomatis Sistem*\n\n"
              . "Laporan *#{$this->ticket->ticket_number}* di *{$roomName}* terlewat 5 menit pada jam kerja tanpa disposisi petugas.\n\n"

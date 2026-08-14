@@ -113,11 +113,12 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
         $reporterName = $this->ticket->reporter?->name ?? 'Reporter';
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
+        $fullUrl = url($details['route']);
 
         return TelegramMessage::create()
             ->to($chatId)
             ->content("⚠️ *{$details['title']}*\n\n{$details['message']}\n\n*Pelapor:* {$reporterName}\n*Ruangan:* {$roomName}\n*Kategori:* {$categoryName}\n*Deskripsi:* {$this->ticket->problem_description}")
-            ->button('Lihat Tiket', $details['route']);
+            ->button('Lihat Tiket', $fullUrl);
     }
 
     public function toWaGateway($notifiable): ?string
@@ -126,6 +127,7 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
         $reporterName = $this->ticket->reporter?->name ?? 'Pelapor';
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
+        $fullUrl = url($details['route']);
 
         return "⚠️ *{$details['title']}*\n\n"
              . "{$details['message']}\n\n"
@@ -133,7 +135,7 @@ class NewTicketReportedNotification extends Notification implements ShouldQueue
              . "• *Ruangan:* {$roomName}\n"
              . "• *Kategori:* {$categoryName}\n"
              . "• *Deskripsi:* {$this->ticket->problem_description}\n\n"
-             . "Lihat Tiket:\n{$details['route']}";
+             . "Lihat Tiket:\n{$fullUrl}";
     }
 
     public function toArray($notifiable): array

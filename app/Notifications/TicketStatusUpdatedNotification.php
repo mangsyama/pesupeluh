@@ -126,15 +126,18 @@ class TicketStatusUpdatedNotification extends Notification
         if (!$chatId) return null;
 
         $details = $this->getNotificationDetails($notifiable);
+        $fullUrl = url($details['route']);
+
         return TelegramMessage::create()
             ->to($chatId)
             ->content("🔔 *{$details['title']}*\n\n{$details['message']}")
-            ->button('Lihat Tiket', $details['route']);
+            ->button('Lihat Tiket', $fullUrl);
     }
 
     public function toWaGateway($notifiable): ?string
     {
         $details = $this->getNotificationDetails($notifiable);
-        return "🔔 *{$details['title']}*\n\n{$details['message']}\n\nLihat tiket: {$details['route']}";
+        $fullUrl = url($details['route']);
+        return "🔔 *{$details['title']}*\n\n{$details['message']}\n\nLihat tiket: {$fullUrl}";
     }
 }

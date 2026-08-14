@@ -74,14 +74,14 @@ class TicketAssignedNotification extends Notification implements ShouldQueue
         return TelegramMessage::create()
             ->to($chatId)
             ->content("{$header}\n\nAnda telah ditugaskan menangani tiket *#{$this->ticket->ticket_number}*.\n\n*Ruangan:* {$roomName}\n*Kategori:* {$categoryName}\n*Deskripsi:* {$this->ticket->problem_description}")
-            ->button('Lihat Pengerjaan Tiket', route('reports-management.show', ['ticket' => $this->ticket->uuid]));
+            ->button('Lihat Pengerjaan Tiket', url(route('reports-management.show', ['ticket' => $this->ticket->uuid], false)));
     }
 
     public function toWaGateway($notifiable): ?string
     {
         $roomName = $this->ticket->room?->name ?? 'Ruangan';
         $categoryName = $this->ticket->category?->name ?? 'Kategori';
-        $link = route('reports-management.show', ['ticket' => $this->ticket->uuid]);
+        $link = url(route('reports-management.show', ['ticket' => $this->ticket->uuid], false));
 
         $priorityText = match($this->ticket->priority) {
             'URGENT' => '🔴 *URGENT (Mendesak)*',

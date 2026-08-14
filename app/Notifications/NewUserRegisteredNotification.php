@@ -64,12 +64,12 @@ class NewUserRegisteredNotification extends Notification
         return TelegramMessage::create()
             ->to($chatId)
             ->content("👤 *Pendaftaran User Baru*\n\nPengguna *{$this->registrant->name}* ({$this->registrant->email}) telah mendaftar dan membutuhkan verifikasi Anda.")
-            ->button('Verifikasi User', route('users.approvals.show', $this->registrant->uuid ?? $this->registrant->id));
+            ->button('Verifikasi User', url(route('users.approvals.show', $this->registrant->uuid ?? $this->registrant->id, false)));
     }
 
     public function toWaGateway($notifiable): ?string
     {
-        $link = route('users.approvals.show', $this->registrant->uuid ?? $this->registrant->id);
+        $link = url(route('users.approvals.show', $this->registrant->uuid ?? $this->registrant->id, false));
         $nip = $this->registrant->nip ?? '-';
         $phone = $this->registrant->phone_number ?? '-';
 

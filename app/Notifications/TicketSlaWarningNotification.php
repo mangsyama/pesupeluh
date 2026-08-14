@@ -66,11 +66,12 @@ class TicketSlaWarningNotification extends Notification
         return TelegramMessage::create()
             ->to($chatId)
             ->content("⚠️ *Peringatan Validasi Laporan*\n\nLaporan *#{$this->ticket->ticket_number}* belum divalidasi melebihi 15 menit!\nMohon segera lakukan validasi & penugasan teknisi.")
-            ->button('Validasi Tiket Sekarang', route('reports-management.show', ['ticket' => $this->ticket->uuid]));
+            ->button('Validasi Tiket Sekarang', url(route('reports-management.show', ['ticket' => $this->ticket->uuid], false)));
     }
 
     public function toWaGateway($notifiable): ?string
     {
-        return "⚠️ *Peringatan Validasi Laporan*\n\nLaporan *#{$this->ticket->ticket_number}* belum divalidasi melebihi 15 menit!\nMohon segera lakukan validasi: " . route('reports-management.show', ['ticket' => $this->ticket->uuid]);
+        $link = url(route('reports-management.show', ['ticket' => $this->ticket->uuid], false));
+        return "⚠️ *Peringatan Validasi Laporan*\n\nLaporan *#{$this->ticket->ticket_number}* belum divalidasi melebihi 15 menit!\nMohon segera lakukan validasi: " . $link;
     }
 }
