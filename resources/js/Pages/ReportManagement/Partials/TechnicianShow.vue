@@ -199,13 +199,26 @@ const handleArriveFileSelect = async (e) => {
 const processArriveFiles = async (files) => {
     if (!files || files.length === 0) return;
     const file = files[0];
-    if (!file.type.startsWith('image/')) return;
+    arriveForm.clearErrors('attachments');
+
+    // Basic file type check
+    if (file.type && !file.type.startsWith('image/') && !/\.(jpg|jpeg|png|webp|heic|heif|bmp)$/i.test(file.name)) {
+        arriveForm.setError('attachments', 'File harus berupa gambar (JPG, PNG, WEBP, dsb).');
+        return;
+    }
 
     let dataUrl;
     try {
-        dataUrl = await compressImage(file);
-    } catch {
+        dataUrl = await compressImage(file, 800, 800, 0.5);
+    } catch (err) {
+        console.warn('Compress image failed, falling back to raw reader:', err);
         dataUrl = await readFileAsDataURL(file);
+    }
+
+    // Protect against payloads larger than 3MB Base64 string length
+    if (dataUrl && dataUrl.length > 3000000) {
+        arriveForm.setError('attachments', 'Ukuran foto terlalu besar. Silakan gunakan foto lain.');
+        return;
     }
 
     arrivePreviews.value = [{
@@ -222,13 +235,25 @@ const removeArriveAttachment = (idx) => {
     arriveForm.attachments = arrivePreviews.value.map(p => p.data);
 };
 
+const isSubmittingArrive = ref(false);
 const submitArrive = () => {
-    if (!props.ticket?.uuid) return;
-    arriveForm.post(route('tickets.respond', props.ticket.uuid), {
+    if (!props.ticket?.uuid || isSubmittingArrive.value || arriveForm.processing) return;
+    isSubmittingArrive.value = true;
+    arriveForm.clearErrors();
+    if (!arriveForm.attachments || arriveForm.attachments.length === 0) {
+        arriveForm.setError('attachments', 'Wajib mengunggah minimal 1 foto bukti kedatangan di lokasi.');
+        isSubmittingArrive.value = false;
+        return;
+    }
+
+    arriveForm.post(`/tickets/${props.ticket.uuid}/respond`, {
         onSuccess: () => {
             showArriveModal.value = false;
             arriveForm.reset();
             arrivePreviews.value = [];
+        },
+        onFinish: () => {
+            isSubmittingArrive.value = false;
         }
     });
 };
@@ -279,13 +304,24 @@ const handleCompleteFileSelect = async (e) => {
 const processCompleteFiles = async (files) => {
     if (!files || files.length === 0) return;
     const file = files[0];
-    if (!file.type.startsWith('image/')) return;
+    resolveForm.clearErrors('attachments');
+
+    if (file.type && !file.type.startsWith('image/') && !/\.(jpg|jpeg|png|webp|heic|heif|bmp)$/i.test(file.name)) {
+        resolveForm.setError('attachments', 'File harus berupa gambar (JPG, PNG, WEBP, dsb).');
+        return;
+    }
 
     let dataUrl;
     try {
-        dataUrl = await compressImage(file);
-    } catch {
+        dataUrl = await compressImage(file, 800, 800, 0.5);
+    } catch (err) {
+        console.warn('Compress image failed, falling back to raw reader:', err);
         dataUrl = await readFileAsDataURL(file);
+    }
+
+    if (dataUrl && dataUrl.length > 3000000) {
+        resolveForm.setError('attachments', 'Ukuran foto terlalu besar. Silakan gunakan foto lain.');
+        return;
     }
 
     completePreviews.value = [{
@@ -311,15 +347,20 @@ const readFileAsDataURL = (file) => {
     });
 };
 
+const isSubmittingResolve = ref(false);
 const submitResolve = (status) => {
-    if (!props.ticket?.uuid) return;
+    if (!props.ticket?.uuid || isSubmittingResolve.value || resolveForm.processing) return;
+    isSubmittingResolve.value = true;
     resolveForm.resolution_status = status;
-    resolveForm.post(route('tickets.resolve', props.ticket.uuid), {
+    resolveForm.post(`/tickets/${props.ticket.uuid}/resolve`, {
         onSuccess: () => {
             showCompleteModal.value = false;
             showPendingModal.value = false;
             showCancelModal.value = false;
             resolveForm.reset();
+        },
+        onFinish: () => {
+            isSubmittingResolve.value = false;
         }
     });
 };

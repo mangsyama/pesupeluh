@@ -6,11 +6,8 @@ vendor
 storage/*.key
 storage/*.sqlite
 storage/framework/cache/data
-storage/logs
-tests
-.github
-/.gitlab
-/.idea
-npm-debug.log
-yarn-error.log
-/.vscode
+public/storage
+storage/app/public/*
+!storage/app/public/.gitignore
+storage/logs/*
+!storage/logs/.gitignore

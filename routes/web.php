@@ -421,12 +421,12 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::post('/technicians/working-hours', [\App\Http\Controllers\TechnicianPositionController::class, 'updateWorkingHours'])->name('technicians.update-working-hours');
 
     // Ticket Workflows & Actions
-    Route::get('/tickets/{ticket:uuid}', [\App\Http\Controllers\TicketController::class, 'show'])->name('tickets.show');
-    Route::post('/tickets/{ticket:uuid}/assign', [\App\Http\Controllers\TicketController::class, 'assign'])->name('tickets.assign');
-    Route::post('/tickets/{ticket:uuid}/respond', [\App\Http\Controllers\TicketController::class, 'respond'])->name('tickets.respond');
-    Route::post('/tickets/{ticket:uuid}/resolve', [\App\Http\Controllers\TicketController::class, 'resolve'])->name('tickets.resolve');
-    Route::post('/tickets/{ticket:uuid}/resume', [\App\Http\Controllers\TicketController::class, 'resume'])->name('tickets.resume');
-    Route::delete('/tickets/{ticket:uuid}', [\App\Http\Controllers\TicketController::class, 'destroy'])->name('tickets.destroy');
+    Route::get('/tickets/{ticket:uuid}', [\App\Http\Controllers\TicketController::class, 'show'])->name('tickets.show')->withTrashed();
+    Route::post('/tickets/{ticket:uuid}/assign', [\App\Http\Controllers\TicketController::class, 'assign'])->name('tickets.assign')->withTrashed();
+    Route::post('/tickets/{ticket:uuid}/respond', [\App\Http\Controllers\TicketController::class, 'respond'])->name('tickets.respond')->withTrashed();
+    Route::post('/tickets/{ticket:uuid}/resolve', [\App\Http\Controllers\TicketController::class, 'resolve'])->name('tickets.resolve')->withTrashed();
+    Route::post('/tickets/{ticket:uuid}/resume', [\App\Http\Controllers\TicketController::class, 'resume'])->name('tickets.resume')->withTrashed();
+    Route::delete('/tickets/{ticket:uuid}', [\App\Http\Controllers\TicketController::class, 'destroy'])->name('tickets.destroy')->withTrashed();
 });
 
 Route::middleware(['auth', 'verified', 'page.access'])->group(function () {

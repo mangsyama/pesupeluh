@@ -16,6 +16,7 @@ use Inertia\Inertia;
 use App\Notifications\TicketAssignedNotification;
 use App\Notifications\TicketStatusUpdatedNotification;
 use App\Services\SecureFileUpload;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -224,8 +225,12 @@ class TicketController extends Controller
         $ticket->load('category.supportingUnit');
         $this->authorizeTicket($ticket, 'execute');
 
+        if ($ticket->trashed()) {
+            return redirect()->back()->with('info', 'Laporan ini telah dihapus.');
+        }
+
         if ($ticket->status !== 'ASSIGNED') {
-            return redirect()->back()->with('error', 'Status tiket tidak valid untuk aksi ini.');
+            return redirect()->back()->with('info', 'Status laporan saat ini tidak memvalidasi aksi kedatangan.');
         }
 
         $validated = $request->validate([
@@ -236,38 +241,51 @@ class TicketController extends Controller
             'attachments.min' => 'Wajib mengunggah minimal 1 foto bukti kedatangan di lokasi.',
         ]);
 
-        $ticket->update([
-            'responded_at' => now(),
-            'status' => 'IN_PROGRESS',
-        ]);
-
-        TicketHistory::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $request->user()->id,
-            'status' => 'IN_PROGRESS',
-            'action' => 'ARRIVED',
-            'notes' => 'Teknisi tiba di lokasi & mulai pengerjaan.',
-        ]);
-
-        $this->sendTicketStatusNotification($ticket, 'ARRIVED');
-
-        // Save arrival images securely
-        $attachments = $request->input('attachments', []);
-        if (is_array($attachments) && count($attachments) > 0) {
-            foreach ($attachments as $dataUrl) {
-                $filePath = SecureFileUpload::saveBase64($dataUrl, 'ticket_attachments', 'ticket_arr_');
-                if ($filePath) {
-                    TicketAttachment::create([
-                        'ticket_id' => $ticket->id,
-                        'file_path' => $filePath,
-                        'uploaded_by' => $request->user()->id,
-                        'uploaded_at' => now(),
-                    ]);
+        try {
+            DB::transaction(function () use ($request, $ticket) {
+                // Save arrival images securely FIRST
+                $attachments = $request->input('attachments', []);
+                $savedCount = 0;
+                if (is_array($attachments) && count($attachments) > 0) {
+                    foreach ($attachments as $dataUrl) {
+                        $filePath = SecureFileUpload::saveBase64($dataUrl, 'ticket_attachments', 'ticket_arr_');
+                        if ($filePath) {
+                            TicketAttachment::create([
+                                'ticket_id' => $ticket->id,
+                                'file_path' => $filePath,
+                                'uploaded_by' => $request->user()->id,
+                                'uploaded_at' => now(),
+                            ]);
+                            $savedCount++;
+                        }
+                    }
                 }
-            }
-        }
 
-        return redirect()->back()->with('success', 'Bukti kedatangan berhasil disimpan. Waktu respon tercatat dan status tiket diubah menjadi Dikerjakan.');
+                if ($savedCount === 0) {
+                    throw new \RuntimeException('Gagal menyimpan file foto bukti kedatangan. Pastikan format file foto valid.');
+                }
+
+                $ticket->update([
+                    'responded_at' => now(),
+                    'status' => 'IN_PROGRESS',
+                ]);
+
+                TicketHistory::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $request->user()->id,
+                    'status' => 'IN_PROGRESS',
+                    'action' => 'ARRIVED',
+                    'notes' => 'Teknisi tiba di lokasi & mulai pengerjaan.',
+                ]);
+            });
+
+            $this->sendTicketStatusNotification($ticket, 'ARRIVED');
+
+            return redirect()->back()->with('success', 'Bukti kedatangan berhasil disimpan. Waktu respon tercatat dan status tiket diubah menjadi Dikerjakan.');
+        } catch (\Throwable $e) {
+            Log::error('TicketController@respond Error: ' . $e->getMessage(), ['ticket_id' => $ticket->id, 'user_id' => $request->user()?->id]);
+            return redirect()->back()->with('error', 'Gagal memproses bukti kedatangan: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -277,6 +295,14 @@ class TicketController extends Controller
     {
         $ticket->load('category.supportingUnit');
         $this->authorizeTicket($ticket, 'execute');
+
+        if ($ticket->trashed()) {
+            return redirect()->back()->with('info', 'Laporan ini telah dihapus.');
+        }
+
+        if (in_array($ticket->status, ['COMPLETED', 'CANCEL'])) {
+            return redirect()->back()->with('info', 'Tiket ini sudah diselesaikan atau dibatalkan sebelumnya.');
+        }
 
         $validated = $request->validate([
             'resolution_status' => 'required|in:COMPLETED,PENDING,CANCEL',
@@ -288,94 +314,105 @@ class TicketController extends Controller
         $status = $validated['resolution_status'];
         $notes = $validated['notes'];
 
-        if ($status === 'COMPLETED') {
-            // Update ticket details
-            $ticket->update([
-                'status' => 'COMPLETED',
-                'resolved_at' => now(),
-                'completion_notes' => $notes,
-            ]);
-
-            // Calculate pending duration if last_paused_at was active
-            if ($ticket->last_paused_at) {
-                $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
-                $ticket->increment('paused_duration_seconds', $pausedDiff);
-                $ticket->update(['last_paused_at' => null]);
-            }
-
-            TicketHistory::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => $request->user()->id,
-                'status' => 'COMPLETED',
-                'action' => 'COMPLETED',
-                'notes' => $notes ?: 'Pekerjaan dinyatakan selesai.',
-            ]);
-
-            $this->sendTicketStatusNotification($ticket, 'COMPLETED', $notes);
-
-            // Save resolution images securely
-            $attachments = $request->input('attachments', []);
-            if (is_array($attachments) && count($attachments) > 0) {
-                foreach ($attachments as $dataUrl) {
-                    $filePath = SecureFileUpload::saveBase64($dataUrl, 'ticket_attachments', 'ticket_res_');
-                    if ($filePath) {
-                        TicketAttachment::create([
-                            'ticket_id' => $ticket->id,
-                            'file_path' => $filePath,
-                            'uploaded_by' => $request->user()->id,
-                            'uploaded_at' => now(),
-                        ]);
+        try {
+            if ($status === 'COMPLETED') {
+                DB::transaction(function () use ($request, $ticket, $notes) {
+                    // Save resolution images securely FIRST
+                    $attachments = $request->input('attachments', []);
+                    if (is_array($attachments) && count($attachments) > 0) {
+                        foreach ($attachments as $dataUrl) {
+                            $filePath = SecureFileUpload::saveBase64($dataUrl, 'ticket_attachments', 'ticket_res_');
+                            if ($filePath) {
+                                TicketAttachment::create([
+                                    'ticket_id' => $ticket->id,
+                                    'file_path' => $filePath,
+                                    'uploaded_by' => $request->user()->id,
+                                    'uploaded_at' => now(),
+                                ]);
+                            }
+                        }
                     }
-                }
+
+                    // Update ticket details
+                    $ticket->update([
+                        'status' => 'COMPLETED',
+                        'resolved_at' => now(),
+                        'completion_notes' => $notes,
+                    ]);
+
+                    // Calculate pending duration if last_paused_at was active
+                    if ($ticket->last_paused_at) {
+                        $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
+                        $ticket->increment('paused_duration_seconds', $pausedDiff);
+                        $ticket->update(['last_paused_at' => null]);
+                    }
+
+                    TicketHistory::create([
+                        'ticket_id' => $ticket->id,
+                        'user_id' => $request->user()->id,
+                        'status' => 'COMPLETED',
+                        'action' => 'COMPLETED',
+                        'notes' => $notes ?: 'Pekerjaan dinyatakan selesai.',
+                    ]);
+                });
+
+                $this->sendTicketStatusNotification($ticket, 'COMPLETED', $notes);
+
+                return redirect()->back()->with('success', 'Laporan berhasil diselesaikan.');
+            } elseif ($status === 'PENDING') {
+                DB::transaction(function () use ($request, $ticket, $notes) {
+                    $ticket->update([
+                        'status' => 'PENDING',
+                        'pending_reason' => $notes,
+                        'last_paused_at' => now(),
+                    ]);
+
+                    TicketHistory::create([
+                        'ticket_id' => $ticket->id,
+                        'user_id' => $request->user()->id,
+                        'status' => 'PENDING',
+                        'action' => 'PAUSED',
+                        'notes' => $notes,
+                    ]);
+                });
+
+                $this->sendTicketStatusNotification($ticket, 'PENDING', $notes);
+
+                return redirect()->back()->with('success', 'Laporan berhasil ditangguhkan.');
+            } elseif ($status === 'CANCEL') {
+                DB::transaction(function () use ($request, $ticket, $notes) {
+                    $ticket->update([
+                        'status' => 'CANCEL',
+                        'resolved_at' => now(),
+                        'completion_notes' => $notes,
+                    ]);
+
+                    // Clear any active pause
+                    if ($ticket->last_paused_at) {
+                        $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
+                        $ticket->increment('paused_duration_seconds', $pausedDiff);
+                        $ticket->update(['last_paused_at' => null]);
+                    }
+
+                    TicketHistory::create([
+                        'ticket_id' => $ticket->id,
+                        'user_id' => $request->user()->id,
+                        'status' => 'CANCEL',
+                        'action' => 'CANCEL',
+                        'notes' => $notes ?: 'Laporan dibatalkan.',
+                    ]);
+                });
+
+                $this->sendTicketStatusNotification($ticket, 'CANCEL', $notes);
+
+                return redirect()->back()->with('success', 'Laporan berhasil dibatalkan.');
             }
 
-            return redirect()->back()->with('success', 'Laporan berhasil diselesaikan.');
-        } elseif ($status === 'PENDING') {
-            $ticket->update([
-                'status' => 'PENDING',
-                'pending_reason' => $notes,
-                'last_paused_at' => now(),
-            ]);
-
-            TicketHistory::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => $request->user()->id,
-                'status' => 'PENDING',
-                'action' => 'PAUSED',
-                'notes' => $notes,
-            ]);
-
-            $this->sendTicketStatusNotification($ticket, 'PENDING', $notes);
-
-            return redirect()->back()->with('success', 'Laporan berhasil ditangguhkan.');
-        } elseif ($status === 'CANCEL') {
-            $ticket->update([
-                'status' => 'CANCEL',
-                'resolved_at' => now(),
-                'completion_notes' => $notes,
-            ]);
-
-            // Clear any active pause
-            if ($ticket->last_paused_at) {
-                $pausedDiff = (int) abs(now()->diffInSeconds(\Illuminate\Support\Carbon::parse($ticket->last_paused_at)));
-                $ticket->increment('paused_duration_seconds', $pausedDiff);
-                $ticket->update(['last_paused_at' => null]);
-            }
-
-            TicketHistory::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => $request->user()->id,
-                'status' => 'CANCEL',
-                'action' => 'CANCEL',
-                'notes' => $notes ?: 'Laporan dibatalkan.',
-            ]);
-
-            $this->sendTicketStatusNotification($ticket, 'CANCEL', $notes);
-
-            return redirect()->back()->with('success', 'Laporan berhasil dibatalkan.');
+            return redirect()->back()->with('error', 'Aksi penyelesaian tidak valid.');
+        } catch (\Throwable $e) {
+            Log::error('TicketController@resolve Error: ' . $e->getMessage(), ['ticket_id' => $ticket->id, 'user_id' => $request->user()?->id]);
+            return redirect()->back()->with('error', 'Gagal memproses penyelesaian tiket: ' . $e->getMessage());
         }
-
-        return redirect()->back()->with('error', 'Aksi penyelesaian tidak valid.');
     }
 
     /**

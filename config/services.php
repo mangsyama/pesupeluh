@@ -44,8 +44,9 @@ return [
     ],
 
     'wa_gateway' => [
+        'enabled'    => env('WA_GATEWAY_ENABLED', true),
         'driver'     => env('WA_GATEWAY_DRIVER', 'local'),
-        'local_url'  => env('WA_LOCAL_URL', 'http://127.0.0.1:3000/send'),
+        'local_url'  => env('WA_LOCAL_URL', env('WA_GATEWAY_URL')),
         'secret_key' => env('WA_GATEWAY_SECRET_KEY'),
     ],
 

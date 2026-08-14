@@ -11,13 +11,26 @@ class SecureFileUpload
     /**
      * Whitelist of allowed MIME types and their corresponding safe extensions.
      */
+    /**
+     * Whitelist of allowed MIME types and their corresponding safe extensions.
+     */
     private static array $allowedMimeTypes = [
         'image/jpeg' => 'jpg',
+        'image/pjpeg' => 'jpg',
+        'image/jpg' => 'jpg',
         'image/png' => 'png',
         'image/webp' => 'webp',
+        'image/heic' => 'heic',
+        'image/heif' => 'heif',
+        'image/heic-sequence' => 'heic',
+        'image/bmp' => 'bmp',
+        'image/x-ms-bmp' => 'bmp',
         'video/mp4' => 'mp4',
         'video/quicktime' => 'mov',
         'video/webm' => 'webm',
+        'video/x-msvideo' => 'avi',
+        'video/3gpp' => '3gp',
+        'video/ogg' => 'ogg',
     ];
 
     /**
@@ -35,49 +48,70 @@ class SecureFileUpload
      */
     public static function saveBase64(string $dataUrl, string $folder = 'ticket_attachments', string $prefix = 'file_'): ?string
     {
-        if (empty($dataUrl) || !is_string($dataUrl)) {
+        @ini_set('memory_limit', '512M');
+        try {
+            $dataUrl = trim($dataUrl);
+            if (empty($dataUrl) || !is_string($dataUrl)) {
+                return null;
+            }
+
+            // Must contain base64 separator
+            if (!str_contains($dataUrl, ';base64,')) {
+                \Illuminate\Support\Facades\Log::warning('SecureFileUpload::saveBase64 failed: Missing base64 header separator.');
+                return null;
+            }
+
+            $parts = explode(';base64,', $dataUrl);
+            if (count($parts) !== 2) {
+                \Illuminate\Support\Facades\Log::warning('SecureFileUpload::saveBase64 failed: Invalid base64 structure.');
+                return null;
+            }
+
+            $base64String = $parts[1];
+            unset($parts);
+
+            $binaryData = base64_decode($base64String, true);
+            unset($base64String);
+
+            if ($binaryData === false) {
+                \Illuminate\Support\Facades\Log::warning('SecureFileUpload::saveBase64 failed: Base64 decode returned false.');
+                return null; // Invalid base64
+            }
+
+            // Enforce maximum size (10 MB)
+            if (strlen($binaryData) > self::MAX_FILE_SIZE_BYTES) {
+                \Illuminate\Support\Facades\Log::warning('SecureFileUpload::saveBase64 failed: File size (' . strlen($binaryData) . ' bytes) exceeds maximum limit.');
+                unset($binaryData);
+                return null;
+            }
+
+            // Inspect real MIME type from binary contents using finfo
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $detectedMime = $finfo->buffer($binaryData);
+
+            if (!$detectedMime || !isset(self::$allowedMimeTypes[$detectedMime])) {
+                \Illuminate\Support\Facades\Log::warning('SecureFileUpload::saveBase64 failed: Disallowed or undetected MIME type (' . ($detectedMime ?: 'unknown') . ').');
+                unset($binaryData);
+                return null; // Disallowed MIME type
+            }
+
+            $extension = self::$allowedMimeTypes[$detectedMime];
+            $filename = $prefix . Str::random(20) . '_' . time() . '.' . $extension;
+
+            Storage::disk('public')->makeDirectory($folder);
+            $stored = Storage::disk('public')->put($folder . '/' . $filename, $binaryData);
+            unset($binaryData);
+
+            if (!$stored) {
+                \Illuminate\Support\Facades\Log::error('SecureFileUpload::saveBase64 failed: Could not save file to disk ' . $folder . '/' . $filename);
+                return null;
+            }
+
+            return '/storage/' . $folder . '/' . $filename;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('SecureFileUpload::saveBase64 exception: ' . $e->getMessage());
             return null;
         }
-
-        // Must contain base64 separator
-        if (!str_contains($dataUrl, ';base64,')) {
-            return null;
-        }
-
-        $parts = explode(';base64,', $dataUrl);
-        if (count($parts) !== 2) {
-            return null;
-        }
-
-        $binaryData = base64_decode($parts[1], true);
-        if ($binaryData === false) {
-            return null; // Invalid base64
-        }
-
-        // Enforce maximum size (10 MB)
-        if (strlen($binaryData) > self::MAX_FILE_SIZE_BYTES) {
-            return null;
-        }
-
-        // Inspect real MIME type from binary contents using finfo
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $detectedMime = $finfo->buffer($binaryData);
-
-        if (!$detectedMime || !isset(self::$allowedMimeTypes[$detectedMime])) {
-            return null; // Disallowed MIME type (e.g. PHP, SVG, HTML)
-        }
-
-        $extension = self::$allowedMimeTypes[$detectedMime];
-        $filename = $prefix . Str::random(20) . '_' . time() . '.' . $extension;
-
-        Storage::disk('public')->makeDirectory($folder);
-        $stored = Storage::disk('public')->put($folder . '/' . $filename, $binaryData);
-
-        if (!$stored) {
-            return null;
-        }
-
-        return '/storage/' . $folder . '/' . $filename;
     }
 
     /**
