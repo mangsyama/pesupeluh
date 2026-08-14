@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, getCurrentInstance } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import TimePickerInput from '@/Components/TimePickerInput.vue';
@@ -16,6 +16,7 @@ import {
 } from '@lucide/vue';
 
 const { proxy } = getCurrentInstance();
+const page = usePage();
 
 const props = defineProps({
     units: {
@@ -34,14 +35,44 @@ const props = defineProps({
 
 const showInfoModal = ref(false);
 
-const isAdmin = computed(() => props.currentUser?.role_id === 1);
+// Get authenticated user object from Inertia page or props
+const authUser = computed(() => page.props.auth?.user || props.currentUser || {});
+
+const isAdmin = computed(() => Number(authUser.value?.role_id) === 1);
 
 // Auto-select user's supporting unit if available
-const userUnitId = computed(() => props.currentUser?.supporting_unit_id);
-const selectedUnitForHours = ref(userUnitId.value ? userUnitId.value : (props.units[0]?.id || 1));
+const userUnitId = computed(() => {
+    const uid = authUser.value?.supporting_unit_id ?? props.currentUser?.supporting_unit_id;
+    return (uid !== null && uid !== undefined && uid !== '') ? Number(uid) : null;
+});
+
+const getInitialUnitId = () => {
+    if (userUnitId.value) {
+        return userUnitId.value;
+    }
+    if (isAdmin.value) {
+        return '';
+    }
+    return props.units[0]?.id ? Number(props.units[0].id) : '';
+};
+
+const selectedUnitForHours = ref(getInitialUnitId());
+
+const isUnitSelected = computed(() => Boolean(selectedUnitForHours.value || userUnitId.value));
 
 const currentSelectedUnit = computed(() => {
-    return props.units.find(u => Number(u.id) === Number(selectedUnitForHours.value)) || props.units[0];
+    const targetId = selectedUnitForHours.value || userUnitId.value;
+    if (!targetId) return null;
+    return props.units.find(u => Number(u.id) === Number(targetId)) || null;
+});
+
+const displayUnitTitle = computed(() => {
+    if (!currentSelectedUnit.value?.name) return 'UNIT PENUNJANG';
+    const name = String(currentSelectedUnit.value.name).trim().toUpperCase();
+    if (name.startsWith('UNIT PENUNJANG')) {
+        return name;
+    }
+    return `UNIT PENUNJANG ${name}`;
 });
 
 const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
@@ -58,11 +89,12 @@ const hoursForm = useForm({
 });
 
 const loadHoursForSelectedUnit = () => {
-    hoursForm.supporting_unit_id = selectedUnitForHours.value;
+    const unitId = selectedUnitForHours.value || userUnitId.value;
+    hoursForm.supporting_unit_id = unitId || '';
     hoursForm.hours = dayNames.map((day, idx) => {
-        const existing = props.workingHours.find(
-            wh => Number(wh.supporting_unit_id) === Number(selectedUnitForHours.value) && Number(wh.day_of_week) === (idx + 1)
-        );
+        const existing = unitId ? props.workingHours.find(
+            wh => Number(wh.supporting_unit_id) === Number(unitId) && Number(wh.day_of_week) === (idx + 1)
+        ) : null;
         return {
             day_of_week: idx + 1,
             start_time: existing?.start_time ? String(existing.start_time).substring(0, 5) : '07:30',
@@ -71,6 +103,12 @@ const loadHoursForSelectedUnit = () => {
         };
     });
 };
+
+watch([() => props.currentUser, () => page.props.auth?.user, () => props.units], () => {
+    if (!isAdmin.value && userUnitId.value && selectedUnitForHours.value !== userUnitId.value) {
+        selectedUnitForHours.value = userUnitId.value;
+    }
+}, { immediate: true });
 
 watch([selectedUnitForHours, () => props.workingHours], () => {
     loadHoursForSelectedUnit();
@@ -135,43 +173,40 @@ const executeSaveHours = () => {
                 </div>
 
                 <!-- Main Container Unit Penunjang -->
-                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+                <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
                     
-                    <!-- Header Row Unit Penunjang (Padding 2, Tanpa Bottom Border) -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2">
-                        <!-- Admin View: SearchableSelect Component -->
-                        <div v-if="isAdmin" class="flex flex-col sm:flex-row sm:items-center gap-3">
-                            <label class="text-sm font-extrabold uppercase text-slate-800 dark:text-white shrink-0">
-                                {{ __('PILIH UNIT PENUNJANG') }}
-                            </label>
-                            <div class="w-full sm:w-64">
+                    <!-- Header Row Unit Penunjang -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full">
+                            <!-- Admin View: SearchableSelect Component (Direct Dropdown) -->
+                            <div v-if="isAdmin" class="w-full sm:w-72 shrink-0">
                                 <SearchableSelect
                                     v-model="selectedUnitForHours"
                                     :options="units"
                                     value-key="id"
                                     label-key="name"
                                     placeholder="Pilih Unit Penunjang..."
+                                    search-placeholder="Cari unit penunjang..."
                                 />
                             </div>
-                        </div>
 
-                        <!-- Ka. Unit View: Readonly Title -->
-                        <div v-else class="flex items-center gap-2.5 text-sm font-extrabold uppercase text-slate-800 dark:text-white">
-                            <span>{{ __('UNIT PENUNJANG') }}</span>
-                            <span class="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-white/10 text-emerald-700 dark:text-white font-extrabold uppercase text-xs">
-                                {{ currentSelectedUnit?.name }}
-                            </span>
-                        </div>
+                            <!-- Ka. Unit View: Readonly Title (Without badge) -->
+                            <div v-else class="flex items-center text-sm sm:text-base font-extrabold uppercase text-slate-900 dark:text-white shrink-0 tracking-wide">
+                                <span>{{ displayUnitTitle }}</span>
+                            </div>
 
-                        <div class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                            *Jadwal berlaku khusus untuk unit penunjang ini secara mandiri.
+                            <!-- Warning Inline Next to Dropdown (Flexible height for responsive text) -->
+                            <div v-if="!isUnitSelected" class="min-h-[44px] sm:h-11 w-full sm:flex-1 px-4 py-2.5 sm:py-0 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center gap-2.5">
+                                <Info class="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                <span class="leading-snug">{{ __('Silakan pilih Unit Penunjang terlebih dahulu untuk mengelola jam operasional.') }}</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Days Schedule Table (Responsive Horizontal Scroll Enabled) -->
-                    <div class="w-full overflow-x-auto border border-transparent dark:border-slate-800 rounded-xl shadow-sm">
+                    <!-- Days Schedule Table (Responsive Horizontal Scroll Enabled & Disabled state) -->
+                    <div :class="['w-full overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl transition-all duration-200', !isUnitSelected ? 'opacity-40 pointer-events-none select-none' : '']">
                         <table class="w-full min-w-[680px] text-left text-xs border-collapse">
-                            <thead class="bg-slate-50/80 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold text-[11px] border-b border-slate-100 dark:border-slate-800">
+                            <thead class="bg-slate-50/80 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-extrabold text-[11px] border-b border-slate-200 dark:border-slate-800">
                                 <tr>
                                     <th class="p-4 whitespace-nowrap min-w-[130px]">Hari</th>
                                     <th class="p-4 whitespace-nowrap min-w-[240px]">Status Ka. Unit Standby</th>
@@ -179,7 +214,7 @@ const executeSaveHours = () => {
                                     <th class="p-4 whitespace-nowrap min-w-[150px] text-center">Jam Selesai Disposisi (Tutup)</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                            <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                                 <tr 
                                     v-for="(h, idx) in hoursForm.hours" 
                                     :key="idx" 
@@ -200,8 +235,8 @@ const executeSaveHours = () => {
                                     </td>
                                     <td class="p-4 whitespace-nowrap">
                                         <label class="relative inline-flex items-center cursor-pointer select-none">
-                                            <input type="checkbox" v-model="h.is_active" class="sr-only peer">
-                                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-600 dark:peer-checked:bg-white"></div>
+                                            <input type="checkbox" v-model="h.is_active" :disabled="!isUnitSelected" class="sr-only peer">
+                                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-slate-600 peer-checked:bg-emerald-600 dark:peer-checked:bg-emerald-600"></div>
                                             <span class="ml-2.5 text-xs font-bold text-slate-700 dark:text-slate-300">
                                                 {{ h.is_active ? 'Ka. Unit Standby (Jam Normal)' : 'Off / Auto-Disposisi Full Day' }}
                                             </span>
@@ -210,14 +245,14 @@ const executeSaveHours = () => {
                                     <td class="p-4 whitespace-nowrap text-center">
                                         <TimePickerInput
                                             v-model="h.start_time"
-                                            :disabled="!h.is_active"
+                                            :disabled="!isUnitSelected || !h.is_active"
                                             placeholder="07:30"
                                         />
                                     </td>
                                     <td class="p-4 whitespace-nowrap text-center">
                                         <TimePickerInput
                                             v-model="h.end_time"
-                                            :disabled="!h.is_active"
+                                            :disabled="!isUnitSelected || !h.is_active"
                                             placeholder="15:00"
                                         />
                                     </td>
@@ -239,8 +274,8 @@ const executeSaveHours = () => {
                         <button
                             type="button"
                             @click="openConfirmModal"
-                            :disabled="hoursForm.processing"
-                            class="w-full sm:w-auto sm:ml-auto h-11 px-6 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-2 transition duration-200 disabled:opacity-50 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 cursor-pointer"
+                            :disabled="!isUnitSelected || hoursForm.processing"
+                            class="w-full sm:w-auto sm:ml-auto h-11 px-6 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-2 transition duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 dark:text-slate-900 cursor-pointer"
                         >
                             <Save class="h-4 w-4" />
                             <span>{{ hoursForm.processing ? __('Menyimpan...') : __('Simpan Jam Operasional') }}</span>

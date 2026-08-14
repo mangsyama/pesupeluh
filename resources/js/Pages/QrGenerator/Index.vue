@@ -1,9 +1,8 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, getCurrentInstance } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import QRCode from 'qrcode';
-import Swal from 'sweetalert2';
 import { 
     QrCode, 
     Download, 
@@ -31,6 +30,8 @@ const props = defineProps({
         default: () => []
     }
 });
+
+const { proxy } = getCurrentInstance();
 
 // Dynamic base origin
 const currentOrigin = computed(() => {
@@ -210,14 +211,9 @@ const downloadQR = () => {
     a.click();
     document.body.removeChild(a);
 
-    Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'QR Code Berhasil Diunduh!',
-        showConfirmButton: false,
-        timer: 2000
-    });
+    if (proxy?.$toast) {
+        proxy.$toast('QR Code Berhasil Diunduh!', 'success');
+    }
 };
 
 const copyUrl = () => {
@@ -227,14 +223,9 @@ const copyUrl = () => {
         copied.value = false;
     }, 2000);
 
-    Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'Tautan disalin ke clipboard!',
-        showConfirmButton: false,
-        timer: 2000
-    });
+    if (proxy?.$toast) {
+        proxy.$toast('Tautan disalin ke clipboard!', 'success');
+    }
 };
 
 watch([customPath, qrColor, includeLogo], () => {
@@ -287,203 +278,164 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Main Content Grid (12 Columns layout matching WA Gateway) -->
-                <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                <!-- Main Content (Sequential 1 Column layout) -->
+                <div class="space-y-4 w-full">
                     
-                    <!-- Left Panel: Configurations & Presets (7 Cols) -->
-                    <div class="xl:col-span-7 space-y-4">
-
-                        <!-- Card 1: Presets Selector -->
-                        <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
-                            <div>
-                                <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                                    1. Pilih Preset Unit Layanan
-                                </h3>
-                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Pilih salah satu pintasan unit untuk langsung memasukkan URL target</p>
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <button
-                                    v-for="preset in presets"
-                                    :key="preset.id"
-                                    type="button"
-                                    @click="applyPreset(preset)"
-                                    :class="[
-                                        'group p-3.5 rounded-xl border text-left transition duration-200 flex items-start gap-3.5 relative cursor-pointer overflow-hidden',
-                                        selectedPreset === preset.id
-                                            ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-200 shadow-xs'
-                                            : 'border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800/50 text-slate-700 dark:text-slate-300'
-                                    ]"
-                                >
-                                    <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white flex items-center justify-center flex-shrink-0">
-                                        <component :is="preset.icon" class="h-5 w-5" />
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-xs font-extrabold text-slate-900 dark:text-white truncate flex items-center justify-between">
-                                            <span>{{ preset.title }}</span>
-                                        </div>
-                                        <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ preset.path }}</p>
-                                    </div>
-                                </button>
-                            </div>
+                    <!-- Card 1: Target URL Input -->
+                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                        <div>
+                            <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                                1. Target URL QR Code
+                            </h3>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Masukkan path halaman yang ingin dibuka saat QR Code di-scan</p>
                         </div>
 
-                        <!-- Card 2: Target URL Input -->
-                        <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                            <div>
-                                <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                                    2. Target URL QR Code
-                                </h3>
-                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Masukkan path halaman yang ingin dibuka saat QR Code di-scan</p>
-                            </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Path Target URL <span class="text-red-400">*</span>
+                            </label>
 
-                            <div class="space-y-1.5">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                    Path Target URL <span class="text-red-400">*</span>
-                                </label>
-
-                                <div class="flex flex-col sm:flex-row rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden focus-within:border-slate-400 dark:focus-within:border-slate-600 transition shadow-2xs">
-                                    <div class="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 px-3.5 py-2.5 sm:py-0 flex items-center text-xs font-bold shrink-0 select-none border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 justify-start">
-                                        <span>{{ currentOrigin }}</span>
-                                    </div>
-                                    <input 
-                                        v-model="customPath"
-                                        type="text" 
-                                        placeholder="/services/units/ipsrs"
-                                        class="flex-1 h-11 px-3.5 bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold border-none outline-none focus:outline-none focus:ring-0"
-                                    />
+                            <div class="flex flex-col sm:flex-row rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden focus-within:border-slate-400 dark:focus-within:border-slate-600 transition shadow-2xs">
+                                <div class="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 px-3.5 py-2.5 sm:py-0 flex items-center text-xs font-bold shrink-0 select-none border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 justify-start">
+                                    <span>{{ currentOrigin }}</span>
                                 </div>
+                                <input 
+                                    v-model="customPath"
+                                    type="text" 
+                                    placeholder="/services/units/ipsrs"
+                                    class="flex-1 h-11 px-3.5 bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold border-none outline-none focus:outline-none focus:ring-0"
+                                />
                             </div>
                         </div>
-
-                        <!-- Card 3: Appearance Controls -->
-                        <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
-                            <div>
-                                <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                                    3. Kustomisasi Desain QR
-                                </h3>
-                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Atur skema warna kode QR dan opsi penyematan logo resmi di tengah</p>
-                            </div>
-
-                            <div class="space-y-4">
-                                <!-- Color Selection Swatches + Custom Picker -->
-                                <div class="space-y-2">
-                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pilihan Warna Kode QR</label>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <button
-                                            v-for="color in colorPresets"
-                                            :key="color.hex"
-                                            type="button"
-                                            @click="qrColor = color.hex"
-                                            :class="[
-                                                'h-9 px-3 rounded-xl border text-xs font-bold flex items-center gap-2 transition cursor-pointer',
-                                                qrColor.toLowerCase() === color.hex.toLowerCase()
-                                                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-200 shadow-xs'
-                                                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:border-slate-300'
-                                            ]"
-                                        >
-                                            <span class="h-3.5 w-3.5 rounded-full shadow-xs shrink-0" :style="{ backgroundColor: color.hex }"></span>
-                                            <span>{{ color.name }}</span>
-                                        </button>
-
-                                        <!-- Custom Color Picker Button -->
-                                        <label 
-                                            :class="[
-                                                'h-9 px-3 rounded-xl border text-xs font-bold flex items-center gap-2 transition cursor-pointer relative select-none',
-                                                isCustomColor
-                                                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-200 shadow-xs'
-                                                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:border-slate-300'
-                                            ]"
-                                        >
-                                            <Palette class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                                            <span>Custom Warna: <strong class="font-bold uppercase">{{ qrColor }}</strong></span>
-                                            <input 
-                                                v-model="qrColor"
-                                                type="color" 
-                                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                                            />
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Center Logo Toggle Card -->
-                                <div 
-                                    @click="includeLogo = !includeLogo"
-                                    :class="[
-                                        'p-4 rounded-xl border transition cursor-pointer flex items-center justify-between gap-4 select-none',
-                                        includeLogo 
-                                            ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20' 
-                                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950'
-                                    ]"
-                                >
-                                    <div class="flex items-center gap-3">
-                                        <div :class="[
-                                            'h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition p-2',
-                                            includeLogo ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                                        ]">
-                                            <img src="/images/logo-sidebar.png" alt="Logo" class="h-full w-full object-contain brightness-0 invert" />
-                                        </div>
-                                        <div>
-                                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white">Tampilkan Logo PESU PELUH di Tengah</h4>
-                                            <p class="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Sematkan logo resmi rumah sakit dengan warna yang selaras</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Switch Toggle Button -->
-                                    <div :class="[
-                                        'w-11 h-6 rounded-full transition-colors p-0.5 shrink-0 flex items-center',
-                                        includeLogo ? 'bg-emerald-600 justify-end' : 'bg-slate-300 dark:bg-slate-700 justify-start'
-                                    ]">
-                                        <div class="w-5 h-5 rounded-full bg-white shadow-xs"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
 
-                    <!-- Right Panel: QR Code Display & Actions (5 Cols) -->
-                    <div class="xl:col-span-5 flex flex-col">
-                        <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between h-full space-y-4">
-                            <div>
-                                <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
-                                    Preview QR Code & Unduh
-                                </h3>
-                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Tampilan gambar QR Code siap simpan & pakai</p>
+                    <!-- Card 2: Appearance Controls -->
+                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+                        <div>
+                            <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                                2. Kustomisasi Desain QR
+                            </h3>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Atur skema warna kode QR dan opsi penyematan logo resmi di tengah</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Color Selection Swatches + Custom Picker -->
+                            <div class="space-y-2">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pilihan Warna Kode QR</label>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button
+                                        v-for="color in colorPresets"
+                                        :key="color.hex"
+                                        type="button"
+                                        @click="qrColor = color.hex"
+                                        :class="[
+                                            'h-9 px-3 rounded-xl border text-xs font-bold flex items-center gap-2 transition cursor-pointer',
+                                            qrColor.toLowerCase() === color.hex.toLowerCase()
+                                                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-200 shadow-xs'
+                                                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                                        ]"
+                                    >
+                                        <span class="h-3.5 w-3.5 rounded-full shadow-xs shrink-0" :style="{ backgroundColor: color.hex }"></span>
+                                        <span>{{ color.name }}</span>
+                                    </button>
+
+                                    <!-- Custom Color Picker Button -->
+                                    <label 
+                                        :class="[
+                                            'h-9 px-3 rounded-xl border text-xs font-bold flex items-center gap-2 transition cursor-pointer relative select-none',
+                                            isCustomColor
+                                                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-200 shadow-xs'
+                                                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                                        ]"
+                                    >
+                                        <Palette class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                        <span>Custom Warna: <strong class="font-bold uppercase">{{ qrColor }}</strong></span>
+                                        <input 
+                                            v-model="qrColor"
+                                            type="color" 
+                                            class="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                        />
+                                    </label>
+                                </div>
                             </div>
 
-                            <!-- QR Frame (Focused pure on QR Code) -->
-                            <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-center shadow-xs flex-1 flex flex-col items-center justify-center min-w-0 overflow-hidden">
-                                <div class="p-3 sm:p-3.5 bg-white rounded-2xl shadow-md border border-slate-100 flex items-center justify-center aspect-square w-full max-w-[240px] sm:max-w-[280px] min-w-0 overflow-hidden">
+                            <!-- Center Logo Toggle Card -->
+                            <div 
+                                @click="includeLogo = !includeLogo"
+                                :class="[
+                                    'p-4 rounded-xl border transition cursor-pointer flex items-center justify-between gap-4 select-none',
+                                    includeLogo 
+                                        ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20' 
+                                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950'
+                                ]"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <div :class="[
+                                        'h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition p-2',
+                                        includeLogo ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                                    ]">
+                                        <img src="/images/logo-sidebar.png" alt="Logo" class="h-full w-full object-contain brightness-0 invert" />
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-extrabold text-slate-900 dark:text-white">Tampilkan Logo PESU PELUH di Tengah</h4>
+                                        <p class="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Sematkan logo resmi rumah sakit dengan warna yang selaras</p>
+                                    </div>
+                                </div>
+
+                                <!-- Switch Toggle Button -->
+                                <div :class="[
+                                    'w-11 h-6 rounded-full transition-colors p-0.5 shrink-0 flex items-center',
+                                    includeLogo ? 'bg-emerald-600 justify-end' : 'bg-slate-300 dark:bg-slate-700 justify-start'
+                                ]">
+                                    <div class="w-5 h-5 rounded-full bg-white shadow-xs"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Preview QR Code & Unduh -->
+                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+                        <div>
+                            <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">
+                                3. Preview QR Code & Unduh
+                            </h3>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Tampilan gambar QR Code siap simpan & pakai</p>
+                        </div>
+
+                        <div class="space-y-4 w-full">
+                            <!-- QR Frame (Full container width) -->
+                            <div class="bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 text-center shadow-xs flex items-center justify-center w-full">
+                                <div class="p-3.5 sm:p-4 bg-white rounded-2xl shadow-md border border-slate-100 flex items-center justify-center aspect-square w-full max-w-[240px] sm:max-w-[280px] overflow-hidden">
                                     <canvas ref="qrCanvasRef" class="w-full h-full max-w-full max-h-full object-contain block"></canvas>
                                 </div>
                             </div>
 
-                            <!-- Target URL Badge Container -->
-                            <div class="px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center gap-2 overflow-hidden shadow-2xs">
-                                <Globe class="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">{{ fullTargetUrl }}</span>
-                            </div>
+                            <!-- Target URL Badge Container (Click to Copy & Centered) -->
+                            <button
+                                type="button"
+                                @click="copyUrl"
+                                title="Klik untuk menyalin URL target"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-50/80 hover:bg-emerald-50/60 dark:bg-slate-950/60 dark:hover:bg-emerald-950/30 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-800 flex items-center justify-center gap-2.5 overflow-hidden shadow-2xs transition cursor-pointer group select-none"
+                            >
+                                <Check v-if="copied" class="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <Globe v-else class="h-4 w-4 text-emerald-500 group-hover:scale-110 transition-transform shrink-0" />
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-emerald-900 dark:group-hover:text-emerald-200 truncate">
+                                    {{ fullTargetUrl }}
+                                </span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 shrink-0">
+                                    {{ copied ? 'Tersalin!' : 'Klik untuk Salin' }}
+                                </span>
+                            </button>
 
                             <!-- Action Buttons -->
-                            <div class="space-y-2 pt-1">
+                            <div class="w-full">
                                 <button
                                     type="button"
                                     @click="downloadQR"
-                                    class="w-full h-10 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 transition cursor-pointer"
+                                    class="w-full h-11 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 text-xs font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 transition cursor-pointer border-0"
                                 >
                                     <Download class="h-4 w-4" />
                                     <span>Download Gambar QR</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    @click="copyUrl"
-                                    class="w-full h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
-                                >
-                                    <Check v-if="copied" class="h-3.5 w-3.5 text-emerald-500" />
-                                    <Copy v-else class="h-3.5 w-3.5 text-slate-400" />
-                                    <span>{{ copied ? 'Tersalin!' : 'Salin URL Target' }}</span>
                                 </button>
                             </div>
                         </div>
