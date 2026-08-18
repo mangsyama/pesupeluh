@@ -77,60 +77,48 @@ class ServiceController extends Controller
 
         // Auto-assign technicians if Off-Hours
         if ($isOffHours) {
-            $technicians = \App\Models\User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
-                ->where('is_active', 1)
-                ->withCount(['assignments as active_tickets_count' => function ($query) {
-                    $query->whereHas('ticket', function ($q) {
-                        $q->whereIn('status', ['ASSIGNED', 'IN_PROGRESS', 'PENDING']);
-                    });
-                }])
-                ->get();
+            $techniciansQuery = \App\Models\User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
+                ->where('is_active', 1);
+
+            if ($supportingUnitId) {
+                $unitTechs = (clone $techniciansQuery)->where('supporting_unit_id', $supportingUnitId)->get();
+                $technicians = $unitTechs->isNotEmpty() ? $unitTechs : $techniciansQuery->get();
+            } else {
+                $technicians = $techniciansQuery->get();
+            }
 
             $onDutyTechs = $technicians->where('is_on_duty', 1);
             $candidatePool = $onDutyTechs->isNotEmpty() ? $onDutyTechs : $technicians;
 
-            $selectedTech = $candidatePool->sort(function ($a, $b) use ($supportingUnitId) {
-                $workloadA = $a->active_tickets_count;
-                $workloadB = $b->active_tickets_count;
+            $assignedTechnicians = collect();
 
-                if ($workloadA !== $workloadB) {
-                    return $workloadA <=> $workloadB; // Lowest active workload first
-                }
-
-                // Tie-breaker: matching supporting unit first
-                $matchA = ($supportingUnitId && (int)$a->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
-                $matchB = ($supportingUnitId && (int)$b->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
-
-                return $matchA <=> $matchB;
-            })->first();
-
-            $onDutyTechnicians = collect();
-
-            if ($selectedTech) {
+            foreach ($candidatePool as $tech) {
                 \App\Models\TicketAssignment::create([
                     'ticket_id' => $ticket->id,
-                    'technician_id' => $selectedTech->id,
-                    'assigned_by' => $request->user()->id,
+                    'technician_id' => $tech->id,
+                    'assigned_by' => null,
                     'assigned_at' => now(),
                 ]);
-                $onDutyTechnicians->push($selectedTech);
+                $assignedTechnicians->push($tech);
             }
+
+            $techNames = $assignedTechnicians->pluck('name')->join(', ');
 
             \App\Models\TicketHistory::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $request->user()->id,
                 'status' => 'ASSIGNED',
                 'action' => 'AUTO_DISPATCH',
-                'notes' => 'Disposisi otomatis di luar jam kerja operasional unit penunjang.',
+                'notes' => 'Disposisi otomatis di luar jam kerja operasional unit penunjang ke seluruh teknisi (' . ($techNames ?: 'Tanpa teknisi') . ').',
             ]);
 
             // Immediately send WA & App notification to assigned technicians & reporter for Off-Hours
-            if ($onDutyTechnicians->isNotEmpty()) {
+            if ($assignedTechnicians->isNotEmpty()) {
                 try {
                     $ticket->load(['room', 'category', 'reporter']);
-                    \Illuminate\Support\Facades\Notification::send($onDutyTechnicians, new \App\Notifications\TicketAssignedNotification($ticket));
+                    \Illuminate\Support\Facades\Notification::send($assignedTechnicians, new \App\Notifications\TicketAssignedNotification($ticket));
                     if ($ticket->reporter) {
-                        \Illuminate\Support\Facades\Notification::send($ticket->reporter, new \App\Notifications\TicketStatusUpdatedNotification($ticket, 'ASSIGNED', 'Disposisi otomatis di luar jam kerja operasional.'));
+                        \Illuminate\Support\Facades\Notification::send($ticket->reporter, new \App\Notifications\TicketStatusUpdatedNotification($ticket, 'ASSIGNED', 'Disposisi otomatis di luar jam kerja operasional ke seluruh teknisi.'));
                     }
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('Gagal mengirim WA/App penugasan ke teknisi/pelapor: ' . $e->getMessage());

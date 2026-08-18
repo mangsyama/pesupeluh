@@ -59,16 +59,23 @@ class AutoDispoCheckCommand extends Command
 
         foreach ($pendingTickets as $ticket) {
             $supportingUnitId = $ticket->category?->supporting_unit_id;
+            $isOperational = UnitWorkingHourService::isOperationalHours($supportingUnitId);
 
-            // Query all active technicians across all units with active task counts
-            $technicians = User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
+            // Query active technicians
+            $techniciansQuery = User::where('role_id', \App\Models\Role::TEKNISI) // TEKNISI
                 ->where('is_active', 1)
                 ->withCount(['assignments as active_tickets_count' => function ($query) {
                     $query->whereHas('ticket', function ($q) {
                         $q->whereIn('status', ['ASSIGNED', 'IN_PROGRESS', 'PENDING']);
                     });
-                }])
-                ->get();
+                }]);
+
+            if ($supportingUnitId) {
+                $unitTechs = (clone $techniciansQuery)->where('supporting_unit_id', $supportingUnitId)->get();
+                $technicians = $unitTechs->isNotEmpty() ? $unitTechs : $techniciansQuery->get();
+            } else {
+                $technicians = $techniciansQuery->get();
+            }
 
             if ($technicians->isEmpty()) {
                 $this->warn("Tiket #{$ticket->ticket_number}: Tidak ada teknisi aktif di sistem.");
@@ -79,31 +86,6 @@ class AutoDispoCheckCommand extends Command
             $onDutyTechs = $technicians->where('is_on_duty', 1);
             $candidatePool = $onDutyTechs->isNotEmpty() ? $onDutyTechs : $technicians;
 
-            // Sort technicians: 
-            // 1. Primary: lowest active workload (active_tickets_count + batch additions)
-            // 2. Secondary: prefer technician matching ticket's supporting unit if tied
-            $selectedTech = $candidatePool->sort(function ($a, $b) use ($supportingUnitId, $batchWorkloadAdditions) {
-                $workloadA = $a->active_tickets_count + ($batchWorkloadAdditions[$a->id] ?? 0);
-                $workloadB = $b->active_tickets_count + ($batchWorkloadAdditions[$b->id] ?? 0);
-
-                if ($workloadA !== $workloadB) {
-                    return $workloadA <=> $workloadB; // Lowest active workload first
-                }
-
-                // Tie-breaker: matching supporting unit first
-                $matchA = ($supportingUnitId && (int)$a->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
-                $matchB = ($supportingUnitId && (int)$b->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
-
-                return $matchA <=> $matchB;
-            })->first();
-
-            if (!$selectedTech) {
-                $this->warn("Tiket #{$ticket->ticket_number}: Gagal memilih teknisi.");
-                continue;
-            }
-
-            $currentWorkload = $selectedTech->active_tickets_count + ($batchWorkloadAdditions[$selectedTech->id] ?? 0);
-
             // Update ticket status to ASSIGNED (validated_by is null = Auto System)
             $ticket->update([
                 'status'       => 'ASSIGNED',
@@ -112,22 +94,59 @@ class AutoDispoCheckCommand extends Command
                 'validated_by' => null,
             ]);
 
-            // Assign the selected technician with lowest workload
-            TicketAssignment::create([
-                'ticket_id'     => $ticket->id,
-                'technician_id' => $selectedTech->id,
-                'assigned_by'   => null, // System auto
-                'assigned_at'   => now(),
-            ]);
+            $assignedTechs = collect();
 
-            // Track workload addition in batch
-            $batchWorkloadAdditions[$selectedTech->id] = ($batchWorkloadAdditions[$selectedTech->id] ?? 0) + 1;
+            if (!$isOperational) {
+                // Outside operational hours: assign ALL candidate technicians
+                foreach ($candidatePool as $tech) {
+                    TicketAssignment::create([
+                        'ticket_id'     => $ticket->id,
+                        'technician_id' => $tech->id,
+                        'assigned_by'   => null, // System auto
+                        'assigned_at'   => now(),
+                    ]);
+                    $assignedTechs->push($tech);
+                    $batchWorkloadAdditions[$tech->id] = ($batchWorkloadAdditions[$tech->id] ?? 0) + 1;
+                }
+            } else {
+                // Operational hours: select single technician with lowest workload
+                $selectedTech = $candidatePool->sort(function ($a, $b) use ($supportingUnitId, $batchWorkloadAdditions) {
+                    $workloadA = $a->active_tickets_count + ($batchWorkloadAdditions[$a->id] ?? 0);
+                    $workloadB = $b->active_tickets_count + ($batchWorkloadAdditions[$b->id] ?? 0);
 
-            $isOperational = UnitWorkingHourService::isOperationalHours($supportingUnitId);
+                    if ($workloadA !== $workloadB) {
+                        return $workloadA <=> $workloadB; // Lowest active workload first
+                    }
+
+                    // Tie-breaker: matching supporting unit first
+                    $matchA = ($supportingUnitId && (int)$a->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
+                    $matchB = ($supportingUnitId && (int)$b->supporting_unit_id === (int)$supportingUnitId) ? 0 : 1;
+
+                    return $matchA <=> $matchB;
+                })->first();
+
+                if ($selectedTech) {
+                    TicketAssignment::create([
+                        'ticket_id'     => $ticket->id,
+                        'technician_id' => $selectedTech->id,
+                        'assigned_by'   => null,
+                        'assigned_at'   => now(),
+                    ]);
+                    $assignedTechs->push($selectedTech);
+                    $batchWorkloadAdditions[$selectedTech->id] = ($batchWorkloadAdditions[$selectedTech->id] ?? 0) + 1;
+                }
+            }
+
+            if ($assignedTechs->isEmpty()) {
+                $this->warn("Tiket #{$ticket->ticket_number}: Gagal memilih teknisi.");
+                continue;
+            }
+
             $reasonNote = $isOperational
                 ? "Laporan terlewat {$timeUnitLabel} pada jam kerja operasional tanpa disposisi petugas."
                 : "Laporan belum didisposisikan di luar jam kerja operasional.";
 
+            $techNames = $assignedTechs->pluck('name')->join(', ');
 
             // Log ticket history
             TicketHistory::create([
@@ -135,19 +154,20 @@ class AutoDispoCheckCommand extends Command
                 'user_id'   => 1, // Admin / System
                 'status'    => 'ASSIGNED',
                 'action'    => 'AUTO_DISPATCH_SYSTEM',
-                'notes'     => "⚡ DISPOSISI OTOMATIS OLEH SISTEM: {$reasonNote} Otomatis dialihkan ke teknisi {$selectedTech->name} (Penugasan Aktif: {$currentWorkload} tiket).",
+                'notes'     => "⚡ DISPOSISI OTOMATIS OLEH SISTEM: {$reasonNote} Otomatis dialihkan ke teknisi: {$techNames}.",
             ]);
 
             // Notify assigned technician
             try {
                 $ticket->load(['room', 'category']);
-                Notification::send($selectedTech, new TicketAssignedNotification($ticket));
+                Notification::send($assignedTechs, new TicketAssignedNotification($ticket));
             } catch (\Throwable $e) {
-                Log::error("Gagal mengirim notifikasi auto-dispo ke Teknisi {$selectedTech->name}: " . $e->getMessage());
+                Log::error("Gagal mengirim notifikasi auto-dispo ke Teknisi ({$techNames}): " . $e->getMessage());
             }
 
             // Also notify Unit Head (Ka Unit) & Admin about this auto-disposition
             try {
+                $firstTech = $assignedTechs->first();
                 $unitHeadsAndAdmins = User::where('is_active', 1)
                     ->where(function ($query) use ($supportingUnitId) {
                         $query->where('role_id', \App\Models\Role::ADMINISTRATOR)
@@ -165,8 +185,8 @@ class AutoDispoCheckCommand extends Command
                     })
                     ->get();
 
-                if ($unitHeadsAndAdmins->isNotEmpty()) {
-                    Notification::send($unitHeadsAndAdmins, new \App\Notifications\TicketAutoDispatchedNotification($ticket, $selectedTech));
+                if ($unitHeadsAndAdmins->isNotEmpty() && $firstTech) {
+                    Notification::send($unitHeadsAndAdmins, new \App\Notifications\TicketAutoDispatchedNotification($ticket, $firstTech));
                 }
             } catch (\Throwable $e) {
                 Log::error("Gagal mengirim notifikasi auto-dispo ke Ka.Unit/Admin: " . $e->getMessage());
@@ -188,9 +208,8 @@ class AutoDispoCheckCommand extends Command
                 Log::error('Gagal broadcast TicketRealtimeUpdated di auto-dispo command: ' . $e->getMessage());
             }
 
-
             $count++;
-            $this->info("Tiket #{$ticket->ticket_number} berhasil didisposisikan otomatis ke teknisi {$selectedTech->name} (Penugasan: {$currentWorkload} tiket).");
+            $this->info("Tiket #{$ticket->ticket_number} berhasil didisposisikan otomatis ke teknisi {$techNames}.");
         }
 
         $this->info("Proses selesai. Total {$count} tiket didisposisikan otomatis oleh sistem.");
