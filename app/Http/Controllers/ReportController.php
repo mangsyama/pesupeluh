@@ -201,6 +201,9 @@ class ReportController extends Controller
      */
     public function exportPdf(Request $request)
     {
+        @ini_set('memory_limit', '512M');
+        @ini_set('max_execution_time', 300);
+
         $user = $request->user();
         
         $query = ServiceTicket::with([
@@ -209,7 +212,6 @@ class ReportController extends Controller
             'category:id,name,supporting_unit_id',
             'category.supportingUnit:id,name',
             'assignments.technician:id,name',
-            'attachments',
         ])
         ->whereNull('deleted_at');
 

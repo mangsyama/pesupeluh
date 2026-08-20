@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            font-size: 6px;
+            font-size: 6.5px;
             color: #0f172a;
             background: #ffffff;
             margin: 0;
@@ -96,7 +96,7 @@
         .data-table th {
             background-color: #059669;
             color: #ffffff;
-            font-size: 6px;
+            font-size: 6.5px;
             font-weight: 700;
             text-transform: uppercase;
             padding: 5px 4px;
@@ -107,7 +107,7 @@
         }
 
         .data-table td {
-            font-size: 6px;
+            font-size: 6.5px;
             padding: 4px 4px;
             border: 0.25pt solid #e2e8f0;
             vertical-align: middle;
@@ -126,17 +126,16 @@
         /* Lebar Kolom */
         .col-no { width: 18px; text-align: center; }
         .col-kode { width: 75px; white-space: nowrap; font-weight: 600; color: #059669; text-align: center; }
-        .col-tgl { width: 56px; white-space: nowrap; text-align: center; }
-        .col-unit { width: 62px; text-align: center; }
-        .col-ruangan { width: 62px; text-align: center; }
-        .col-pelapor { width: 65px; }
+        .col-tgl { width: 58px; white-space: nowrap; text-align: center; }
+        .col-unit { width: 65px; text-align: center; }
+        .col-ruangan { width: 65px; text-align: center; }
+        .col-pelapor { width: 70px; }
         .col-masalah { width: auto; }
-        .col-prioritas { width: 42px; text-align: center; }
-        .col-disposisi { width: 70px; }
-        .col-respon { width: 54px; white-space: nowrap; }
-        .col-hasil { width: 48px; text-align: center; }
-        .col-ket { width: 85px; }
-        .col-lampiran { width: 45px; text-align: center; }
+        .col-prioritas { width: 45px; text-align: center; }
+        .col-disposisi { width: 75px; }
+        .col-respon { width: 58px; white-space: nowrap; }
+        .col-hasil { width: 50px; text-align: center; }
+        .col-ket { width: 95px; }
 
         /* Akses Warna Teks Status & Prioritas (Semua Bold) */
         .text-green { color: #059669; font-weight: 700; }
@@ -145,17 +144,6 @@
         .text-purple { color: #7c3aed; font-weight: 700; }
         .text-red { color: #dc2626; font-weight: 700; }
         .text-dash { text-align: center !important; color: #94a3b8; font-weight: 400; }
-
-        /* Photos Thumbnails */
-        .photo-thumb {
-            width: 24px;
-            height: 24px;
-            object-fit: cover;
-            border-radius: 2px;
-            border: 0.5px solid #cbd5e1;
-            margin: 0 auto;
-            display: block;
-        }
 
         /* Empty State */
         .empty-state {
@@ -212,7 +200,6 @@
             <th class="col-respon">Waktu Respon</th>
             <th class="col-hasil">Status</th>
             <th class="col-ket">Keterangan</th>
-            <th class="col-lampiran">Lampiran</th>
         </tr>
     </thead>
     <tbody>
@@ -315,36 +302,6 @@
             @else
                 <td class="col-ket text-dash">-</td>
             @endif
-
-            {{-- 13. Lampiran (Maksimal 1 Foto) --}}
-            <td class="col-lampiran">
-                @if($firstAtt = $ticket->attachments->first())
-                    @php
-                        $cleanPath = ltrim(str_replace(['storage/', 'public/'], '', $firstAtt->file_path), '/');
-                        $filePath = storage_path('app/public/' . $cleanPath);
-                        if (!file_exists($filePath)) {
-                            $filePath = public_path('storage/' . $cleanPath);
-                        }
-                        $imgBase64 = null;
-                        if (file_exists($filePath)) {
-                            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-                            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                                $imgContent = @file_get_contents($filePath);
-                                if ($imgContent) {
-                                    $imgBase64 = 'data:image/' . ($ext === 'jpg' ? 'jpeg' : $ext) . ';base64,' . base64_encode($imgContent);
-                                }
-                            }
-                        }
-                    @endphp
-                    @if($imgBase64)
-                        <img src="{{ $imgBase64 }}" class="photo-thumb" alt="foto">
-                    @else
-                        <span class="text-dash">-</span>
-                    @endif
-                @else
-                    <span class="text-dash">-</span>
-                @endif
-            </td>
         </tr>
         @endforeach
     </tbody>
