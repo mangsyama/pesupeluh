@@ -250,7 +250,22 @@ class ReportController extends Controller
             $logoBase64 = 'data:image/' . ($ext === 'jpg' ? 'jpeg' : $ext) . ';base64,' . base64_encode(file_get_contents($logoPath));
         }
 
-        $pdf = Pdf::loadView('exports.tickets_pdf', [
+        if (!file_exists(storage_path('fonts'))) {
+            mkdir(storage_path('fonts'), 0755, true);
+        }
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->setOptions([
+            'isRemoteEnabled' => true,
+            'isFontSubsettingEnabled' => true,
+            'isHtml5ParserEnabled' => true,
+            'fontDir' => storage_path('fonts'),
+            'fontCache' => storage_path('fonts'),
+            'tempDir' => sys_get_temp_dir(),
+            'chroot' => [public_path(), storage_path()],
+        ], true);
+
+        $pdf->loadView('exports.tickets_pdf', [
             'tickets'      => $tickets,
             'exportedAt'   => now()->format('d F Y H:i'),
             'startDate'    => $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') : null,
@@ -262,13 +277,7 @@ class ReportController extends Controller
             'logoBase64'   => $logoBase64,
             'logoPath'     => $logoPath,
         ])
-        ->setPaper('a4', 'landscape')
-        ->setOptions([
-            'isRemoteEnabled' => true,
-            'isFontSubsettingEnabled' => true,
-            'isHtml5ParserEnabled' => true,
-            'chroot' => [public_path(), storage_path()],
-        ]);
+        ->setPaper('a4', 'landscape');
 
         return $pdf->download('laporan_tiket_' . now()->format('Ymd_His') . '.pdf');
     }

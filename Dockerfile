@@ -72,7 +72,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 
 WORKDIR /var/www/pesupeluh
 COPY . /var/www/pesupeluh
-RUN mkdir -p /var/www/pesupeluh/bootstrap/cache /var/www/pesupeluh/storage/framework/cache /var/www/pesupeluh/storage/framework/sessions /var/www/pesupeluh/storage/framework/views /var/www/pesupeluh/storage/logs /var/www/pesupeluh/database && \
+RUN mkdir -p /var/www/pesupeluh/bootstrap/cache /var/www/pesupeluh/storage/framework/cache /var/www/pesupeluh/storage/framework/sessions /var/www/pesupeluh/storage/framework/views /var/www/pesupeluh/storage/logs /var/www/pesupeluh/storage/fonts /var/www/pesupeluh/database && \
     chown -R www-data:www-data /var/www/pesupeluh/storage /var/www/pesupeluh/bootstrap/cache /var/www/pesupeluh/database || true && \
     composer install --no-interaction --prefer-dist --no-progress --no-scripts && \
     npm install --legacy-peer-deps && \
