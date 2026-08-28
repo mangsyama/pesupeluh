@@ -5,8 +5,44 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Laporan Tiket Layanan — PESU PELUH</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-        
+        /* ── LOCAL POPPINS FONTS ── */
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 300;
+            src: url("{{ public_path('fonts/poppins/Poppins-Light.ttf') }}") format("truetype");
+        }
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 400;
+            src: url("{{ public_path('fonts/poppins/Poppins-Regular.ttf') }}") format("truetype");
+        }
+        @font-face {
+            font-family: 'Poppins';
+            font-style: italic;
+            font-weight: 400;
+            src: url("{{ public_path('fonts/poppins/Poppins-Italic.ttf') }}") format("truetype");
+        }
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 500;
+            src: url("{{ public_path('fonts/poppins/Poppins-Medium.ttf') }}") format("truetype");
+        }
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 600;
+            src: url("{{ public_path('fonts/poppins/Poppins-SemiBold.ttf') }}") format("truetype");
+        }
+        @font-face {
+            font-family: 'Poppins';
+            font-style: normal;
+            font-weight: 700;
+            src: url("{{ public_path('fonts/poppins/Poppins-Bold.ttf') }}") format("truetype");
+        }
+
         /* ── MARGIN FISIK MULTI-PAGE DOMPDF ── */
         @page {
             margin: 8mm 10mm 8mm 10mm;
@@ -125,17 +161,18 @@
 
         /* Lebar Kolom */
         .col-no { width: 18px; text-align: center; }
-        .col-kode { width: 75px; white-space: nowrap; font-weight: 600; color: #059669; text-align: center; }
-        .col-tgl { width: 58px; white-space: nowrap; text-align: center; }
-        .col-unit { width: 65px; text-align: center; }
-        .col-ruangan { width: 65px; text-align: center; }
-        .col-pelapor { width: 70px; }
+        .col-kode { width: 70px; white-space: nowrap; font-weight: 600; color: #059669; text-align: center; }
+        .col-tgl { width: 55px; white-space: nowrap; text-align: center; }
+        .col-unit { width: 60px; text-align: center; }
+        .col-ruangan { width: 60px; text-align: center; }
+        .col-pelapor { width: 65px; }
         .col-masalah { width: auto; }
-        .col-prioritas { width: 45px; text-align: center; }
-        .col-disposisi { width: 75px; }
-        .col-respon { width: 58px; white-space: nowrap; }
-        .col-hasil { width: 50px; text-align: center; }
-        .col-ket { width: 95px; }
+        .col-prioritas { width: 42px; text-align: center; }
+        .col-disposisi { width: 68px; }
+        .col-respon { width: 54px; white-space: nowrap; text-align: center; }
+        .col-hasil { width: 48px; text-align: center; }
+        .col-ket { width: 85px; }
+        .col-lampiran { width: 45px; text-align: center; }
 
         /* Akses Warna Teks Status & Prioritas (Semua Bold) */
         .text-green { color: #059669; font-weight: 700; }
@@ -144,6 +181,25 @@
         .text-purple { color: #7c3aed; font-weight: 700; }
         .text-red { color: #dc2626; font-weight: 700; }
         .text-dash { text-align: center !important; color: #94a3b8; font-weight: 400; }
+
+        /* Photos Thumbnails */
+        .photo-thumb {
+            width: 24px;
+            height: 24px;
+            object-fit: cover;
+            border-radius: 2px;
+            border: 0.25pt solid #cbd5e1;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .photo-count {
+            font-size: 5px;
+            color: #64748b;
+            text-align: center;
+            margin-top: 1px;
+            line-height: 1;
+        }
 
         /* Empty State */
         .empty-state {
@@ -200,6 +256,7 @@
             <th class="col-respon">Waktu Respon</th>
             <th class="col-hasil">Status</th>
             <th class="col-ket">Keterangan</th>
+            <th class="col-lampiran">Foto</th>
         </tr>
     </thead>
     <tbody>
@@ -302,6 +359,62 @@
             @else
                 <td class="col-ket text-dash">-</td>
             @endif
+
+            {{-- 13. Foto Lampiran --}}
+            <td class="col-lampiran">
+                @php
+                    $imgBase64 = null;
+                    if ($ticket->attachments && $ticket->attachments->count() > 0) {
+                        foreach ($ticket->attachments as $att) {
+                            $rawPath = $att->file_path;
+                            if (!$rawPath) continue;
+
+                            if (str_starts_with($rawPath, 'data:image')) {
+                                $imgBase64 = $rawPath;
+                                break;
+                            }
+
+                            $cleanPath = ltrim(str_replace(['/storage/', 'storage/', 'public/'], '', $rawPath), '/\\');
+                            $candidates = [
+                                storage_path('app/public/' . $cleanPath),
+                                storage_path('app/' . $cleanPath),
+                                public_path('storage/' . $cleanPath),
+                                public_path($cleanPath),
+                                public_path(ltrim($rawPath, '/\\')),
+                                $rawPath,
+                            ];
+
+                            $foundFile = null;
+                            foreach ($candidates as $cand) {
+                                if ($cand && file_exists($cand) && is_file($cand)) {
+                                    $foundFile = $cand;
+                                    break;
+                                }
+                            }
+
+                            if ($foundFile) {
+                                $ext = strtolower(pathinfo($foundFile, PATHINFO_EXTENSION));
+                                if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'])) {
+                                    $imgContent = @file_get_contents($foundFile);
+                                    if ($imgContent) {
+                                        $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : ('image/' . $ext);
+                                        $imgBase64 = 'data:' . $mime . ';base64,' . base64_encode($imgContent);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                @endphp
+                @if($imgBase64)
+                    <img src="{{ $imgBase64 }}" class="photo-thumb" alt="foto">
+                    @if($ticket->attachments->count() > 1)
+                        <div class="photo-count">+{{ $ticket->attachments->count() - 1 }}</div>
+                    @endif
+                @else
+                    <span class="text-dash">-</span>
+                @endif
+            </td>
         </tr>
         @endforeach
     </tbody>

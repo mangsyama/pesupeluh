@@ -212,6 +212,7 @@ class ReportController extends Controller
             'category:id,name,supporting_unit_id',
             'category.supportingUnit:id,name',
             'assignments.technician:id,name',
+            'attachments',
         ])
         ->whereNull('deleted_at');
 
@@ -262,7 +263,7 @@ class ReportController extends Controller
             'fontDir' => storage_path('fonts'),
             'fontCache' => storage_path('fonts'),
             'tempDir' => sys_get_temp_dir(),
-            'chroot' => [public_path(), storage_path()],
+            'chroot' => [public_path(), storage_path(), base_path()],
         ], true);
 
         $pdf->loadView('exports.tickets_pdf', [
