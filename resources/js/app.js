@@ -23,7 +23,9 @@ if (typeof window !== 'undefined' && 'caches' in window) {
 
 if (typeof window !== 'undefined') {
     const appKey = import.meta.env.VITE_REVERB_APP_KEY || 'w60yiz2uk29hsgi3bxgg';
-    console.log('[Echo] initializing, key:', appKey, 'host:', import.meta.env.VITE_REVERB_HOST, 'port:', import.meta.env.VITE_REVERB_PORT);
+    if (import.meta.env.DEV) {
+        console.log('[Echo] initializing, key:', appKey, 'host:', import.meta.env.VITE_REVERB_HOST, 'port:', import.meta.env.VITE_REVERB_PORT);
+    }
     if (appKey) {
         window.Pusher = Pusher;
         window.Echo = new Echo({

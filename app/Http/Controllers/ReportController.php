@@ -251,19 +251,41 @@ class ReportController extends Controller
             $logoBase64 = 'data:image/' . ($ext === 'jpg' ? 'jpeg' : $ext) . ';base64,' . base64_encode(file_get_contents($logoPath));
         }
 
-        if (!file_exists(storage_path('fonts'))) {
-            mkdir(storage_path('fonts'), 0755, true);
+        $fontDir = storage_path('fonts');
+        if (!file_exists($fontDir)) {
+            @mkdir($fontDir, 0775, true);
+        }
+
+        $fontJson = $fontDir . DIRECTORY_SEPARATOR . 'installed-fonts.json';
+        if (file_exists($fontJson) && !is_writable($fontJson)) {
+            @unlink($fontJson);
+        }
+
+        $testFile = $fontDir . DIRECTORY_SEPARATOR . 'test_perm.tmp';
+        if (!is_writable($fontDir) || (file_exists($fontJson) && !is_writable($fontJson)) || (@file_put_contents($testFile, '1') === false)) {
+            $fontDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pesupeluh_pdf_fonts';
+            if (!file_exists($fontDir)) {
+                @mkdir($fontDir, 0775, true);
+            }
+        } else {
+            @unlink($testFile);
         }
 
         $pdf = app('dompdf.wrapper');
         $pdf->setOptions([
-            'isRemoteEnabled' => true,
-            'isFontSubsettingEnabled' => true,
-            'isHtml5ParserEnabled' => true,
-            'fontDir' => storage_path('fonts'),
-            'fontCache' => storage_path('fonts'),
+            'font_dir' => $fontDir,
+            'font_cache' => $fontDir,
+            'fontDir' => $fontDir,
+            'fontCache' => $fontDir,
+            'temp_dir' => sys_get_temp_dir(),
             'tempDir' => sys_get_temp_dir(),
             'chroot' => [public_path(), storage_path(), base_path()],
+            'is_remote_enabled' => true,
+            'isRemoteEnabled' => true,
+            'is_font_subsetting_enabled' => true,
+            'isFontSubsettingEnabled' => true,
+            'is_html5_parser_enabled' => true,
+            'isHtml5ParserEnabled' => true,
         ], true);
 
         $pdf->loadView('exports.tickets_pdf', [

@@ -307,7 +307,7 @@ class TicketController extends Controller
         $validated = $request->validate([
             'resolution_status' => 'required|in:COMPLETED,PENDING,CANCEL',
             'notes' => 'required_if:resolution_status,PENDING,CANCEL|nullable|string|min:5',
-            'attachments' => 'nullable|array|max:5',
+            'attachments' => 'required_if:resolution_status,COMPLETED|nullable|array|min:1|max:5',
             'attachments.*' => 'nullable|string',
         ]);
 
@@ -319,6 +319,7 @@ class TicketController extends Controller
                 DB::transaction(function () use ($request, $ticket, $notes) {
                     // Save resolution images securely FIRST
                     $attachments = $request->input('attachments', []);
+                    $savedCount = 0;
                     if (is_array($attachments) && count($attachments) > 0) {
                         foreach ($attachments as $dataUrl) {
                             $filePath = SecureFileUpload::saveBase64($dataUrl, 'ticket_attachments', 'ticket_res_');
@@ -329,8 +330,13 @@ class TicketController extends Controller
                                     'uploaded_by' => $request->user()->id,
                                     'uploaded_at' => now(),
                                 ]);
+                                $savedCount++;
                             }
                         }
+                    }
+
+                    if ($savedCount === 0) {
+                        throw new \RuntimeException('Wajib melampirkan minimal 1 foto bukti hasil penanganan yang valid.');
                     }
 
                     // Update ticket details

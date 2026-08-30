@@ -172,7 +172,7 @@
         .col-respon { width: 54px; white-space: nowrap; text-align: center; }
         .col-hasil { width: 48px; text-align: center; }
         .col-ket { width: 85px; }
-        .col-lampiran { width: 45px; text-align: center; }
+        .col-lampiran { width: 45px; text-align: center; vertical-align: middle; padding: 3px 2px !important; }
 
         /* Akses Warna Teks Status & Prioritas (Semua Bold) */
         .text-green { color: #059669; font-weight: 700; }
@@ -182,24 +182,21 @@
         .text-red { color: #dc2626; font-weight: 700; }
         .text-dash { text-align: center !important; color: #94a3b8; font-weight: 400; }
 
-        /* Photos Thumbnails */
+        /* Photos Layout Stacked (Atas - Bawah) */
+        .photo-stack { text-align: center; margin: 0 auto; }
+        .photo-box { margin-bottom: 3px; }
+        .photo-box:last-child { margin-bottom: 0; }
+        .photo-label { font-size: 5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 1px; line-height: 1; text-align: center; }
         .photo-thumb {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             object-fit: cover;
             border-radius: 2px;
             border: 0.25pt solid #cbd5e1;
             margin: 0 auto;
             display: block;
         }
-
-        .photo-count {
-            font-size: 5px;
-            color: #64748b;
-            text-align: center;
-            margin-top: 1px;
-            line-height: 1;
-        }
+        .photo-dash { font-size: 6px; color: #94a3b8; font-weight: 400; line-height: 1; text-align: center; display: block; }
 
         /* Empty State */
         .empty-state {
@@ -360,60 +357,67 @@
                 <td class="col-ket text-dash">-</td>
             @endif
 
-            {{-- 13. Foto Lampiran --}}
+            {{-- 13. Foto Lampiran (Atas: Laporan | Bawah: Selesai) --}}
             <td class="col-lampiran">
                 @php
-                    $imgBase64 = null;
-                    if ($ticket->attachments && $ticket->attachments->count() > 0) {
-                        foreach ($ticket->attachments as $att) {
+                    $resolveImg = function($attsList) {
+                        if (!$attsList || $attsList->count() === 0) return null;
+                        foreach ($attsList as $att) {
                             $rawPath = $att->file_path;
                             if (!$rawPath) continue;
 
                             if (str_starts_with($rawPath, 'data:image')) {
-                                $imgBase64 = $rawPath;
-                                break;
+                                return $rawPath;
                             }
 
-                            $cleanPath = ltrim(str_replace(['/storage/', 'storage/', 'public/'], '', $rawPath), '/\\');
+                            $normalized = str_replace('\\', '/', $rawPath);
+                            $cleanPath = ltrim(str_replace(['/storage/', 'storage/', 'public/'], '', $normalized), '/');
+
                             $candidates = [
-                                storage_path('app/public/' . $cleanPath),
-                                storage_path('app/' . $cleanPath),
-                                public_path('storage/' . $cleanPath),
-                                public_path($cleanPath),
-                                public_path(ltrim($rawPath, '/\\')),
+                                storage_path('app/public/' . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath)),
+                                storage_path('app/' . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath)),
+                                public_path('storage/' . str_replace('/', DIRECTORY_SEPARATOR, $cleanPath)),
+                                public_path(str_replace('/', DIRECTORY_SEPARATOR, $cleanPath)),
                                 $rawPath,
                             ];
 
-                            $foundFile = null;
                             foreach ($candidates as $cand) {
                                 if ($cand && file_exists($cand) && is_file($cand)) {
-                                    $foundFile = $cand;
-                                    break;
-                                }
-                            }
-
-                            if ($foundFile) {
-                                $ext = strtolower(pathinfo($foundFile, PATHINFO_EXTENSION));
-                                if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'])) {
-                                    $imgContent = @file_get_contents($foundFile);
-                                    if ($imgContent) {
-                                        $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : ('image/' . $ext);
-                                        $imgBase64 = 'data:' . $mime . ';base64,' . base64_encode($imgContent);
-                                        break;
+                                    $ext = strtolower(pathinfo($cand, PATHINFO_EXTENSION));
+                                    if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'])) {
+                                        return $cand;
                                     }
                                 }
                             }
                         }
-                    }
+                        return null;
+                    };
+
+                    $allAtts = $ticket->attachments ?? collect();
+                    $reporterAtts = $allAtts->filter(fn($a) => $a->uploaded_by == $ticket->reporter_id);
+                    $completionAtts = $allAtts->filter(fn($a) => $a->uploaded_by != $ticket->reporter_id && !str_contains($a->file_path ?? '', 'ticket_arr_'));
+
+                    $reporterImg = $resolveImg($reporterAtts);
+                    $completionImg = $resolveImg($completionAtts);
                 @endphp
-                @if($imgBase64)
-                    <img src="{{ $imgBase64 }}" class="photo-thumb" alt="foto">
-                    @if($ticket->attachments->count() > 1)
-                        <div class="photo-count">+{{ $ticket->attachments->count() - 1 }}</div>
-                    @endif
-                @else
-                    <span class="text-dash">-</span>
-                @endif
+                <div class="photo-stack">
+                    <div class="photo-box">
+                        <div class="photo-label">Laporan</div>
+                        @if($reporterImg)
+                            <img src="{{ $reporterImg }}" class="photo-thumb" alt="Laporan">
+                        @else
+                            <span class="photo-dash">-</span>
+                        @endif
+                    </div>
+                    <div class="photo-box">
+                        <div class="photo-label">Selesai</div>
+                        @if($completionImg)
+                            <img src="{{ $completionImg }}" class="photo-thumb" alt="Selesai">
+                        @else
+                            <span class="photo-dash">-</span>
+                        @endif
+                    </div>
+                </div>
             </td>
         </tr>
         @endforeach

@@ -541,6 +541,20 @@ const registerNotificationListeners = () => {
     }
 };
 
+onMounted(() => {
+    registerNotificationListeners();
+});
+
+watch(
+    () => page.props.auth?.user?.id,
+    (userId) => {
+        if (userId) {
+            registerNotificationListeners();
+        }
+    },
+    { immediate: true }
+);
+
 const markAsRead = (notif) => {
     if (!notif.id) return;
 

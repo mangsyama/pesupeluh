@@ -351,13 +351,22 @@ const isSubmittingResolve = ref(false);
 const submitResolve = (status) => {
     if (!props.ticket?.uuid || isSubmittingResolve.value || resolveForm.processing) return;
     isSubmittingResolve.value = true;
+    resolveForm.clearErrors();
     resolveForm.resolution_status = status;
+
+    if (status === 'COMPLETED' && (!resolveForm.attachments || resolveForm.attachments.length === 0)) {
+        resolveForm.setError('attachments', 'Wajib mengunggah minimal 1 foto bukti hasil penanganan.');
+        isSubmittingResolve.value = false;
+        return;
+    }
+
     resolveForm.post(`/tickets/${props.ticket.uuid}/resolve`, {
         onSuccess: () => {
             showCompleteModal.value = false;
             showPendingModal.value = false;
             showCancelModal.value = false;
             resolveForm.reset();
+            completePreviews.value = [];
         },
         onFinish: () => {
             isSubmittingResolve.value = false;
@@ -1338,7 +1347,7 @@ const contextLabel = computed(() => {
 
                 <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
                     <SecondaryButton type="button" @click="showCompleteModal = false" class="h-11 px-5">{{ __('Batal') }}</SecondaryButton>
-                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes" class="h-11 px-6 !bg-emerald-600 hover:!bg-emerald-500 font-bold">
+                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes || !resolveForm.attachments || resolveForm.attachments.length === 0" class="h-11 px-6 !bg-emerald-600 hover:!bg-emerald-500 font-bold">
                         {{ resolveForm.processing ? __('Menyimpan...') : __('Selesai Penanganan') }}
                     </PrimaryButton>
                 </div>
