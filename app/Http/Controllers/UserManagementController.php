@@ -104,12 +104,11 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Display a listing of all approved users by role.
+     * Get all permission keys structured by category groups.
      */
-    public function index()
+    private function getAllPermissionKeys(): array
     {
-        // All available permission keys for the permission checkbox UI
-        $allPermissionKeys = [
+        return [
             [
                 'group' => 'Menu Utama',
                 'permissions' => [
@@ -122,6 +121,7 @@ class UserManagementController extends Controller
                     ['key' => 'services.index', 'label' => 'Layanan Penunjang'],
                     ['key' => 'reports.history', 'label' => 'Riwayat Pelaporan'],
                     ['key' => 'reports-management.index', 'label' => 'Manajemen Laporan'],
+                    ['key' => 'reports-audit.index', 'label' => 'Audit Laporan (Semua Data)'],
                     ['key' => 'reports.index', 'label' => 'Ekspor Laporan'],
                 ],
             ],
@@ -152,7 +152,13 @@ class UserManagementController extends Controller
                 ],
             ],
         ];
+    }
 
+    /**
+     * Display a listing of all approved users by role.
+     */
+    public function index()
+    {
         return Inertia::render('UserManagement/Index', [
             'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
                 ->whereNotNull('approved_by')
@@ -161,7 +167,7 @@ class UserManagementController extends Controller
             'roles' => Inertia::defer(fn() => Role::orderBy('id', 'asc')->get()),
             'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
             'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
-            'allPermissionKeys' => $allPermissionKeys,
+            'allPermissionKeys' => $this->getAllPermissionKeys(),
         ]);
     }
 
@@ -202,54 +208,10 @@ class UserManagementController extends Controller
      */
     public function show(User $user)
     {
-        $allPermissionKeys = [
-            [
-                'group' => 'Menu Utama',
-                'permissions' => [
-                    ['key' => 'dashboard', 'label' => 'Dashboard'],
-                ],
-            ],
-            [
-                'group' => 'Layanan & Laporan',
-                'permissions' => [
-                    ['key' => 'services.index', 'label' => 'Layanan Penunjang'],
-                    ['key' => 'reports.history', 'label' => 'Riwayat Pelaporan'],
-                    ['key' => 'reports-management.index', 'label' => 'Manajemen Laporan'],
-                    ['key' => 'reports.index', 'label' => 'Ekspor Laporan'],
-                ],
-            ],
-            [
-                'group' => 'Teknisi & Operasional',
-                'permissions' => [
-                    ['key' => 'technicians.position', 'label' => 'Posisi & Status Teknisi'],
-                    ['key' => 'service-management.working-hours', 'label' => 'Jam Operasional Unit'],
-                ],
-            ],
-            [
-                'group' => 'Master Data',
-                'permissions' => [
-                    ['key' => 'service-management.rooms', 'label' => 'Manajemen Ruangan'],
-                    ['key' => 'service-management.categories', 'label' => 'Kategori Kerusakan'],
-                    ['key' => 'service-management.supporting-units', 'label' => 'Unit Penunjang'],
-                    ['key' => 'users.approvals', 'label' => 'Persetujuan Pengguna'],
-                    ['key' => 'users.index', 'label' => 'Daftar Pengguna'],
-                ],
-            ],
-            [
-                'group' => 'Sistem',
-                'permissions' => [
-                    ['key' => 'admin.wa-gateway.index', 'label' => 'WhatsApp Gateway'],
-                    ['key' => 'admin.qr-code.index', 'label' => 'Generator QR Code'],
-                    ['key' => 'settings.index', 'label' => 'Pengaturan'],
-                    ['key' => 'design-system.index', 'label' => 'Design System'],
-                ],
-            ],
-        ];
-
         return Inertia::render('UserManagement/Show', [
             'targetUser' => $user->load(['role', 'room', 'supportingUnit']),
             'roles' => Role::orderBy('id', 'asc')->get(),
-            'allPermissionKeys' => $allPermissionKeys,
+            'allPermissionKeys' => $this->getAllPermissionKeys(),
         ]);
     }
 
@@ -258,56 +220,12 @@ class UserManagementController extends Controller
      */
     public function edit(User $user)
     {
-        $allPermissionKeys = [
-            [
-                'group' => 'Menu Utama',
-                'permissions' => [
-                    ['key' => 'dashboard', 'label' => 'Dashboard'],
-                ],
-            ],
-            [
-                'group' => 'Layanan & Laporan',
-                'permissions' => [
-                    ['key' => 'services.index', 'label' => 'Layanan Penunjang'],
-                    ['key' => 'reports.history', 'label' => 'Riwayat Pelaporan'],
-                    ['key' => 'reports-management.index', 'label' => 'Manajemen Laporan'],
-                    ['key' => 'reports.index', 'label' => 'Ekspor Laporan'],
-                ],
-            ],
-            [
-                'group' => 'Teknisi & Operasional',
-                'permissions' => [
-                    ['key' => 'technicians.position', 'label' => 'Posisi & Status Teknisi'],
-                    ['key' => 'service-management.working-hours', 'label' => 'Jam Operasional Unit'],
-                ],
-            ],
-            [
-                'group' => 'Master Data',
-                'permissions' => [
-                    ['key' => 'service-management.rooms', 'label' => 'Manajemen Ruangan'],
-                    ['key' => 'service-management.categories', 'label' => 'Kategori Kerusakan'],
-                    ['key' => 'service-management.supporting-units', 'label' => 'Unit Penunjang'],
-                    ['key' => 'users.approvals', 'label' => 'Persetujuan Pengguna'],
-                    ['key' => 'users.index', 'label' => 'Daftar Pengguna'],
-                ],
-            ],
-            [
-                'group' => 'Sistem',
-                'permissions' => [
-                    ['key' => 'admin.wa-gateway.index', 'label' => 'WhatsApp Gateway'],
-                    ['key' => 'admin.qr-code.index', 'label' => 'Generator QR Code'],
-                    ['key' => 'settings.index', 'label' => 'Pengaturan'],
-                    ['key' => 'design-system.index', 'label' => 'Design System'],
-                ],
-            ],
-        ];
-
         return Inertia::render('UserManagement/Edit', [
             'targetUser' => $user->load(['role', 'room', 'supportingUnit']),
             'roles' => Inertia::defer(fn() => Role::orderBy('id', 'asc')->get()),
             'rooms' => Inertia::defer(fn() => Room::orderBy('name', 'asc')->get()),
             'supportingUnits' => Inertia::defer(fn() => SupportingUnit::orderBy('name', 'asc')->get()),
-            'allPermissionKeys' => $allPermissionKeys,
+            'allPermissionKeys' => $this->getAllPermissionKeys(),
         ]);
     }
 

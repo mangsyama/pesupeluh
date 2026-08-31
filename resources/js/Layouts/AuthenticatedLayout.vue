@@ -4,7 +4,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NotificationItem from '@/Components/NotificationItem.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode, QrCode, Radio } from '@lucide/vue';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ShieldCheck, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode, QrCode, Radio } from '@lucide/vue';
 
 
 
@@ -195,6 +195,7 @@ const isItemActive = (child) => {
     if (child.routeName === 'users.approvals' && route().current('users.approvals.show')) return true;
     if (child.routeName === 'users.index' && (route().current('users.edit') || route().current('users.show'))) return true;
     if (child.routeName === 'reports-management.index' && route().current('reports-management.show')) return true;
+    if (child.routeName === 'reports-audit.index' && route().current('reports-audit.show')) return true;
     if (child.routeName === 'reports.history' && route().current('reports.show')) return true;
     if (child.routeName === 'settings.index' && route().current('profile.edit')) return true;
     if (child.routeName === 'services.index' && (route().current('services.index') || route().current('services.medik') || route().current('services.non-medik') || route().current('services.units.show'))) return true;
@@ -212,6 +213,9 @@ const isRouteActive = (item) => {
         return true;
     }
     if (item.routeName === 'reports-management.index' && route().current('reports-management.show')) {
+        return true;
+    }
+    if (item.routeName === 'reports-audit.index' && route().current('reports-audit.show')) {
         return true;
     }
     if (item.routeName === 'reports.history' && route().current('reports.show')) {
@@ -248,6 +252,7 @@ const menuGroups = computed(() => {
                 { label: 'menu.supporting_services', routeName: 'services.index', icon: Activity, permKey: 'services.index' },
                 { label: 'menu.reporting_history', routeName: 'reports.history', icon: History, permKey: 'reports.history' },
                 { label: 'Manajemen Laporan', routeName: 'reports-management.index', icon: Wrench, permKey: 'reports-management.index' },
+                { label: 'Audit Laporan', routeName: 'reports-audit.index', icon: ShieldCheck, permKey: 'reports-audit.index' },
                 { label: 'menu.reports_export', routeName: 'reports.index', icon: FileBarChart2, permKey: 'reports.index' },
             ]
         },
@@ -329,6 +334,9 @@ const backRoute = computed(() => {
     if (route().current('reports-management.show')) {
         return route('reports-management.index');
     }
+    if (route().current('reports-audit.show')) {
+        return route('reports-audit.index');
+    }
     if (route().current('users.approvals.show')) {
         return route('users.approvals');
     }
@@ -347,6 +355,7 @@ const showBackButton = computed(() => {
            route().current('services.units.show') || 
            route().current('reports.show') || 
            route().current('reports-management.show') ||
+           route().current('reports-audit.show') ||
            route().current('users.approvals.show') ||
            route().current('users.edit') ||
            route().current('users.show') ||

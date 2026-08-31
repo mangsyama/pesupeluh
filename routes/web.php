@@ -490,6 +490,18 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/reports-management/{ticket:uuid}', [\App\Http\Controllers\ReportManagementController::class, 'show'])->name('reports-management.show');
     Route::delete('/reports-management/{ticket:uuid}', [\App\Http\Controllers\ReportManagementController::class, 'destroy'])->name('reports-management.destroy');
 
+    Route::get('/reports-audit', [\App\Http\Controllers\ReportAuditController::class, 'index'])->name('reports-audit.index');
+    Route::post('/reports-audit/filters', [\App\Http\Controllers\ReportAuditController::class, 'storeFilters'])->name('reports-audit.filters');
+    Route::get('/reports-audit/{uuid}', [\App\Http\Controllers\ReportAuditController::class, 'show'])->name('reports-audit.show');
+    Route::put('/reports-audit/{uuid}', [\App\Http\Controllers\ReportAuditController::class, 'update'])->name('reports-audit.update');
+    Route::delete('/reports-audit/{uuid}', [\App\Http\Controllers\ReportAuditController::class, 'destroy'])->name('reports-audit.destroy');
+    Route::post('/reports-audit/{uuid}/restore', [\App\Http\Controllers\ReportAuditController::class, 'restore'])->name('reports-audit.restore');
+    Route::post('/reports-audit/{uuid}/attachments', [\App\Http\Controllers\ReportAuditController::class, 'uploadAttachment'])->name('reports-audit.upload-attachment');
+    Route::post('/reports-audit/{uuid}/attachments/{attachmentId}/replace', [\App\Http\Controllers\ReportAuditController::class, 'replaceAttachment'])->name('reports-audit.replace-attachment');
+    Route::delete('/reports-audit/{uuid}/attachments/{attachmentId}', [\App\Http\Controllers\ReportAuditController::class, 'deleteAttachment'])->name('reports-audit.delete-attachment');
+    Route::post('/reports-audit/{uuid}/slots/{slotType}', [\App\Http\Controllers\ReportAuditController::class, 'updateSlotAttachment'])->name('reports-audit.update-slot');
+    Route::delete('/reports-audit/{uuid}/slots/{slotType}', [\App\Http\Controllers\ReportAuditController::class, 'deleteSlotAttachment'])->name('reports-audit.delete-slot');
+
     Route::get('/settings', function () {
         return Inertia::render('UserSettings/Index');
     })->name('settings.index');

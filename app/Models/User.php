@@ -84,7 +84,7 @@ class User extends Authenticatable
         // 2. Default Administrator role permissions if no override
         if ($this->isAdmin()) {
             return $this->memoizedPermissions = [
-                'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports.index',
+                'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports-audit.index', 'reports.index',
                 'technicians.position', 'service-management.working-hours',
                 'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
                 'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index', 'design-system.index',

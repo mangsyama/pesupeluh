@@ -134,4 +134,21 @@ class SecureFileUpload
 
         return '/storage/' . $path;
     }
+
+    /**
+     * Safely delete a file from public storage.
+     */
+    public static function deleteFile(?string $filePath): bool
+    {
+        if (!$filePath || !is_string($filePath)) {
+            return false;
+        }
+
+        $cleanPath = preg_replace('#^/?storage/#', '', trim($filePath));
+        if (Storage::disk('public')->exists($cleanPath)) {
+            return Storage::disk('public')->delete($cleanPath);
+        }
+
+        return false;
+    }
 }

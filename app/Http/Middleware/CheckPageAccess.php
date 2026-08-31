@@ -45,6 +45,19 @@ class CheckPageAccess
         'reports.export.pdf' => 'reports.index',
         'reports.export.csv' => 'reports.index',
 
+        // Reports - Audit
+        'reports-audit.index' => 'reports-audit.index',
+        'reports-audit.show' => 'reports-audit.index',
+        'reports-audit.update' => 'reports-audit.index',
+        'reports-audit.destroy' => 'reports-audit.index',
+        'reports-audit.restore' => 'reports-audit.index',
+        'reports-audit.filters' => 'reports-audit.index',
+        'reports-audit.upload-attachment' => 'reports-audit.index',
+        'reports-audit.replace-attachment' => 'reports-audit.index',
+        'reports-audit.delete-attachment' => 'reports-audit.index',
+        'reports-audit.update-slot' => 'reports-audit.index',
+        'reports-audit.delete-slot' => 'reports-audit.index',
+
         // Service Management (Master Data)
         'service-management.index' => 'service-management.rooms',
         'service-management.rooms' => 'service-management.rooms',

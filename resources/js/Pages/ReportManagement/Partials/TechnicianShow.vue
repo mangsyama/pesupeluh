@@ -404,15 +404,21 @@ const closeLightbox = () => {
 
 // Group attachments
 const reporterAttachments = computed(() => {
-    return props.ticket?.attachments?.filter(att => att.uploaded_by == props.ticket?.reporter_id) || [];
+    return props.ticket?.attachments?.filter(att => 
+        att.file_path && !att.file_path.includes('ticket_arr_') && !att.file_path.includes('ticket_res_')
+    ) || [];
 });
 
 const arrivalAttachments = computed(() => {
-    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id && att.file_path?.includes('ticket_arr_')) || [];
+    return props.ticket?.attachments?.filter(att => 
+        att.file_path && att.file_path.includes('ticket_arr_')
+    ) || [];
 });
 
 const completionAttachments = computed(() => {
-    return props.ticket?.attachments?.filter(att => att.uploaded_by != props.ticket?.reporter_id && !att.file_path?.includes('ticket_arr_')) || [];
+    return props.ticket?.attachments?.filter(att => 
+        att.file_path && (att.file_path.includes('ticket_res_') || (!att.file_path.includes('ticket_arr_') && att.uploaded_by != props.ticket?.reporter_id))
+    ) || [];
 });
 
 const isVideo = (path) => {
@@ -420,6 +426,31 @@ const isVideo = (path) => {
     const lower = path.toLowerCase();
     return lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.ogg') || lower.endsWith('.3gp') || lower.endsWith('.avi');
 };
+
+const completedHistory = computed(() => {
+    return props.ticket?.histories?.find(h => h.action === 'COMPLETED' || h.status === 'COMPLETED') || null;
+});
+
+const completedBy = computed(() => {
+    if (completedHistory.value?.user?.name) {
+        return completedHistory.value.user.name;
+    }
+    if (props.ticket?.assignments && props.ticket.assignments.length > 0) {
+        return props.ticket.assignments.map(a => a.technician?.name).filter(Boolean).join(', ');
+    }
+    return null;
+});
+
+const cancelledHistory = computed(() => {
+    return props.ticket?.histories?.find(h => h.action === 'CANCELLED' || h.status === 'CANCEL') || null;
+});
+
+const cancelledBy = computed(() => {
+    if (cancelledHistory.value?.user?.name) {
+        return cancelledHistory.value.user.name;
+    }
+    return null;
+});
 
 const statusConfig = {
     PENDING_VALIDATION: { label: 'Menunggu Validasi', badge: 'bg-amber-50 text-amber-700 border-amber-200/50 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/30' },
@@ -464,10 +495,50 @@ const contextLabel = computed(() => {
     }
     return null;
 });
+
+const canPerformAction = computed(() => {
+    return props.ticket && 
+        props.ticket.status !== 'PENDING_VALIDATION' && 
+        props.ticket.status !== 'COMPLETED' && 
+        props.ticket.status !== 'CANCEL';
+});
+
+// Smart Scroll Hide/Show for Mobile Floating Action Bar
+const isFloatingBarVisible = ref(true);
+let lastScrollY = 0;
+const scrollThreshold = 8;
+
+const handleScroll = () => {
+    const currentScrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (currentScrollY <= 40) {
+        isFloatingBarVisible.value = true;
+        lastScrollY = currentScrollY;
+        return;
+    }
+
+    if (currentScrollY > lastScrollY + scrollThreshold) {
+        // Scrolling down -> hide
+        isFloatingBarVisible.value = false;
+    } else if (currentScrollY < lastScrollY - scrollThreshold) {
+        // Scrolling up -> show
+        isFloatingBarVisible.value = true;
+    }
+
+    lastScrollY = currentScrollY;
+};
+
+onMounted(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+});
+
+onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll);
+});
 </script>
 
 <template>
-    <div class="py-4 px-4 sm:px-4 lg:px-4">
+    <div class="py-4 px-4 sm:px-4 lg:px-4" :class="canPerformAction ? 'pb-44 md:pb-4' : ''">
         <!-- Skeleton Loading view when ticket is fetching -->
         <div class="w-full space-y-4" v-if="!ticket">
             <!-- Ticket Profile Header Skeleton -->
@@ -484,6 +555,15 @@ const contextLabel = computed(() => {
             <!-- Main Layout Grid Skeleton -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div class="lg:col-span-2 space-y-4">
+                    <!-- SLA Metrics Skeleton (Horizontal) -->
+                    <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                        <div class="h-5 w-36 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                            <div v-for="k in 3" :key="'skel-sla-' + k" class="h-16 bg-slate-100/80 dark:bg-slate-950/40 rounded-xl animate-pulse"></div>
+                        </div>
+                    </div>
+
+                    <!-- Ticket Info Skeleton -->
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
                         <div class="h-5 w-40 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
                         <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
@@ -500,6 +580,12 @@ const contextLabel = computed(() => {
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
                         <div class="h-5 w-32 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
                         <div class="h-10 w-full bg-slate-200/80 dark:bg-slate-800 rounded-xl animate-pulse"></div>
+                        <div class="space-y-3 pt-2">
+                            <div v-for="j in 4" :key="'skel-status-' + j" class="flex justify-between items-center">
+                                <div class="h-3.5 w-24 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                                <div class="h-4 w-16 bg-slate-200/80 dark:bg-slate-800 rounded animate-pulse"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -509,15 +595,15 @@ const contextLabel = computed(() => {
                     
                     <!-- Ticket Profile Header Card -->
                     <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-6 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <div class="h-12 w-12 rounded-xl flex items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white flex-shrink-0">
+                        <div class="flex items-center gap-3.5">
+                            <div class="h-12 w-12 rounded-xl flex items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white shrink-0">
                                 <Wrench class="h-6 w-6" />
                             </div>
-                            <div>
-                                <h2 class="text-xl font-extrabold text-slate-955 dark:text-white leading-tight">
+                            <div class="space-y-0.5">
+                                <h2 class="text-xl font-extrabold text-slate-950 dark:text-white leading-tight">
                                     #{{ ticket.ticket_number }}
                                 </h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl leading-relaxed uppercase font-semibold">
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl leading-relaxed uppercase font-semibold">
                                     {{ ticket.category?.supporting_unit?.name ?? ticket.category?.supportingUnit?.name ?? 'IPSRS' }} &bull; {{ ticket.category?.name ?? 'PELAPORAN' }}
                                 </p>
                             </div>
@@ -530,14 +616,108 @@ const contextLabel = computed(() => {
                         <!-- Left Column: Details & Execution Panels -->
                         <div class="lg:col-span-2 space-y-4">
                             
+                            <!-- SLA Metrics Container (Above Ticket Info) -->
+                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                                        {{ __('pages.tickets.detail.sla_metrics') }}
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        @click="showSlaInfoModal = true"
+                                        class="h-6 w-6 rounded-full bg-slate-100 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-emerald-950/60 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 flex items-center justify-center transition-colors cursor-pointer"
+                                        title="Informasi Penjelasan Metrik Waktu"
+                                    >
+                                        <Info class="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                                    <!-- Response Time Card -->
+                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
+                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white shrink-0">
+                                            <Clock class="h-5 w-5" />
+                                        </div>
+                                        <div class="flex-1 min-w-0 space-y-0.5">
+                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
+                                                {{ __('pages.tickets.detail.response_time_sla') }}
+                                            </div>
+                                            <div class="text-[10px] font-medium leading-none">
+                                                <span v-if="ticket.responded_at" class="text-slate-500 dark:text-slate-400">
+                                                    {{ __('pages.tickets.detail.responded_status_sla') }}
+                                                </span>
+                                                <span v-else-if="ticket.validated_at" class="text-emerald-600 dark:text-white animate-pulse font-bold">
+                                                    {{ __('pages.tickets.detail.running_status_sla') }}
+                                                </span>
+                                                <span v-else class="text-slate-400 dark:text-slate-500">
+                                                    {{ __('pages.tickets.detail.awaiting_validate_sla') }}
+                                                </span>
+                                            </div>
+                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
+                                                {{ formatDuration(responseTimeSeconds) }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Paused Duration Card -->
+                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
+                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-100 dark:border-orange-900/50 text-orange-600 dark:text-orange-400 shrink-0">
+                                            <Pause class="h-5 w-5" />
+                                        </div>
+                                        <div class="flex-1 min-w-0 space-y-0.5">
+                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
+                                                {{ __('pages.tickets.detail.paused_duration') }}
+                                            </div>
+                                            <div class="text-[10px] font-medium leading-none">
+                                                <span v-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 animate-pulse font-bold">
+                                                    {{ __('pages.tickets.detail.active_paused_sla') }}
+                                                </span>
+                                                <span v-else class="text-slate-400 dark:text-slate-500">
+                                                    {{ __('pages.tickets.detail.total_pauses_sla') }}
+                                                </span>
+                                            </div>
+                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
+                                                {{ formatDuration(pausedDurationSeconds) }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Resolution Time Card -->
+                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
+                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white shrink-0">
+                                            <CheckCircle2 class="h-5 w-5" />
+                                        </div>
+                                        <div class="flex-1 min-w-0 space-y-0.5">
+                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
+                                                {{ __('pages.tickets.detail.resolution_time_sla') }}
+                                            </div>
+                                            <div class="text-[10px] font-medium leading-none">
+                                                <span v-if="ticket.resolved_at" class="text-slate-500 dark:text-slate-400">
+                                                    {{ __('pages.tickets.detail.resolved_status_sla') }}
+                                                </span>
+                                                <span v-else-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 font-bold">
+                                                    {{ __('pages.tickets.detail.paused_status_sla') }}
+                                                </span>
+                                                <span v-else-if="ticket.responded_at" class="text-emerald-600 dark:text-white animate-pulse font-bold">
+                                                    {{ __('pages.tickets.detail.running_status_sla') }}
+                                                </span>
+                                                <span v-else class="text-slate-400 dark:text-slate-500">
+                                                    {{ __('pages.tickets.detail.awaiting_dispatch_sla') }}
+                                                </span>
+                                            </div>
+                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
+                                                {{ formatDuration(resolutionTimeSeconds) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Ticket Info Container -->
                             <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div>
-                                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                                        {{ __('pages.tickets.detail.ticket_info') }}
-                                    </h3>
-                                    <div class="h-0.5 bg-slate-100 dark:bg-slate-800 mt-2"></div>
-                                </div>
+                                <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                                    {{ __('pages.tickets.detail.ticket_info') }}
+                                </h3>
 
                                 <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
@@ -681,14 +861,11 @@ const contextLabel = computed(() => {
 
                             </div>
 
-                            <!-- Action Panel Card: Technician Execution Controls -->
-                            <div v-if="ticket.status !== 'PENDING_VALIDATION' && ticket.status !== 'COMPLETED' && ticket.status !== 'CANCEL'" class="bg-white dark:bg-slate-900 border border-emerald-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 animate-spa-fade-in">
-                                <div>
-                                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                                        {{ __('pages.tickets.detail.work_followup') }}
-                                    </h3>
-                                    <div class="h-0.5 bg-slate-100 dark:bg-slate-800 mt-2"></div>
-                                </div>
+                            <!-- Action Panel Card: Technician Execution Controls (Desktop View) -->
+                            <div v-if="canPerformAction" class="hidden md:block bg-white dark:bg-slate-900 border border-emerald-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 animate-spa-fade-in">
+                                <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                                    {{ __('pages.tickets.detail.work_followup') }}
+                                </h3>
 
                                 <!-- Case 1: Assigned but not arrived yet -->
                                 <div v-if="ticket.status === 'ASSIGNED'" class="space-y-3">
@@ -697,7 +874,7 @@ const contextLabel = computed(() => {
                                     </p>
                                     <button
                                         @click="openArriveModal"
-                                        class="w-full h-11 text-xs font-bold rounded-xl text-white dark:text-slate-900 shadow-sm flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 transition duration-200"
+                                        class="w-full h-11 text-xs font-bold rounded-xl text-white dark:text-slate-900 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 transition duration-200"
                                     >
                                         <Clock class="h-4.5 w-4.5" />
                                         <span>{{ __('pages.tickets.detail.btn_arrive') }}</span>
@@ -708,7 +885,7 @@ const contextLabel = computed(() => {
                                 <div v-else-if="ticket.status === 'IN_PROGRESS'" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <button
                                         @click="openCompleteModal"
-                                        class="h-11 text-xs font-bold rounded-xl text-white dark:text-slate-900 shadow-sm flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 transition duration-200"
+                                        class="h-11 text-xs font-bold rounded-xl text-white dark:text-slate-900 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 transition duration-200"
                                     >
                                         <CheckCircle2 class="h-4.5 w-4.5" />
                                         <span>{{ __('pages.tickets.detail.btn_complete') }}</span>
@@ -716,7 +893,7 @@ const contextLabel = computed(() => {
 
                                     <button
                                         @click="openPendingModal"
-                                        class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-450 transition duration-200"
+                                        class="h-11 text-xs font-bold rounded-xl text-white flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-450 transition duration-200"
                                     >
                                         <Pause class="h-4.5 w-4.5" />
                                         <span>{{ __('pages.tickets.detail.btn_pending') }}</span>
@@ -724,7 +901,7 @@ const contextLabel = computed(() => {
 
                                     <button
                                         @click="openCancelModal"
-                                        class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-500 transition duration-200"
+                                        class="h-11 text-xs font-bold rounded-xl text-white flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-500 transition duration-200"
                                     >
                                         <XCircle class="h-4.5 w-4.5" />
                                         <span>{{ __('pages.tickets.detail.btn_cancel') }}</span>
@@ -743,7 +920,7 @@ const contextLabel = computed(() => {
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <button
                                             @click="resumeTicket"
-                                            class="h-11 text-xs font-bold rounded-xl text-white dark:text-slate-900 shadow-sm flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 transition duration-200"
+                                            class="h-11 text-xs font-bold rounded-xl text-white dark:text-slate-900 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 dark:bg-white dark:hover:bg-slate-200 transition duration-200"
                                         >
                                             <Play class="h-4.5 w-4.5" />
                                             <span>{{ __('pages.tickets.detail.btn_resume') }}</span>
@@ -751,7 +928,7 @@ const contextLabel = computed(() => {
 
                                         <button
                                             @click="openCancelModal"
-                                            class="h-11 text-xs font-bold rounded-xl text-white shadow-sm flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-500 transition duration-200"
+                                            class="h-11 text-xs font-bold rounded-xl text-white flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-500 transition duration-200"
                                         >
                                             <XCircle class="h-4.5 w-4.5" />
                                             <span>{{ __('pages.tickets.detail.btn_cancel') }}</span>
@@ -762,115 +939,14 @@ const contextLabel = computed(() => {
 
                         </div>
 
-                        <!-- Right Column: SLA Analytics & Progress Timelines -->
+                        <!-- Right Column: Progress Timelines -->
                         <div class="space-y-4">
                             
-                            <!-- SLA Metric Cards -->
-                            <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                                        {{ __('pages.tickets.detail.sla_metrics') }}
-                                    </h3>
-                                    <button
-                                        type="button"
-                                        @click="showSlaInfoModal = true"
-                                        class="h-6 w-6 rounded-full bg-slate-100 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-emerald-950/60 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 flex items-center justify-center transition-colors cursor-pointer"
-                                        title="Informasi Penjelasan Metrik Waktu"
-                                    >
-                                        <Info class="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                                <div class="h-0.5 bg-slate-100 dark:bg-slate-800 mt-2"></div>
-
-                                <div class="space-y-3 pt-1">
-                                    <!-- Response Time Card -->
-                                     <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
-                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white shrink-0">
-                                            <Clock class="h-5 w-5" />
-                                        </div>
-                                        <div class="flex-1 min-w-0 space-y-0.5">
-                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
-                                                {{ __('pages.tickets.detail.response_time_sla') }}
-                                            </div>
-                                            <div class="text-[10px] font-medium leading-none">
-                                                <span v-if="ticket.responded_at" class="text-slate-500 dark:text-slate-400">
-                                                    {{ __('pages.tickets.detail.responded_status_sla') }}
-                                                </span>
-                                                <span v-else-if="ticket.validated_at" class="text-emerald-600 dark:text-white animate-pulse font-bold">
-                                                    {{ __('pages.tickets.detail.running_status_sla') }}
-                                                </span>
-                                                <span v-else class="text-slate-400 dark:text-slate-500">
-                                                    {{ __('pages.tickets.detail.awaiting_validate_sla') }}
-                                                </span>
-                                            </div>
-                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
-                                                {{ formatDuration(responseTimeSeconds) }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Paused Duration Card -->
-                                    <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
-                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-100 dark:border-orange-900/50 text-orange-600 dark:text-orange-400 shrink-0">
-                                            <Pause class="h-5 w-5" />
-                                        </div>
-                                        <div class="flex-1 min-w-0 space-y-0.5">
-                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
-                                                {{ __('pages.tickets.detail.paused_duration') }}
-                                            </div>
-                                            <div class="text-[10px] font-medium leading-none">
-                                                <span v-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 animate-pulse font-bold">
-                                                    {{ __('pages.tickets.detail.active_paused_sla') }}
-                                                </span>
-                                                <span v-else class="text-slate-400 dark:text-slate-500">
-                                                    {{ __('pages.tickets.detail.total_pauses_sla') }}
-                                                </span>
-                                            </div>
-                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
-                                                {{ formatDuration(pausedDurationSeconds) }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Resolution Time Card -->
-                                     <div class="p-3.5 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 flex items-center gap-3.5">
-                                        <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-white/10 border border-emerald-100 dark:border-white/20 text-emerald-600 dark:text-white shrink-0">
-                                            <CheckCircle2 class="h-5 w-5" />
-                                        </div>
-                                        <div class="flex-1 min-w-0 space-y-0.5">
-                                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide leading-tight">
-                                                {{ __('pages.tickets.detail.resolution_time_sla') }}
-                                            </div>
-                                            <div class="text-[10px] font-medium leading-none">
-                                                <span v-if="ticket.resolved_at" class="text-slate-500 dark:text-slate-400">
-                                                    {{ __('pages.tickets.detail.resolved_status_sla') }}
-                                                </span>
-                                                <span v-else-if="ticket.status === 'PENDING'" class="text-orange-600 dark:text-orange-400 font-bold">
-                                                    {{ __('pages.tickets.detail.paused_status_sla') }}
-                                                </span>
-                                                <span v-else-if="ticket.responded_at" class="text-emerald-600 dark:text-white animate-pulse font-bold">
-                                                    {{ __('pages.tickets.detail.running_status_sla') }}
-                                                </span>
-                                                <span v-else class="text-slate-400 dark:text-slate-500">
-                                                    {{ __('pages.tickets.detail.awaiting_dispatch_sla') }}
-                                                </span>
-                                            </div>
-                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-100 pt-0.5">
-                                                {{ formatDuration(resolutionTimeSeconds) }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Ticket Status Timeline Tracking -->
                             <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <div>
-                                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                                        {{ __('pages.tickets.detail.timeline') }}
-                                    </h3>
-                                    <div class="h-0.5 bg-slate-100 dark:bg-slate-800 mt-2"></div>
-                                </div>
+                                <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                                    {{ __('pages.tickets.detail.timeline') }}
+                                </h3>
 
                                 <div class="flow-root pt-1">
                                     <ul>
@@ -1045,13 +1121,19 @@ const contextLabel = computed(() => {
                                                         <p class="text-xs font-bold" :class="ticket.status === 'COMPLETED' || ticket.status === 'CANCEL' ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'">
                                                             {{ ticket.status === 'CANCEL' ? __('pages.tickets.detail.cancel_status') : __('pages.tickets.detail.completed_status') }}
                                                         </p>
+                                                        <p v-if="ticket.status === 'COMPLETED' && completedBy" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                            {{ __('pages.tickets.detail.by_label') }}: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ completedBy }}</span>
+                                                        </p>
                                                         <p v-if="ticket.status === 'COMPLETED'" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
                                                             <span class="font-bold text-emerald-600 dark:text-white">{{ __('pages.tickets.detail.action_taken_label') }}</span> {{ ticket.completion_notes }}
                                                         </p>
-                                                        <p v-else-if="ticket.status === 'CANCEL'" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                        <p v-else-if="ticket.status === 'CANCEL' && cancelledBy" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                                            Dibatalkan Oleh: <span class="font-semibold text-slate-700 dark:text-slate-300">{{ cancelledBy }}</span>
+                                                        </p>
+                                                        <p v-if="ticket.status === 'CANCEL'" class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
                                                             <span class="font-bold text-rose-600 dark:text-rose-400">{{ __('pages.tickets.detail.cancel_reason_label_inline') }}</span> {{ ticket.completion_notes }}
                                                         </p>
-                                                        <p v-else class="text-[10px] text-slate-400 dark:text-slate-600">
+                                                        <p v-else-if="ticket.status !== 'COMPLETED' && ticket.status !== 'CANCEL'" class="text-[10px] text-slate-400 dark:text-slate-600">
                                                             {{ __('pages.tickets.detail.waiting_resolution_timeline') }}
                                                         </p>
 
@@ -1084,6 +1166,73 @@ const contextLabel = computed(() => {
                     </div>
 
                 </div>
+    </div>
+
+    <!-- Floating Bottom Action Bar for Mobile Devices -->
+    <div 
+        v-if="canPerformAction" 
+        :class="[
+            'fixed bottom-5 sm:bottom-6 left-4 right-4 sm:left-6 sm:right-6 z-40 md:hidden max-w-md mx-auto p-3 sm:p-3.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.2)] transition-all duration-300 transform',
+            isFloatingBarVisible ? 'translate-y-0 opacity-100' : 'translate-y-32 opacity-0 pointer-events-none'
+        ]"
+    >
+        <div class="space-y-2">
+            <!-- Case 1: ASSIGNED -->
+            <div v-if="ticket.status === 'ASSIGNED'">
+                <button
+                    @click="openArriveModal"
+                    class="w-full h-12 text-xs font-extrabold rounded-2xl text-white dark:text-slate-900 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] dark:bg-white dark:hover:bg-slate-200 transition duration-200"
+                >
+                    <Clock class="h-4.5 w-4.5" />
+                    <span>{{ __('pages.tickets.detail.btn_arrive') }}</span>
+                </button>
+            </div>
+
+            <!-- Case 2: IN_PROGRESS -->
+            <div v-else-if="ticket.status === 'IN_PROGRESS'" class="space-y-2">
+                <button
+                    @click="openCompleteModal"
+                    class="w-full h-12 text-xs font-extrabold rounded-2xl text-white dark:text-slate-900 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] dark:bg-white dark:hover:bg-slate-200 transition duration-200"
+                >
+                    <CheckCircle2 class="h-4.5 w-4.5" />
+                    <span>{{ __('pages.tickets.detail.btn_complete') }}</span>
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button
+                        @click="openPendingModal"
+                        class="w-full h-12 text-xs font-extrabold rounded-2xl text-white flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] transition duration-200"
+                    >
+                        <Pause class="h-4 w-4" />
+                        <span>Tangguhkan</span>
+                    </button>
+                    <button
+                        @click="openCancelModal"
+                        class="w-full h-12 text-xs font-extrabold rounded-2xl text-white flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] transition duration-200"
+                    >
+                        <XCircle class="h-4 w-4" />
+                        <span>Batalkan</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Case 3: PENDING -->
+            <div v-else-if="ticket.status === 'PENDING'" class="space-y-2">
+                <button
+                    @click="resumeTicket"
+                    class="w-full h-12 text-xs font-extrabold rounded-2xl text-white dark:text-slate-900 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] dark:bg-white dark:hover:bg-slate-200 transition duration-200"
+                >
+                    <Play class="h-4.5 w-4.5" />
+                    <span>Lanjutkan Pekerjaan</span>
+                </button>
+                <button
+                    @click="openCancelModal"
+                    class="w-full h-12 text-xs font-extrabold rounded-2xl text-rose-600 bg-rose-50 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/40 active:scale-[0.98] flex items-center justify-center gap-1.5 transition duration-200"
+                >
+                    <XCircle class="h-4 w-4" />
+                    <span>Batalkan</span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Modals for Technician Execution -->

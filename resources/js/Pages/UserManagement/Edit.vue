@@ -111,6 +111,7 @@ const getRoleDefaultPermissions = (roleId) => {
         perms.push('service-management.working-hours');
     }
     if (Number(roleId) === 1) {
+        if (!perms.includes('reports-audit.index')) perms.push('reports-audit.index');
         if (!perms.includes('admin.qr-code.index')) perms.push('admin.qr-code.index');
         if (!perms.includes('admin.wa-gateway.index')) perms.push('admin.wa-gateway.index');
     }
