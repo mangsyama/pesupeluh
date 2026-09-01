@@ -88,11 +88,14 @@ docker compose logs -f --tail=100
 
 ---
 
-## 🛠️ 5. Command Maintenance & Perintah Artisan
+## 🛠️ 5. Command Maintenance & Perintah Artisan / Frontend
 
-Gunakan jika perlu menjalankan perintah Laravel Artisan di dalam container server:
+Gunakan jika perlu menjalankan perintah Laravel Artisan atau NPM di dalam container server:
 
 ```bash
+# Build / Compile Asset Frontend (Vite / NPM Build via Docker)
+docker compose exec php npm run build
+
 # Jalankan Migrasi Database
 docker compose exec php php artisan migrate --force
 
