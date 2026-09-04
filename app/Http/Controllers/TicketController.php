@@ -304,10 +304,12 @@ class TicketController extends Controller
             return redirect()->back()->with('info', 'Tiket ini sudah diselesaikan atau dibatalkan sebelumnya.');
         }
 
+        $isCompleted = $request->input('resolution_status') === 'COMPLETED';
+
         $validated = $request->validate([
             'resolution_status' => 'required|in:COMPLETED,PENDING,CANCEL',
             'notes' => 'required_if:resolution_status,PENDING,CANCEL|nullable|string|min:5',
-            'attachments' => 'required_if:resolution_status,COMPLETED|nullable|array|min:1|max:5',
+            'attachments' => $isCompleted ? 'required|array|min:1|max:5' : 'nullable|array',
             'attachments.*' => 'nullable|string',
         ]);
 

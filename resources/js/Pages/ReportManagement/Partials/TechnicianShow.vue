@@ -354,10 +354,33 @@ const submitResolve = (status) => {
     resolveForm.clearErrors();
     resolveForm.resolution_status = status;
 
-    if (status === 'COMPLETED' && (!resolveForm.attachments || resolveForm.attachments.length === 0)) {
-        resolveForm.setError('attachments', 'Wajib mengunggah minimal 1 foto bukti hasil penanganan.');
-        isSubmittingResolve.value = false;
-        return;
+    if (status === 'COMPLETED') {
+        if (!resolveForm.notes || resolveForm.notes.trim().length < 5) {
+            resolveForm.setError('notes', 'Catatan penanganan wajib diisi minimal 5 karakter.');
+            isSubmittingResolve.value = false;
+            return;
+        }
+        if (!resolveForm.attachments || resolveForm.attachments.length === 0) {
+            resolveForm.setError('attachments', 'Wajib mengunggah minimal 1 foto bukti hasil penanganan.');
+            isSubmittingResolve.value = false;
+            return;
+        }
+    }
+
+    if (status === 'PENDING') {
+        if (!resolveForm.notes || resolveForm.notes.trim().length < 5) {
+            resolveForm.setError('notes', 'Alasan penundaan wajib diisi minimal 5 karakter.');
+            isSubmittingResolve.value = false;
+            return;
+        }
+    }
+
+    if (status === 'CANCEL') {
+        if (!resolveForm.notes || resolveForm.notes.trim().length < 5) {
+            resolveForm.setError('notes', 'Alasan pembatalan wajib diisi minimal 5 karakter.');
+            isSubmittingResolve.value = false;
+            return;
+        }
     }
 
     resolveForm.post(`/tickets/${props.ticket.uuid}/resolve`, {
@@ -367,6 +390,18 @@ const submitResolve = (status) => {
             showCancelModal.value = false;
             resolveForm.reset();
             completePreviews.value = [];
+            if (proxy?.$swal) {
+                proxy.$swal({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: status === 'PENDING' ? 'Laporan berhasil ditangguhkan.' : (status === 'CANCEL' ? 'Laporan berhasil dibatalkan.' : 'Laporan berhasil diselesaikan.'),
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        },
+        onError: (err) => {
+            console.error('Resolve ticket error:', err);
         },
         onFinish: () => {
             isSubmittingResolve.value = false;
@@ -1496,8 +1531,8 @@ onUnmounted(() => {
 
                 <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
                     <SecondaryButton type="button" @click="showCompleteModal = false" class="h-11 px-5">{{ __('Batal') }}</SecondaryButton>
-                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes || !resolveForm.attachments || resolveForm.attachments.length === 0" class="h-11 px-6 !bg-emerald-600 hover:!bg-emerald-500 font-bold">
-                        {{ resolveForm.processing ? __('Menyimpan...') : __('Selesai Penanganan') }}
+                    <PrimaryButton type="submit" :disabled="resolveForm.processing || isSubmittingResolve" class="h-11 px-6 !bg-emerald-600 hover:!bg-emerald-500 font-bold">
+                        {{ resolveForm.processing || isSubmittingResolve ? __('Menyimpan...') : __('Selesai Penanganan') }}
                     </PrimaryButton>
                 </div>
             </form>
@@ -1549,8 +1584,8 @@ onUnmounted(() => {
 
                 <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
                     <SecondaryButton type="button" @click="showPendingModal = false" class="h-11 px-5">{{ __('Batal') }}</SecondaryButton>
-                    <PrimaryButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes" class="h-11 px-6 !bg-amber-500 hover:!bg-amber-450 font-bold">
-                        {{ resolveForm.processing ? __('Menangguhkan...') : __('Tangguhkan Tugas') }}
+                    <PrimaryButton type="submit" :disabled="resolveForm.processing || isSubmittingResolve" class="h-11 px-6 !bg-amber-500 hover:!bg-amber-450 font-bold">
+                        {{ resolveForm.processing || isSubmittingResolve ? __('Menangguhkan...') : __('Tangguhkan Tugas') }}
                     </PrimaryButton>
                 </div>
             </form>
@@ -1602,8 +1637,8 @@ onUnmounted(() => {
 
                 <div class="p-4 sm:p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-end gap-3 sticky bottom-0 z-10 shrink-0">
                     <SecondaryButton type="button" @click="showCancelModal = false" class="h-11 px-5">{{ __('Batal') }}</SecondaryButton>
-                    <DangerButton type="submit" :disabled="resolveForm.processing || !resolveForm.notes" class="h-11 px-6 font-bold">
-                        {{ resolveForm.processing ? __('Batalkan...') : __('Batalkan Tiket') }}
+                    <DangerButton type="submit" :disabled="resolveForm.processing || isSubmittingResolve" class="h-11 px-6 font-bold">
+                        {{ resolveForm.processing || isSubmittingResolve ? __('Batalkan...') : __('Batalkan Tiket') }}
                     </DangerButton>
                 </div>
             </form>
