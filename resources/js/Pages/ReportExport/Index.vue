@@ -258,29 +258,16 @@ const applyFilters = () => {
 };
 
 const resetFilters = () => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    const formatDate = (d) => {
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-    };
-
-    const sDate = formatDate(startOfMonth);
-    const eDate = formatDate(now);
-
     formFilters.value = {
-        start_date: sDate,
-        end_date: eDate,
+        start_date: '',
+        end_date: '',
         unit_id: '',
         category_id: '',
         room_id: '',
         reporter_id: '',
     };
 
-    if (fpRange) fpRange.setDate([sDate, eDate]);
+    if (fpRange) fpRange.clear();
 
     applyFilters();
 };
@@ -356,7 +343,7 @@ onMounted(() => {
         altInput: true,
         altFormat: 'd F Y',
         altInputClass: 'w-full h-10 px-4 text-center border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-0 focus:border-slate-200 dark:focus:border-slate-800 transition duration-150',
-        defaultDate: [formFilters.value.start_date, formFilters.value.end_date],
+        defaultDate: (formFilters.value.start_date && formFilters.value.end_date) ? [formFilters.value.start_date, formFilters.value.end_date] : null,
         onChange: (selectedDates) => {
             if (selectedDates.length === 2) {
                 const formatDate = (d) => {
@@ -377,8 +364,12 @@ onUnmounted(() => {
 });
 
 watch(() => props.filters, (newVal) => {
-    if (fpRange && newVal.start_date && newVal.end_date) {
-        fpRange.setDate([newVal.start_date, newVal.end_date]);
+    if (fpRange) {
+        if (newVal.start_date && newVal.end_date) {
+            fpRange.setDate([newVal.start_date, newVal.end_date]);
+        } else {
+            fpRange.clear();
+        }
     }
 }, { deep: true });
 </script>

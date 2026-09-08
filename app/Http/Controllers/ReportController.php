@@ -25,8 +25,8 @@ class ReportController extends Controller
 
         // Default filters untuk form di frontend
         $filters = [
-            'start_date'  => $request->input('start_date', now()->startOfMonth()->format('Y-m-d')),
-            'end_date'    => $request->input('end_date', now()->format('Y-m-d')),
+            'start_date'  => $request->input('start_date', ''),
+            'end_date'    => $request->input('end_date', ''),
             'unit_id'     => $request->input('unit_id', ''),
             'category_id' => $request->input('category_id', ''),
             'room_id'     => $request->input('room_id', ''),
@@ -222,10 +222,6 @@ class ReportController extends Controller
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        if (!$startDate && !$endDate) {
-            $startDate = now()->startOfMonth()->format('Y-m-d');
-            $endDate = now()->format('Y-m-d');
-        }
 
         $unitName = null;
         if ($request->filled('unit_id')) {
@@ -310,8 +306,23 @@ class ReportController extends Controller
      */
     public function exportCsv(Request $request)
     {
+        $user = $request->user();
+
+        $query = ServiceTicket::with([
+            'reporter:id,name',
+            'room:id,name,building_name,location_floor',
+            'category:id,name,supporting_unit_id',
+            'category.supportingUnit:id,name',
+            'assignments.technician:id,name',
+        ])
+        ->whereNull('deleted_at');
+
+        $this->applyFilters($query, $request, $user);
+
+        $tickets = $query->orderByDesc('created_at')->get();
+
         return Excel::download(
-            new TicketsExport($request->user(), $request->all()),
+            new TicketsExport($tickets),
             'laporan_tiket_' . now()->format('Ymd_His') . '.csv',
             \Maatwebsite\Excel\Excel::CSV
         );
@@ -367,11 +378,6 @@ class ReportController extends Controller
         // Filter range tanggal
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-
-        if (!$startDate && !$endDate) {
-            $startDate = now()->startOfMonth()->format('Y-m-d');
-            $endDate = now()->format('Y-m-d');
-        }
 
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [

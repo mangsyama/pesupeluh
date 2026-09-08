@@ -50,7 +50,7 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            font-size: 6.5px;
+            font-size: 6px;
             color: #0f172a;
             background: #ffffff;
             margin: 0;
@@ -74,15 +74,15 @@
         }
 
         .logo-cell {
-            width: 46px;
-            padding-right: 10px;
+            width: 44px;
+            padding-right: 8px;
         }
 
         .logo-cell img {
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             display: block;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
         .brand-title {
@@ -90,7 +90,6 @@
             font-weight: 700;
             color: #059669;
             line-height: 0.95;
-            text-transform: uppercase;
             letter-spacing: 0.8px;
             margin: 0;
             padding: 0;
@@ -100,7 +99,7 @@
             font-size: 6.5px;
             color: #059669;
             font-weight: 600;
-            margin-top: 0px;
+            margin-top: 1px;
             line-height: 1.0;
             padding: 0;
         }
@@ -108,7 +107,7 @@
         .meta-info {
             font-size: 6px;
             color: #64748b;
-            margin-top: 0px;
+            margin-top: 1px;
             line-height: 1.0;
             font-weight: 400;
             padding: 0;
@@ -127,28 +126,30 @@
         .data-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: auto;
         }
 
         .data-table th {
             background-color: #059669;
             color: #ffffff;
-            font-size: 6.5px;
+            font-size: 5.5px;
             font-weight: 700;
             text-transform: uppercase;
-            padding: 5px 4px;
+            padding: 5px 2.5px;
             border: 0.25pt solid #cbd5e1;
             text-align: center;
             vertical-align: middle;
-            white-space: nowrap;
+            line-height: 1;
+            white-space: nowrap !important;
         }
 
         .data-table td {
-            font-size: 6.5px;
-            padding: 4px 4px;
+            font-size: 5.5px;
+            padding: 3.5px 2.5px;
             border: 0.25pt solid #e2e8f0;
             vertical-align: middle;
             color: #1e293b;
-            line-height: 1.3;
+            line-height: 1.25;
         }
 
         .data-table tr:nth-child(even) td {
@@ -159,20 +160,21 @@
             background-color: #ffffff;
         }
 
-        /* Lebar Kolom */
-        .col-no { width: 18px; text-align: center; }
-        .col-kode { width: 70px; white-space: nowrap; font-weight: 600; color: #059669; text-align: center; }
-        .col-tgl { width: 55px; white-space: nowrap; text-align: center; }
-        .col-unit { width: 60px; text-align: center; }
-        .col-ruangan { width: 60px; text-align: center; }
-        .col-pelapor { width: 65px; }
-        .col-masalah { width: auto; }
-        .col-prioritas { width: 42px; text-align: center; }
-        .col-disposisi { width: 68px; }
-        .col-respon { width: 54px; white-space: nowrap; text-align: center; }
-        .col-hasil { width: 48px; text-align: center; }
-        .col-ket { width: 85px; }
-        .col-lampiran { width: 45px; text-align: center; vertical-align: middle; padding: 3px 2px !important; }
+        /* Lebar Kolom & Aturan Wrap */
+        .col-no { width: 14px; text-align: center; white-space: nowrap !important; }
+        .col-kode { width: 62px; font-weight: 600; color: #059669; text-align: center; white-space: nowrap !important; }
+        .col-tgl { width: 50px; text-align: center; white-space: nowrap !important; }
+        .col-unit { width: 46px; text-align: center; white-space: nowrap !important; }
+        .col-ruangan { width: 54px; text-align: center; white-space: nowrap !important; }
+        .col-pelapor { width: 58px; white-space: normal; word-wrap: break-word; }
+        .col-masalah { width: auto; white-space: normal; word-wrap: break-word; }
+        .col-kategori { width: 52px; text-align: center; white-space: normal; word-wrap: break-word; }
+        .col-prioritas { width: 36px; text-align: center; white-space: nowrap !important; }
+        .col-disposisi { width: 62px; white-space: normal; word-wrap: break-word; }
+        .col-respon { width: 50px; text-align: center; white-space: nowrap !important; }
+        .col-status { width: 44px; text-align: center; white-space: nowrap !important; }
+        .col-ket { width: auto; white-space: normal; word-wrap: break-word; }
+        .col-lampiran { width: 36px; text-align: center; vertical-align: middle; white-space: nowrap !important; padding: 2px 1px !important; }
 
         /* Akses Warna Teks Status & Prioritas (Semua Bold) */
         .text-green { color: #059669; font-weight: 700; }
@@ -184,19 +186,19 @@
 
         /* Photos Layout Stacked (Atas - Bawah) */
         .photo-stack { text-align: center; margin: 0 auto; }
-        .photo-box { margin-bottom: 3px; }
+        .photo-box { margin-bottom: 2px; }
         .photo-box:last-child { margin-bottom: 0; }
-        .photo-label { font-size: 5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 1px; line-height: 1; text-align: center; }
+        .photo-label { font-size: 4.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 1px; line-height: 1; text-align: center; }
         .photo-thumb {
-            width: 20px;
-            height: 20px;
+            width: 17px;
+            height: 17px;
             object-fit: cover;
             border-radius: 2px;
             border: 0.25pt solid #cbd5e1;
             margin: 0 auto;
             display: block;
         }
-        .photo-dash { font-size: 6px; color: #94a3b8; font-weight: 400; line-height: 1; text-align: center; display: block; }
+        .photo-dash { font-size: 5.5px; color: #94a3b8; font-weight: 400; line-height: 1; text-align: center; display: block; }
 
         /* Empty State */
         .empty-state {
@@ -204,7 +206,7 @@
             padding: 24px;
             color: #64748b;
             font-style: italic;
-            font-size: 8.5px;
+            font-size: 8px;
             border: 0.25pt solid #cbd5e1;
         }
     </style>
@@ -241,19 +243,20 @@
 <table class="data-table">
     <thead>
         <tr>
-            <th class="col-no">No</th>
-            <th class="col-kode">Kode Tiket</th>
-            <th class="col-tgl">Tanggal</th>
-            <th class="col-unit">Unit</th>
-            <th class="col-ruangan">Ruangan</th>
-            <th class="col-pelapor">Pelapor</th>
-            <th class="col-masalah">Permasalahan</th>
-            <th class="col-prioritas">Prioritas</th>
-            <th class="col-disposisi">Disposisi Petugas</th>
-            <th class="col-respon">Waktu Respon</th>
-            <th class="col-hasil">Status</th>
-            <th class="col-ket">Keterangan</th>
-            <th class="col-lampiran">Foto</th>
+            <th class="col-no">NO</th>
+            <th class="col-kode">KODE TIKET</th>
+            <th class="col-tgl">TANGGAL</th>
+            <th class="col-unit">UNIT</th>
+            <th class="col-ruangan">RUANGAN</th>
+            <th class="col-pelapor">PELAPOR</th>
+            <th class="col-masalah">PERMASALAHAN</th>
+            <th class="col-kategori">KATEGORI</th>
+            <th class="col-prioritas">PRIORITAS</th>
+            <th class="col-disposisi">DISPOSISI PETUGAS</th>
+            <th class="col-respon">WAKTU RESPON</th>
+            <th class="col-status">STATUS</th>
+            <th class="col-ket">KETERANGAN</th>
+            <th class="col-lampiran">LAMPIRAN</th>
         </tr>
     </thead>
     <tbody>
@@ -261,6 +264,7 @@
         @php
             $unitLabel = $ticket->category?->supportingUnit?->name;
             $roomLabel = $ticket->room?->name;
+            $categoryLabel = $ticket->category?->name;
 
             $techNames = $ticket->assignments->map(fn($a) => $a->technician?->name)->filter()->implode(', ');
 
@@ -280,84 +284,95 @@
                 $keterangan = $ticket->completion_notes;
             } elseif ($ticket->status === 'PENDING' && $ticket->pending_reason) {
                 $keterangan = $ticket->pending_reason;
+            } elseif ($ticket->completion_notes) {
+                $keterangan = $ticket->completion_notes;
+            } elseif ($ticket->pending_reason) {
+                $keterangan = $ticket->pending_reason;
             }
 
             $respondedAtStr = $ticket->responded_at ? $ticket->responded_at->format('d/m/Y H:i') : null;
         @endphp
         <tr>
-            {{-- 1. No --}}
+            {{-- 1. NO --}}
             <td class="col-no">{{ $i + 1 }}</td>
 
-            {{-- 2. Kode Tiket --}}
+            {{-- 2. KODE TIKET --}}
             <td class="col-kode">{{ $ticket->ticket_number }}</td>
 
-            {{-- 3. Tanggal --}}
-            <td class="col-tgl">{{ $ticket->created_at->format('d/m/Y H:i') }}</td>
+            {{-- 3. TANGGAL --}}
+            <td class="col-tgl">{{ $ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-' }}</td>
 
-            {{-- 4. Unit (Pisah Kolom) --}}
+            {{-- 4. UNIT --}}
             @if($unitLabel)
                 <td class="col-unit">{{ $unitLabel }}</td>
             @else
                 <td class="col-unit text-dash">-</td>
             @endif
 
-            {{-- 5. Ruangan (Pisah Kolom) --}}
+            {{-- 5. RUANGAN --}}
             @if($roomLabel)
                 <td class="col-ruangan">{{ $roomLabel }}</td>
             @else
                 <td class="col-ruangan text-dash">-</td>
             @endif
 
-            {{-- 6. Pelapor --}}
+            {{-- 6. PELAPOR --}}
             @if($ticket->reporter?->name)
                 <td class="col-pelapor">{{ $ticket->reporter->name }}</td>
             @else
                 <td class="col-pelapor text-dash">-</td>
             @endif
 
-            {{-- 7. Permasalahan --}}
+            {{-- 7. PERMASALAHAN --}}
             @if($ticket->problem_description)
                 <td class="col-masalah">{{ $ticket->problem_description }}</td>
             @else
                 <td class="col-masalah text-dash">-</td>
             @endif
 
-            {{-- 8. Prioritas (RUTIN hijau / URGENT merah) --}}
+            {{-- 8. KATEGORI --}}
+            @if($categoryLabel)
+                <td class="col-kategori">{{ $categoryLabel }}</td>
+            @else
+                <td class="col-kategori text-dash">-</td>
+            @endif
+
+            {{-- 9. PRIORITAS --}}
             <td class="col-prioritas">
-                @if($ticket->priority === 'URGENT')
+                @if(strtoupper($ticket->priority ?? '') === 'URGENT')
                     <span class="text-red">URGENT</span>
                 @else
                     <span class="text-green">RUTIN</span>
                 @endif
             </td>
 
-            {{-- 9. Disposisi Petugas --}}
+            {{-- 10. DISPOSISI PETUGAS --}}
             @if($techNames)
                 <td class="col-disposisi">{{ $techNames }}</td>
             @else
                 <td class="col-disposisi text-dash">-</td>
             @endif
 
-            {{-- 10. Waktu Respon --}}
+            {{-- 11. WAKTU RESPON --}}
             @if($respondedAtStr)
                 <td class="col-respon">{{ $respondedAtStr }}</td>
             @else
                 <td class="col-respon text-dash">-</td>
             @endif
 
-            {{-- 11. Status (Huruf Kapital Semua) --}}
-            <td class="col-hasil">
+            {{-- 12. STATUS --}}
+            <td class="col-status">
                 <span class="{{ $st['class'] }}">{{ $st['label'] }}</span>
             </td>
 
-            {{-- 12. Keterangan --}}
+            {{-- 13. KETERANGAN --}}
             @if($keterangan)
-                <td class="col-ket">{{ Str::limit($keterangan, 80) }}</td>
+                <td class="col-ket">{{ $keterangan }}</td>
             @else
                 <td class="col-ket text-dash">-</td>
             @endif
 
-            {{-- 13. Foto Lampiran (Atas: Laporan | Bawah: Selesai) --}}
+            {{-- 14. LAMPIRAN --}}
             <td class="col-lampiran">
                 @php
                     $resolveImg = function($attsList) {
@@ -402,7 +417,7 @@
                 @endphp
                 <div class="photo-stack">
                     <div class="photo-box">
-                        <div class="photo-label">Laporan</div>
+                        <div class="photo-label">LAPORAN</div>
                         @if($reporterImg)
                             <img src="{{ $reporterImg }}" class="photo-thumb" alt="Laporan">
                         @else
@@ -410,7 +425,7 @@
                         @endif
                     </div>
                     <div class="photo-box">
-                        <div class="photo-label">Selesai</div>
+                        <div class="photo-label">SELESAI</div>
                         @if($completionImg)
                             <img src="{{ $completionImg }}" class="photo-thumb" alt="Selesai">
                         @else
