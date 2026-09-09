@@ -424,6 +424,11 @@ const closeLightbox = () => {
     activeLightbox.value = null;
 };
 
+const handleImgError = (e) => {
+    e.target.onerror = null;
+    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Cpath d='M10.5 8.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E";
+};
+
 // Attachments slot computed properties (classified by file prefix)
 const reporterPhoto = computed(() => {
     return props.ticket?.attachments?.find(att => 
@@ -1101,7 +1106,7 @@ const confirmRestore = () => {
                                             <!-- If Photo Exists -->
                                             <div v-if="reporterPhoto" class="relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 group cursor-pointer" @click="openLightbox(reporterPhoto.file_path)">
                                                 <video v-if="isVideo(reporterPhoto.file_path)" :src="reporterPhoto.file_path" class="w-full h-full object-cover"></video>
-                                                <img v-else :src="reporterPhoto.file_path" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" alt="Foto Pelapor" />
+                                                <img v-else :src="reporterPhoto.file_path" @error="handleImgError" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" alt="Foto Pelapor" />
                                                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                                                     <Eye class="h-5 w-5" />
                                                 </div>
@@ -1162,7 +1167,7 @@ const confirmRestore = () => {
                                             <!-- If Photo Exists -->
                                             <div v-if="arrivalPhoto" class="relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 group cursor-pointer" @click="openLightbox(arrivalPhoto.file_path)">
                                                 <video v-if="isVideo(arrivalPhoto.file_path)" :src="arrivalPhoto.file_path" class="w-full h-full object-cover"></video>
-                                                <img v-else :src="arrivalPhoto.file_path" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" alt="Foto Teknisi Hadir" />
+                                                <img v-else :src="arrivalPhoto.file_path" @error="handleImgError" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" alt="Foto Teknisi Hadir" />
                                                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                                                     <Eye class="h-5 w-5" />
                                                 </div>
@@ -1223,7 +1228,7 @@ const confirmRestore = () => {
                                             <!-- If Photo Exists -->
                                             <div v-if="completionPhoto" class="relative aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 group cursor-pointer" @click="openLightbox(completionPhoto.file_path)">
                                                 <video v-if="isVideo(completionPhoto.file_path)" :src="completionPhoto.file_path" class="w-full h-full object-cover"></video>
-                                                <img v-else :src="completionPhoto.file_path" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" alt="Foto Penyelesaian" />
+                                                <img v-else :src="completionPhoto.file_path" @error="handleImgError" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" alt="Foto Penyelesaian" />
                                                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                                                     <Eye class="h-5 w-5" />
                                                 </div>
@@ -1515,7 +1520,7 @@ const confirmRestore = () => {
                                         controls 
                                         class="w-full h-full object-cover"
                                     ></video>
-                                    <img v-else :src="att.file_path" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt="Reporter attachment" />
+                                    <img v-else :src="att.file_path" @error="handleImgError" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt="Reporter attachment" />
                                 </div>
                             </div>
                             <div v-else class="text-xs text-slate-400 dark:text-slate-500 italic p-3 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/20 dark:bg-slate-950/10">
@@ -1661,7 +1666,7 @@ const confirmRestore = () => {
                                                         class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer"
                                                         @click="openLightbox(att.file_path)"
                                                     >
-                                                        <img :src="att.file_path" class="w-full h-full object-cover" alt="Arrival proof" />
+                                                        <img :src="att.file_path" @error="handleImgError" class="w-full h-full object-cover" alt="Arrival proof" />
                                                     </div>
                                                 </div>
                                                 <div v-if="ticket.responded_at" class="text-[10px] font-medium text-slate-400 flex items-center gap-1 pt-0.5">
@@ -1744,7 +1749,7 @@ const confirmRestore = () => {
                                                         class="relative rounded-lg overflow-hidden border border-slate-100 dark:border-slate-800 aspect-square cursor-pointer"
                                                         @click="openLightbox(att.file_path)"
                                                     >
-                                                        <img :src="att.file_path" class="w-full h-full object-cover" alt="Completion photo proof" />
+                                                        <img :src="att.file_path" @error="handleImgError" class="w-full h-full object-cover" alt="Completion photo proof" />
                                                     </div>
                                                 </div>
                                                 <div v-if="ticket.resolved_at" class="text-[10px] font-medium text-slate-400 flex items-center gap-1 pt-0.5">
@@ -1774,6 +1779,7 @@ const confirmRestore = () => {
             <div class="relative max-w-4xl max-h-[85vh] overflow-hidden" @click.stop>
                 <img 
                     :src="activeLightbox" 
+                    @error="handleImgError"
                     class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl border border-white/10" 
                     alt="Attachment Preview" 
                 />

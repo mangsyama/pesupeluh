@@ -162,13 +162,44 @@ class ReportAuditController extends Controller
         $ticket = ServiceTicket::withTrashed()->where('uuid', $uuid)->firstOrFail();
 
         $validated = $request->validate([
-            'reporter_id' => 'required|exists:users,id',
-            'room_id' => 'required|exists:rooms,id',
-            'category_id' => 'required|exists:issue_categories,id',
+            'reporter_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (!is_numeric($value) || !\App\Models\User::where('id', (int) $value)->exists()) {
+                        $fail('Pelapor yang dipilih tidak valid.');
+                    }
+                }
+            ],
+            'room_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (!is_numeric($value) || !\App\Models\Room::where('id', (int) $value)->exists()) {
+                        $fail('Ruangan yang dipilih tidak valid.');
+                    }
+                }
+            ],
+            'category_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if (!is_numeric($value) || !\App\Models\IssueCategory::where('id', (int) $value)->exists()) {
+                        $fail('Kategori yang dipilih tidak valid.');
+                    }
+                }
+            ],
             'problem_description' => 'required|string',
             'priority' => 'nullable|string|in:ROUTINE,URGENT,EMERGENCY',
             'status' => 'required|string|in:PENDING_VALIDATION,ASSIGNED,IN_PROGRESS,PENDING,COMPLETED,CANCEL',
-            'validated_by' => 'nullable|exists:users,id',
+            'validated_by' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if ($value === null || $value === '' || $value === 'SYSTEM' || $value === 'null') {
+                        return;
+                    }
+                    if (!is_numeric($value) || !\App\Models\User::where('id', (int) $value)->exists()) {
+                        $fail('Validator / Petugas Disposisi tidak valid.');
+                    }
+                }
+            ],
             'validated_at' => 'nullable|date',
             'responded_at' => 'nullable|date',
             'resolved_at' => 'nullable|date',
@@ -176,7 +207,13 @@ class ReportAuditController extends Controller
             'paused_duration_seconds' => 'nullable|integer|min:0',
             'completion_notes' => 'nullable|string',
             'technician_ids' => 'nullable|array',
-            'technician_ids.*' => 'exists:users,id',
+            'technician_ids.*' => [
+                function ($attribute, $value, $fail) {
+                    if (!is_numeric($value) || !\App\Models\User::where('id', (int) $value)->exists()) {
+                        $fail('Teknisi yang dipilih tidak valid.');
+                    }
+                }
+            ],
             'created_at' => 'nullable|date',
         ]);
 
@@ -433,7 +470,7 @@ class ReportAuditController extends Controller
         };
 
         $assignedTechId = $ticket->assignments()->first()?->technician_id ?? $actor->id;
-        $uploaderId = ($slotType === 'reporter') ? $ticket->reporter_id : $assignedTechId;
+        $uploaderId = ($slotType === 'reporter') ? ($ticket->reporter_id ?? $actor->id) : ($assignedTechId ?? $actor->id);
 
         $slotName = match($slotType) {
             'arrival' => 'Foto Bukti Hadir Teknisi',
