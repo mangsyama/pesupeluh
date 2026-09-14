@@ -124,4 +124,102 @@ class ServiceTicket extends Model
         $tz = config('app.timezone', 'Asia/Makassar');
         return \Illuminate\Support\Carbon::instance($date)->setTimezone($tz)->format('Y-m-d\TH:i:sP');
     }
+
+    /**
+     * Check if this ticket is forwarded from SIPUAS.
+     */
+    public function isSipuas(): bool
+    {
+        $desc = $this->problem_description ?? '';
+        return str_contains($desc, '[DISPOSISI ADUAN PUBLIK SIPUAS]')
+            || str_contains($desc, 'SIPUAS')
+            || str_starts_with($this->reporter?->username ?? '', 'sipuas_');
+    }
+
+    /**
+     * Get clean problem description (extracts only complaint text from SIPUAS payload).
+     */
+    public function getCleanDescription(): string
+    {
+        $desc = $this->problem_description ?? '';
+        if (!$this->isSipuas()) {
+            return $desc;
+        }
+
+        if (preg_match('/---\s*URAIAN KELUHAN FASILITAS\s*---/i', $desc)) {
+            $parts = preg_split('/---\s*URAIAN KELUHAN FASILITAS\s*---/i', $desc, 2);
+            $afterUraian = $parts[1] ?? '';
+            $subParts = preg_split('/---\s*CATATAN VERIFIKATOR(?:\s*\([^)]*\))?\s*---/i', $afterUraian, 2);
+            return trim($subParts[0] ?? '');
+        }
+
+        if (preg_match('/---\s*CATATAN VERIFIKATOR(?:\s*\([^)]*\))?\s*---/i', $desc)) {
+            $parts = preg_split('/---\s*CATATAN VERIFIKATOR(?:\s*\([^)]*\))?\s*---/i', $desc, 2);
+            return trim($parts[0] ?? '');
+        }
+
+        return $desc;
+    }
+
+    /**
+     * Get display reporter name (citizen name for SIPUAS, or reporter->name).
+     */
+    public function getDisplayReporterName(): string
+    {
+        if (!$this->isSipuas()) {
+            return $this->reporter?->name ?? '-';
+        }
+
+        $desc = $this->problem_description ?? '';
+        if (preg_match('/Pelapor:\s*(.*?)(?:\s+Diteruskan|\s+---|[\r\n]|$)/i', $desc, $matches)) {
+            $raw = trim($matches[1]);
+            $clean = preg_replace('/\(HP:\s*[^)]+\)/i', '', $raw);
+            $clean = preg_replace('/\(Publik via SIPUAS\)/i', '', $clean);
+            $clean = trim($clean);
+            if (!empty($clean)) {
+                return $clean . ' (Masyarakat)';
+            }
+        }
+
+        return ($this->reporter?->name ?? 'Masyarakat') . ' (Masyarakat)';
+    }
+
+    /**
+     * Get display reporter phone number.
+     */
+    public function getDisplayReporterPhone(): string
+    {
+        if (!$this->isSipuas()) {
+            return $this->reporter?->phone_number ?? '-';
+        }
+
+        $desc = $this->problem_description ?? '';
+        if (preg_match('/Pelapor:\s*(.*?)(?:\s+Diteruskan|\s+---|[\r\n]|$)/i', $desc, $matches)) {
+            $raw = trim($matches[1]);
+            if (preg_match('/\(HP:\s*([^)]+)\)/i', $raw, $hpMatch)) {
+                return trim($hpMatch[1]);
+            }
+        }
+
+        if (preg_match('/\(HP:\s*([^)]+)\)/i', $desc, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return $this->reporter?->phone_number ?? '-';
+    }
+
+    public function getCleanDescriptionAttribute(): string
+    {
+        return $this->getCleanDescription();
+    }
+
+    public function getDisplayReporterNameAttribute(): string
+    {
+        return $this->getDisplayReporterName();
+    }
+
+    public function getDisplayReporterPhoneAttribute(): string
+    {
+        return $this->getDisplayReporterPhone();
+    }
 }

@@ -17,8 +17,11 @@ import {
     UserCheck,
     Pause,
     Play,
-    Info
+    Info,
+    MessageSquare,
+    Globe
 } from '@lucide/vue';
+import { parseSipuasTicket } from '@/Utils/sipuasHelper';
 
 const { proxy } = getCurrentInstance();
 const showSlaInfoModal = ref(false);
@@ -58,6 +61,8 @@ const props = defineProps({
         default: false
     }
 });
+
+const sipuasInfo = computed(() => parseSipuasTicket(props.ticket));
 
 // Live counter mechanism
 const now = ref(new Date());
@@ -456,18 +461,50 @@ const contextLabel = computed(() => {
 
                             <!-- Ticket Info Container -->
                             <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
-                                <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                                    {{ __('pages.tickets.detail.ticket_info') }}
-                                </h3>
+                                <div class="flex items-center justify-between gap-3 flex-wrap">
+                                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                                        {{ sipuasInfo.isSipuas ? 'Informasi Tiket - Aduan Masyarakat' : __('pages.tickets.detail.ticket_info') }}
+                                    </h3>
+                                </div>
 
                                 <div class="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5">
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                                        <!-- SIPUAS Provenance Integrated Fields -->
+                                        <template v-if="sipuasInfo.isSipuas">
+                                            <div>
+                                                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                    Sumber Disposisi
+                                                </div>
+                                                <div class="text-sm font-bold text-slate-800 dark:text-white leading-tight">
+                                                    <span>Aduan Publik SIPUAS</span>
+                                                    <span v-if="sipuasInfo.sipuasTicketNumber" class="text-slate-400 dark:text-slate-500 font-normal ml-1">
+                                                        ({{ sipuasInfo.sipuasTicketNumber }})
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
+                                                    Diteruskan Oleh
+                                                </div>
+                                                <div class="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-tight">
+                                                    <span>{{ sipuasInfo.forwardedBy || 'Administrator' }}</span>
+                                                    <span class="text-slate-400 dark:text-slate-500 font-normal ml-1">
+                                                        (KASI Pelayanan)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </template>
+
                                         <div>
                                             <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
                                                 {{ __('pages.tickets.detail.reporter') }}
                                             </div>
                                             <div class="text-sm font-bold text-slate-800 dark:text-white uppercase leading-tight">
-                                                {{ ticket.reporter?.name || '-' }}
+                                                <span>{{ sipuasInfo.isSipuas ? sipuasInfo.reporterName : (ticket.reporter?.name || '-') }}</span>
+                                                <span v-if="sipuasInfo.isSipuas" class="text-slate-400 dark:text-slate-500 font-normal normal-case ml-1">
+                                                    (Masyarakat)
+                                                </span>
                                             </div>
                                         </div>
 
@@ -475,8 +512,8 @@ const contextLabel = computed(() => {
                                             <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
                                                 Nomor HP Pelapor
                                             </div>
-                                            <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
-                                                {{ ticket.reporter?.phone_number || '-' }}
+                                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-tight">
+                                                {{ sipuasInfo.isSipuas ? sipuasInfo.reporterPhone : (ticket.reporter?.phone_number || '-') }}
                                             </div>
                                         </div>
 
@@ -485,13 +522,13 @@ const contextLabel = computed(() => {
                                                 {{ __('pages.tickets.detail.room_location') }}
                                             </div>
                                             <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
-                                                {{ ticket.room?.name || '-' }} <span v-if="formatRoomDetails(ticket.room)" class="text-slate-400 dark:text-slate-500">({{ formatRoomDetails(ticket.room) }})</span>
+                                                {{ ticket.room?.name || '-' }} <span v-if="formatRoomDetails(ticket.room)" class="text-slate-400 dark:text-slate-500 font-normal">({{ formatRoomDetails(ticket.room) }})</span>
                                             </div>
                                         </div>
 
                                         <div>
                                             <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
-                                                Kategori Kerusakan
+                                                Kategori Permasalahan
                                             </div>
                                             <div class="text-sm font-medium text-slate-800 dark:text-slate-200 leading-tight">
                                                 {{ ticket.category?.name || '-' }}
@@ -509,18 +546,19 @@ const contextLabel = computed(() => {
                                             </div>
                                         </div>
 
-                                        <div v-if="ticket.priority">
+                                        <div>
                                             <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
                                                 Prioritas Tiket
                                             </div>
                                             <div class="mt-0.5">
-                                                <span :class="['px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase border', getPriority(ticket).badge]">
+                                                <span v-if="ticket.priority && getPriority(ticket).label !== '-'" :class="['px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase border', getPriority(ticket).badge]">
                                                     {{ getPriority(ticket).label }}
                                                 </span>
+                                                <span v-else class="text-slate-400 dark:text-slate-500 font-bold text-xs">-</span>
                                             </div>
                                         </div>
 
-                                        <div>
+                                        <div class="sm:col-span-2">
                                             <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase tracking-wider mb-0.5">
                                                 {{ __('pages.tickets.detail.reported_at_label') }}
                                             </div>
@@ -531,12 +569,23 @@ const contextLabel = computed(() => {
                                     </div>
                                 </div>
 
+                                <!-- Problem Description -->
                                 <div class="space-y-2">
                                     <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider">
                                         {{ __('pages.tickets.detail.problem_desc') }}
                                     </span>
-                                    <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-slate-800 dark:text-slate-200 text-sm font-medium leading-relaxed whitespace-pre-line">
-                                        {{ ticket.problem_description }}
+                                    <div class="bg-slate-50/50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 text-slate-800 dark:text-slate-200 text-sm font-medium leading-relaxed whitespace-pre-line">
+                                        {{ sipuasInfo.isSipuas ? sipuasInfo.cleanDescription : ticket.problem_description }}
+                                    </div>
+                                </div>
+
+                                <!-- Catatan Verifikator (KASI Pelayanan) -->
+                                <div v-if="sipuasInfo.isSipuas && sipuasInfo.supervisorNotes" class="space-y-2">
+                                    <span class="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 tracking-wider">
+                                        Catatan Verifikator (KASI Pelayanan)
+                                    </span>
+                                    <div class="bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/60 rounded-xl p-4 sm:p-5 text-slate-800 dark:text-slate-200 text-sm font-medium leading-relaxed whitespace-pre-line">
+                                        {{ sipuasInfo.supervisorNotes }}
                                     </div>
                                 </div>
 

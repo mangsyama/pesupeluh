@@ -2,6 +2,7 @@
 import { ref, computed, watch, getCurrentInstance } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, ShieldAlert, ArrowRight, Wrench, Trash2 } from '@lucide/vue';
+import { getDisplayDescription, getDisplayReporterName, getDisplayReporterPhone, isSipuasTicket } from '@/Utils/sipuasHelper';
 
 const { proxy } = getCurrentInstance();
 
@@ -298,10 +299,13 @@ const formatDate = (dateStr) => {
                                         </td>
                                         <!-- Reporter -->
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="font-bold text-slate-900 dark:text-white text-xs">{{ ticket.reporter?.name ?? '-' }}</div>
+                                            <div class="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                                                <span>{{ getDisplayReporterName(ticket) }}</span>
+                                                <span v-if="isSipuasTicket(ticket)" class="text-[10px] text-slate-400 font-normal">(Masyarakat)</span>
+                                            </div>
                                             <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
                                                 <Phone class="h-3.5 w-3.5 text-slate-400" />
-                                                <span>{{ ticket.reporter?.phone_number ?? '-' }}</span>
+                                                <span>{{ getDisplayReporterPhone(ticket) }}</span>
                                             </div>
                                         </td>
                                         <!-- Category & Room -->
@@ -313,8 +317,8 @@ const formatDate = (dateStr) => {
                                             </div>
                                         </td>
                                         <!-- Desc -->
-                                        <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 break-words max-w-md">
-                                            {{ ticket.problem_description }}
+                                        <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 break-words max-w-md leading-relaxed">
+                                            {{ getDisplayDescription(ticket) }}
                                         </td>
                                         <!-- Priority -->
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -400,16 +404,19 @@ const formatDate = (dateStr) => {
                                         </span>
                                     </div>
 
-                                    <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                                        {{ ticket.problem_description }}
+                                    <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        {{ getDisplayDescription(ticket) }}
                                     </p>
 
                                     <div class="text-[11px] space-y-1.5 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/50">
                                         <div class="flex justify-between items-center">
                                             <span class="font-medium text-slate-400 dark:text-slate-500">Pelapor:</span>
                                             <span class="font-bold text-slate-800 dark:text-slate-200">
-                                                {{ ticket.reporter?.name ?? '-' }}
-                                                <span v-if="ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name" class="text-slate-400 font-normal text-[10px]">
+                                                {{ getDisplayReporterName(ticket) }}
+                                                <span v-if="isSipuasTicket(ticket)" class="text-slate-400 font-normal text-[10px]">
+                                                    (Masyarakat)
+                                                </span>
+                                                <span v-else-if="ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name" class="text-slate-400 font-normal text-[10px]">
                                                     ({{ ticket.reporter?.room?.name || ticket.reporter?.supporting_unit?.name }})
                                                 </span>
                                             </span>

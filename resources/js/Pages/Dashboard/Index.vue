@@ -17,8 +17,8 @@ import {
     ShieldCheck,
     Zap,
     ArrowRight,
-    Sparkles
 } from '@lucide/vue';
+import { getDisplayDescription, getDisplayReporterName } from '@/Utils/sipuasHelper';
 
 const { proxy } = getCurrentInstance();
 
@@ -124,10 +124,10 @@ const recentReports = computed(() => {
         return {
             id: ticket.ticket_number,
             date: formatDate(ticket.created_at),
-            author: ticket.reporter?.name ?? '-',
+            author: getDisplayReporterName(ticket),
             category: ticket.category?.name ?? '-',
             room: ticket.room?.name ?? '-',
-            title: ticket.problem_description,
+            title: getDisplayDescription(ticket),
             status: ticket.status
         };
     });

@@ -52,6 +52,7 @@ class UserManagementController extends Controller
         return Inertia::render('UserManagement/Approval/Index', [
             'users' => Inertia::defer(fn() => User::with(['role', 'room', 'supportingUnit'])
                 ->whereNull('approved_by')
+                ->where('username', 'not like', 'sipuas%')
                 ->orderBy('id', 'desc')
                 ->get()),
         ]);

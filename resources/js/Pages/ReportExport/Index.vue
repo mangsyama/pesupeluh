@@ -6,6 +6,7 @@ import { FileText, Download, BarChart3, CheckCircle2, Clock, FileBarChart2, Filt
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.css';
 import { Indonesian } from 'flatpickr/dist/l10n/id.js';
+import { getDisplayDescription, getDisplayReporterName, isSipuasTicket } from '@/Utils/sipuasHelper';
 
 const { proxy } = getCurrentInstance();
 
@@ -836,7 +837,8 @@ watch(() => props.filters, (newVal) => {
                                         {{ ticket.created_at ? new Date(ticket.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' }}
                                     </td>
                                     <td class="px-6 py-4 font-semibold whitespace-normal break-words max-w-[150px]">
-                                        {{ ticket.reporter?.name ?? '-' }}
+                                        {{ getDisplayReporterName(ticket) }}
+                                        <span v-if="isSipuasTicket(ticket)" class="text-xs text-slate-400 font-normal"> (Masyarakat)</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-normal break-words max-w-[150px]">
                                         {{ ticket.room?.name ?? '-' }}
@@ -847,8 +849,8 @@ watch(() => props.filters, (newVal) => {
                                     <td class="px-6 py-4 whitespace-normal break-words max-w-[150px] font-medium text-slate-800 dark:text-slate-200">
                                         {{ ticket.category?.name ?? '-' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-normal break-words max-w-xs">
-                                        {{ ticket.problem_description }}
+                                    <td class="px-6 py-4 whitespace-normal break-words max-w-xs leading-relaxed">
+                                        {{ getDisplayDescription(ticket) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <span 

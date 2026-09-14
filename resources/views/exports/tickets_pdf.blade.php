@@ -317,15 +317,15 @@
             @endif
 
             {{-- 6. PELAPOR --}}
-            @if($ticket->reporter?->name)
-                <td class="col-pelapor">{{ $ticket->reporter->name }}</td>
+            @if($ticket->getDisplayReporterName())
+                <td class="col-pelapor">{{ $ticket->getDisplayReporterName() }}</td>
             @else
                 <td class="col-pelapor text-dash">-</td>
             @endif
 
             {{-- 7. PERMASALAHAN --}}
-            @if($ticket->problem_description)
-                <td class="col-masalah">{{ $ticket->problem_description }}</td>
+            @if($ticket->getCleanDescription())
+                <td class="col-masalah">{{ $ticket->getCleanDescription() }}</td>
             @else
                 <td class="col-masalah text-dash">-</td>
             @endif

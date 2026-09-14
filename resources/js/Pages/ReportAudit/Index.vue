@@ -25,6 +25,7 @@ import {
     Wrench,
     ArrowRight
 } from '@lucide/vue';
+import { getDisplayDescription, getDisplayReporterName, getDisplayReporterPhone, isSipuasTicket } from '@/Utils/sipuasHelper';
 
 const { proxy } = getCurrentInstance();
 
@@ -508,12 +509,13 @@ const confirmRestore = (ticket) => {
 
                                 <!-- Reporter -->
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="font-bold text-slate-900 dark:text-white text-xs">
-                                        {{ ticket.reporter?.name ?? '-' }}
+                                    <div class="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+                                        <span>{{ getDisplayReporterName(ticket) }}</span>
+                                        <span v-if="isSipuasTicket(ticket)" class="text-[10px] text-slate-400 font-normal">(Masyarakat)</span>
                                     </div>
                                     <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
                                         <Phone class="h-3 w-3 text-slate-400" />
-                                        <span>{{ ticket.reporter?.phone_number ?? '-' }}</span>
+                                        <span>{{ getDisplayReporterPhone(ticket) }}</span>
                                     </div>
                                 </td>
 
@@ -529,8 +531,8 @@ const confirmRestore = (ticket) => {
                                 </td>
 
                                 <!-- Problem Description -->
-                                <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 break-words max-w-sm">
-                                    <p class="line-clamp-2">{{ ticket.problem_description }}</p>
+                                <td class="px-6 py-4 text-xs text-slate-600 dark:text-slate-400 break-words max-w-sm leading-relaxed">
+                                    {{ getDisplayDescription(ticket) }}
                                 </td>
 
                                 <!-- Priority -->
@@ -653,8 +655,8 @@ const confirmRestore = (ticket) => {
                             </div>
                         </div>
 
-                        <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                            {{ ticket.problem_description }}
+                        <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                            {{ getDisplayDescription(ticket) }}
                         </p>
 
                         <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800">
