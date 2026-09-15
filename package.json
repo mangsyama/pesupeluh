@@ -25,11 +25,13 @@
         "@fontsource/poppins": "^5.2.7",
         "@lucide/vue": "^1.18.0",
         "@vladmandic/face-api": "^1.7.15",
+        "apexcharts": "^7.3.0",
         "flatpickr": "^4.6.13",
         "laravel-echo": "^2.3.7",
         "pusher-js": "^8.5.0",
         "qrcode": "^1.5.4",
-        "sweetalert2": "^11.26.25"
+        "sweetalert2": "^11.26.25",
+        "vue3-apexcharts": "^1.11.1"
     },
     "overrides": {
         "brace-expansion": "^5.0.8"

@@ -72,6 +72,7 @@ Route::get('/dashboard', function (Request $request) {
                 $recentTickets = (clone $baseQuery)
                     ->select([
                         'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                        'validated_at', 'validated_by', 'responded_at', 'resolved_at',
                         \Illuminate\Support\Facades\DB::raw(
                             \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
                                 ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
@@ -96,6 +97,7 @@ Route::get('/dashboard', function (Request $request) {
                     'stat4' => ['label' => 'Menunggu Verifikasi', 'value' => $pendingTicketsCount, 'type' => 'pending'],
                     'recentTickets' => $recentTickets,
                     'breakdownData' => $breakdownData,
+                    'analytics' => \App\Services\DashboardAnalyticsService::getAnalytics($baseQuery),
                 ];
             }
 
@@ -142,6 +144,7 @@ Route::get('/dashboard', function (Request $request) {
                 $recentTickets = (clone $baseQuery)
                     ->select([
                         'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                        'validated_at', 'validated_by', 'responded_at', 'resolved_at',
                         \Illuminate\Support\Facades\DB::raw(
                             \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
                                 ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
@@ -166,6 +169,7 @@ Route::get('/dashboard', function (Request $request) {
                     'stat4' => ['label' => 'Ditangguhkan', 'value' => $pendingTicketsCount, 'type' => 'pending'],
                     'recentTickets' => $recentTickets,
                     'breakdownData' => $breakdownData,
+                    'analytics' => \App\Services\DashboardAnalyticsService::getAnalytics($baseQuery),
                 ];
             }
 
@@ -213,6 +217,7 @@ Route::get('/dashboard', function (Request $request) {
                 $recentTickets = (clone $baseQuery)
                     ->select([
                         'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                        'validated_at', 'validated_by', 'responded_at', 'resolved_at',
                         \Illuminate\Support\Facades\DB::raw(
                             \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
                                 ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
@@ -240,6 +245,7 @@ Route::get('/dashboard', function (Request $request) {
                     'stat4' => ['label' => 'Menunggu Disposisi', 'value' => $pendingTicketsCount, 'type' => 'pending'],
                     'recentTickets' => $recentTickets,
                     'breakdownData' => $breakdownData,
+                    'analytics' => \App\Services\DashboardAnalyticsService::getAnalytics($baseQuery),
                 ];
             }
 
@@ -284,6 +290,7 @@ Route::get('/dashboard', function (Request $request) {
                 $recentTickets = (clone $baseQuery)
                     ->select([
                         'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                        'validated_at', 'validated_by', 'responded_at', 'resolved_at',
                         \Illuminate\Support\Facades\DB::raw(
                             \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
                                 ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
@@ -311,6 +318,7 @@ Route::get('/dashboard', function (Request $request) {
                     'stat4' => ['label' => 'Menunggu Validasi', 'value' => $pendingTicketsCount, 'type' => 'pending'],
                     'recentTickets' => $recentTickets,
                     'breakdownData' => $breakdownData,
+                    'analytics' => \App\Services\DashboardAnalyticsService::getAnalytics($baseQuery),
                 ];
             }
 
@@ -360,6 +368,7 @@ Route::get('/dashboard', function (Request $request) {
 
             $recentTickets = \App\Models\ServiceTicket::select([
                 'id', 'uuid', 'ticket_number', 'reporter_id', 'room_id', 'category_id', 'status', 'created_at',
+                'validated_at', 'validated_by', 'responded_at', 'resolved_at',
                 \Illuminate\Support\Facades\DB::raw(
                     \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite' 
                         ? 'SUBSTR(problem_description, 1, 100) as problem_description' 
@@ -384,6 +393,7 @@ Route::get('/dashboard', function (Request $request) {
                 'stat4' => ['label' => 'Menunggu Verifikasi', 'value' => $pendingTicketsCount, 'type' => 'pending'],
                 'recentTickets' => $recentTickets,
                 'breakdownData' => $breakdownData,
+                'analytics' => \App\Services\DashboardAnalyticsService::getAnalytics(\App\Models\ServiceTicket::query()->whereNull('service_tickets.deleted_at')),
             ];
         }),
     ]);
