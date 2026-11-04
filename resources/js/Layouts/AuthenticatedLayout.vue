@@ -4,7 +4,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NotificationItem from '@/Components/NotificationItem.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ShieldCheck, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode, QrCode, Radio } from '@lucide/vue';
+import { Sun, Moon, Languages, LayoutDashboard, FileText, User, X, ChevronRight, ChevronLeft, ChevronDown, Settings, LogOut, Activity, Users, FileBarChart2, History, Shield, ShieldAlert, ShieldCheck, UserCheck, ArrowLeft, Database, Search, Building2, Layers, MapPin, Hospital, Palette, Play, Type, Bell, Clock, CheckCircle2, AlertTriangle, AlertCircle, HelpCircle, Wrench, Check, CheckCheck, Eye, MessageSquareCode, QrCode, Radio, Leaf, Ticket, ClipboardCheck, MessageSquarePlus } from '@lucide/vue';
 
 
 
@@ -146,13 +146,7 @@ const getInitialOpenMenus = () => {
             route().current('users.edit'),
         'menu.service_management': route().current('service-management.rooms') ||
             route().current('service-management.categories') ||
-            route().current('service-management.supporting-units'),
-        'menu.design_components': route().current('design-system.index') ||
-            route().current('design-system.buttons-badges') ||
-            route().current('design-system.forms') ||
-            route().current('design-system.modals-alerts') ||
-            route().current('design-system.tables') ||
-            route().current('design-system.cards')
+            route().current('service-management.supporting-units')
     };
 
     if (typeof window !== 'undefined') {
@@ -198,12 +192,15 @@ const isItemActive = (child) => {
     if (child.routeName === 'reports-audit.index' && route().current('reports-audit.show')) return true;
     if (child.routeName === 'reports.history' && route().current('reports.show')) return true;
     if (child.routeName === 'settings.index' && route().current('profile.edit')) return true;
-    if (child.routeName === 'services.index' && (route().current('services.index') || route().current('services.medik') || route().current('services.non-medik') || route().current('services.units.show'))) return true;
+    if (child.routeName === 'services.index' && (route().current('services.index') || route().current('services.medik') || route().current('services.non-medik') || route().current('services.units.show') || route().current('pansinar.*'))) return true;
     return false;
 };
 
 const isRouteActive = (item) => {
     if (item.routeName && route().current(item.routeName)) {
+        return true;
+    }
+    if (item.routeName === 'public.sanitasi.create' && route().current('public.sanitasi.*')) {
         return true;
     }
     if (item.routeName === 'users.approvals' && route().current('users.approvals.show')) {
@@ -224,7 +221,7 @@ const isRouteActive = (item) => {
     if (item.routeName === 'settings.index' && route().current('profile.edit')) {
         return true;
     }
-    if (item.routeName === 'services.index' && (route().current('services.index') || route().current('services.medik') || route().current('services.non-medik') || route().current('services.units.show'))) {
+    if (item.routeName === 'services.index' && (route().current('services.index') || route().current('services.medik') || route().current('services.non-medik') || route().current('services.units.show') || route().current('pansinar.*'))) {
         return true;
     }
     return false;
@@ -235,7 +232,24 @@ const permissions = computed(() => page.props.auth?.page_permissions || []);
 
 const hasAccess = (permKey) => permissions.value.includes(permKey);
 
+const isPanSinarMode = computed(() => route().current('pansinar.*') || route().current('public.sanitasi.*'));
+
 const menuGroups = computed(() => {
+    // If in PAN-SINAR (Kesling Sub-System), switch to dedicated PAN-SINAR navigation
+    if (isPanSinarMode.value) {
+        return [
+            {
+                title: 'PAN-SINAR',
+                items: [
+                    { label: 'Dashboard', routeName: 'pansinar.index', icon: LayoutDashboard },
+                    { label: 'Aduan Sanitasi', routeName: 'pansinar.tickets.index', icon: Ticket },
+                    { label: 'Ceklis Harian', routeName: 'pansinar.inspections.index', icon: ClipboardCheck },
+                    { label: 'Manajemen Toilet', routeName: 'pansinar.toilets.index', icon: MapPin },
+                ]
+            }
+        ];
+    }
+
     const can = hasAccess;
 
     // Define ALL menu items, then filter by permissions
@@ -325,7 +339,7 @@ const backRoute = computed(() => {
     if (route().current('users.edit') || route().current('users.show')) {
         return route('users.index');
     }
-    if (route().current('profile.edit') || route().current('design-system.*')) {
+    if (route().current('profile.edit')) {
         return route('settings.index');
     }
     if (route().current('reports.show')) {
@@ -340,26 +354,21 @@ const backRoute = computed(() => {
     if (route().current('users.approvals.show')) {
         return route('users.approvals');
     }
-    if (route().current('services.units.show') && page.props.unit) {
-        const isMedik = page.props.unit.division?.name?.toLowerCase().includes('medik') && 
-                       !page.props.unit.division?.name?.toLowerCase().includes('non-medik');
-        return isMedik ? route('services.medik') : route('services.non-medik');
+    if (route().current('pansinar.*') || route().current('services.units.show')) {
+        return route('services.index');
     }
     return route('services.index');
 });
 
 const showBackButton = computed(() => {
-    return route().current('services.medik') || 
-           route().current('services.non-medik') || 
-           route().current('profile.edit') || 
+    return route().current('profile.edit') || 
            route().current('services.units.show') || 
            route().current('reports.show') || 
            route().current('reports-management.show') ||
            route().current('reports-audit.show') ||
            route().current('users.approvals.show') ||
            route().current('users.edit') ||
-           route().current('users.show') ||
-           route().current('design-system.*');
+           route().current('users.show');
 });
 
 const globalSearchQuery = ref('');
@@ -493,7 +502,7 @@ const showNotificationToast = (normalized) => {
 };
 
 // Watch for Inertia flash session messages (e.g. from redirect()->back()->with('success', ...))
-let lastProcessedFlashKey = null;
+const shownFlashMessages = new Map();
 
 watch(
     () => page.props.flash,
@@ -502,12 +511,16 @@ watch(
 
         const currentKey = `${flash.success || ''}|${flash.error || ''}|${flash.warning || ''}|${flash.info || ''}`;
         if (!currentKey.replace(/\|/g, '')) {
-            lastProcessedFlashKey = null;
             return;
         }
 
-        if (currentKey === lastProcessedFlashKey) return;
-        lastProcessedFlashKey = currentKey;
+        const now = Date.now();
+        const lastShownTime = shownFlashMessages.get(currentKey);
+        // Cegah pesan toast muncul berulang akibat riwayat browser / popstate saat menutup modal
+        if (lastShownTime && (now - lastShownTime) < 60000) {
+            return;
+        }
+        shownFlashMessages.set(currentKey, now);
 
         if (flash.success) {
             showNotificationToast({ title: 'Sukses', message: flash.success, type: 'success' });
@@ -644,31 +657,55 @@ const closeMobileNotificationsOnOutsideClick = (e) => {
     }
 };
 
-const searchableItems = [
+const panSinarSearchableItems = [
+    { label: 'Dashboard Sanitasi', routeName: 'pansinar.index', description: 'Ringkasan data, matriks KPI & status sanitasi', badge: 'PAN-SINAR' },
+    { label: 'Aduan Sanitasi', routeName: 'pansinar.tickets.index', description: 'Daftar aduan kendala fasilitas sanitasi & toilet', badge: 'PAN-SINAR' },
+    { label: 'Ceklis Harian', routeName: 'pansinar.inspections.index', description: 'Inspeksi & ceklis patroli kebersihan berkala', badge: 'PAN-SINAR' },
+    { label: 'Manajemen Toilet', routeName: 'pansinar.toilets.index', description: 'Data master toilet & cetak QR Code lokasi', badge: 'PAN-SINAR' },
+];
+
+const generalSearchableItems = [
     { label: 'Dashboard', routeName: 'dashboard', description: 'Ringkasan data & status utama' },
     { label: 'Layanan Penunjang', routeName: 'services.index', description: 'Pelaporan Medik & Non-Medik' },
-    { label: 'Laporan & Export', routeName: 'reports.index', description: 'Unduh laporan PDF & CSV' },
     { label: 'Riwayat Pelaporan', routeName: 'reports.history', description: 'Daftar riwayat tiket' },
-    { label: 'Manajemen Ruangan', routeName: 'service-management.rooms', description: 'Pengelolaan data master ruangan dan lokasi' },
-    { label: 'Kategori Permasalahan', routeName: 'service-management.categories', description: 'Pengelolaan data master kategori permasalahan aset & operasional' },
-    { label: 'Layanan Penunjang (Managemen Layanan)', routeName: 'service-management.supporting-units', description: 'Pengelolaan data divisi dan unit penunjang' },
-    { label: 'Persetujuan Registrasi', routeName: 'users.approvals', description: 'Persetujuan pendaftar pengguna baru' },
-    { label: 'Daftar Pengguna', routeName: 'users.index', description: 'Kelola data pengguna sistem' },
+    { label: 'Manajemen Laporan', routeName: 'reports-management.index', description: 'Monitoring & kelola seluruh tiket laporan', permKey: 'reports-management.index' },
+    { label: 'Audit Laporan', routeName: 'reports-audit.index', description: 'Audit trail dan validasi laporan', permKey: 'reports-audit.index' },
+    { label: 'Laporan & Export', routeName: 'reports.index', description: 'Unduh laporan PDF & CSV', permKey: 'reports.index' },
+    { label: 'Posisi Teknisi', routeName: 'technicians.position', description: 'Radar dan status penugasan teknisi on-duty', permKey: 'technicians.position' },
+    { label: 'Jam Operasional', routeName: 'service-management.working-hours', description: 'Pengaturan jam kerja operasional layanan', permKey: 'service-management.working-hours' },
+    { label: 'Persetujuan Registrasi', routeName: 'users.approvals', description: 'Persetujuan pendaftar pengguna baru', permKey: 'users.approvals' },
+    { label: 'Daftar Pengguna', routeName: 'users.index', description: 'Kelola data pengguna sistem', permKey: 'users.index' },
+    { label: 'Manajemen Ruangan', routeName: 'service-management.rooms', description: 'Pengelolaan data master ruangan dan lokasi', permKey: 'service-management.rooms' },
+    { label: 'Kategori Permasalahan', routeName: 'service-management.categories', description: 'Pengelolaan data master kategori permasalahan aset & operasional', permKey: 'service-management.categories' },
+    { label: 'Layanan Penunjang (Master Data)', routeName: 'service-management.supporting-units', description: 'Pengelolaan data divisi dan unit penunjang', permKey: 'service-management.supporting-units' },
+    { label: 'WhatsApp Gateway', routeName: 'admin.wa-gateway.index', description: 'Pengaturan dan log integrasi WhatsApp', permKey: 'admin.wa-gateway.index' },
+    { label: 'Generator QR Code', routeName: 'admin.qr-code.index', description: 'Alat cetak QR Code ruangan & titik lapor', permKey: 'admin.qr-code.index' },
     { label: 'Pengaturan Profil', routeName: 'settings.index', description: 'Ubah sandi, tema, dan profil' },
-    { label: 'Sistem Desain - Ringkasan', routeName: 'design-system.index', description: 'Ringkasan panduan warna, tema dark mode, & tipografi' },
-    { label: 'Sistem Desain - Tombol & Badge', routeName: 'design-system.buttons-badges', description: 'Koleksi komponen tombol, animasi loading, & badge status' },
-    { label: 'Sistem Desain - Formulir & Input', routeName: 'design-system.forms', description: 'Koleksi komponen input form, select, checkbox, & upload file' },
-    { label: 'Sistem Desain - Modal & Alert', routeName: 'design-system.modals-alerts', description: 'Koleksi modal popup transisi & notifikasi SweetAlert2' },
-    { label: 'Sistem Desain - Tabel & Pagination', routeName: 'design-system.tables', description: 'Desain layout tabel data, pagination, & state data kosong' },
-    { label: 'Sistem Desain - Kartu Statistik', routeName: 'design-system.cards', description: 'Koleksi layout kartu data statistik & visualisasi grid' },
     { label: 'Notifikasi Saya', routeName: 'notifications.index', description: 'Semua riwayat notifikasi sistem dan tugas' },
 ];
+
+const activeSearchableItems = computed(() => {
+    if (isPanSinarMode.value) {
+        return panSinarSearchableItems;
+    }
+    return [...generalSearchableItems, ...panSinarSearchableItems].filter(item => {
+        if (item.permKey && !hasAccess(item.permKey)) {
+            return false;
+        }
+        return true;
+    });
+});
 
 const mobilePageTitles = [
     { routeName: 'dashboard', label: 'Dashboard' },
     { routeName: 'services.index', label: 'Layanan Penunjang' },
     { routeName: 'services.medik', label: 'Penunjang Medik' },
     { routeName: 'services.non-medik', label: 'Penunjang Non-Medik' },
+    { routeName: 'pansinar.index', label: 'Dashboard' },
+    { routeName: 'pansinar.tickets.index', label: 'Aduan Sanitasi' },
+    { routeName: 'pansinar.inspections.index', label: 'Ceklis Harian' },
+    { routeName: 'pansinar.toilets.index', label: 'Manajemen Toilet' },
+    { routeName: 'pansinar.qr.index', label: 'Manajemen Toilet' },
     { routeName: 'services.units.show', label: 'Unit Penunjang' },
     { routeName: 'technicians.position', label: 'Posisi & Status Teknisi' },
     { routeName: 'technicians.radar', label: 'Posisi & Status Teknisi' },
@@ -687,12 +724,6 @@ const mobilePageTitles = [
     { routeName: 'users.edit', label: 'Edit Pengguna' },
     { routeName: 'profile.edit', label: 'Profil Saya' },
     { routeName: 'settings.index', label: 'Pengaturan Profil' },
-    { routeName: 'design-system.index', label: 'Sistem Desain - Ringkasan' },
-    { routeName: 'design-system.buttons-badges', label: 'Sistem Desain - Tombol & Badge' },
-    { routeName: 'design-system.forms', label: 'Sistem Desain - Formulir & Input' },
-    { routeName: 'design-system.modals-alerts', label: 'Sistem Desain - Modal & Alert' },
-    { routeName: 'design-system.tables', label: 'Sistem Desain - Tabel & Pagination' },
-    { routeName: 'design-system.cards', label: 'Sistem Desain - Kartu Statistik' },
     { routeName: 'notifications.index', label: 'Semua Notifikasi' },
     { routeName: 'admin.wa-gateway.index', label: 'WhatsApp Gateway' },
     { routeName: 'admin.qr-code.index', label: 'Generator QR Code' },
@@ -713,9 +744,10 @@ const currentPageTitle = computed(() => {
 const filteredSearchItems = computed(() => {
     if (!globalSearchQuery.value.trim()) return [];
     const query = globalSearchQuery.value.toLowerCase();
-    return searchableItems.filter(item => 
+    return activeSearchableItems.value.filter(item => 
         item.label.toLowerCase().includes(query) || 
-        item.description.toLowerCase().includes(query)
+        item.description.toLowerCase().includes(query) ||
+        (item.badge && item.badge.toLowerCase().includes(query))
     );
 });
 
@@ -744,7 +776,7 @@ const getGroupInitials = (title) => {
                             v-if="showBackButton"
                             :href="backRoute"
                             prefetch
-                            @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') || route().current('design-system.*') ? null : triggerSupportBack"
+                            @click="route().current('profile.edit') || route().current('services.units.show') || route().current('pansinar.*') || route().current('reports.show') || route().current('reports-management.show') ? null : triggerSupportBack"
                             class="hidden lg:inline-flex items-center justify-center h-11 w-11 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition duration-150 focus:outline-none shadow-sm border border-white dark:border-slate-800 mr-3 flex-shrink-0"
                             title="Kembali"
                         >
@@ -758,7 +790,7 @@ const getGroupInitials = (title) => {
                                 v-if="showBackButton"
                                 :href="backRoute"
                                 prefetch
-                                @click="route().current('profile.edit') || route().current('services.units.show') || route().current('reports.show') || route().current('reports-management.show') || route().current('design-system.*') ? null : triggerSupportBack"
+                                @click="route().current('profile.edit') || route().current('services.units.show') || route().current('pansinar.*') || route().current('reports.show') || route().current('reports-management.show') ? null : triggerSupportBack"
                                 class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-md border border-white dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition duration-150 focus:outline-none"
                                 aria-label="Kembali"
                             >
@@ -793,7 +825,7 @@ const getGroupInitials = (title) => {
                                     type="text"
                                     @focus="showSearchResults = true"
                                     @blur="setTimeout(() => { showSearchResults = false }, 200)"
-                                    :placeholder="__('menu.search_placeholder')"
+                                    :placeholder="isPanSinarMode ? 'Cari menu & fitur PAN-SINAR...' : __('menu.search_placeholder')"
                                     class="w-full h-11 pl-10 pr-10 border border-white dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-0 focus:border-white dark:focus:border-slate-800 transition-all duration-150 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm"
                                 />
                                 <!-- Clear Button -->
@@ -809,18 +841,27 @@ const getGroupInitials = (title) => {
  
                              <!-- Floating Results Panel -->
                              <div v-if="showSearchResults && filteredSearchItems.length > 0" class="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg z-50 overflow-hidden py-1.5 max-h-72 overflow-y-auto">
-                                 <div class="px-3.5 py-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 mb-1">
-                                     {{ __('menu.search_results') }}
+                                 <div class="px-3.5 py-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
+                                     <span>{{ isPanSinarMode ? 'Fitur PAN-SINAR' : __('menu.search_results') }}</span>
+                                     <span class="text-[9px] font-semibold text-slate-400 lowercase">{{ filteredSearchItems.length }} ditemukan</span>
                                  </div>
                                  <Link 
                                      v-for="item in filteredSearchItems" 
-                                     :key="item.routeName"
+                                     :key="item.routeName + (item.badge || '')"
                                      :href="route(item.routeName)"
                                      prefetch
-                                     class="flex flex-col px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition duration-150"
+                                     @click="showSearchResults = false; globalSearchQuery = ''"
+                                     class="flex items-center justify-between px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition duration-150"
                                  >
-                                     <span class="text-xs font-bold text-slate-900 dark:text-white">{{ __(item.label) }}</span>
-                                     <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">{{ item.description }}</span>
+                                     <div class="flex flex-col">
+                                         <div class="flex items-center gap-1.5">
+                                             <span class="text-xs font-bold text-slate-900 dark:text-white">{{ item.label }}</span>
+                                             <span v-if="item.badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                                 {{ item.badge }}
+                                             </span>
+                                         </div>
+                                         <span class="text-[10px] text-slate-400 dark:text-slate-500 leading-normal">{{ item.description }}</span>
+                                     </div>
                                  </Link>
                              </div>
                              <div v-else-if="showSearchResults && globalSearchQuery.trim() !== ''" class="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg z-50 p-4 text-center text-xs text-slate-400 dark:text-slate-500">
@@ -1303,26 +1344,54 @@ const getGroupInitials = (title) => {
                         <button 
                             @click="toggleSidebarCollapse"
                             class="relative group h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
-                            title="Expand Sidebar"
+                            :title="isPanSinarMode ? 'Expand Sidebar (PAN-SINAR)' : 'Expand Sidebar'"
                         >
-                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert transition-all duration-200 group-hover:opacity-0" />
+                            <!-- If PAN-SINAR Mode -->
+                            <template v-if="isPanSinarMode">
+                                <div class="h-10 w-10 rounded-xl bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white flex items-center justify-center transition-all duration-200 group-hover:opacity-0">
+                                    <Leaf class="h-5 w-5" />
+                                </div>
+                            </template>
+                            <!-- Default PESU PELUH Logo -->
+                            <template v-else>
+                                <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert transition-all duration-200 group-hover:opacity-0" />
+                            </template>
                             <ChevronRight class="absolute inset-0 m-auto h-5.5 w-5.5 text-emerald-600 dark:text-white opacity-0 group-hover:opacity-100 transition-all duration-200" />
                         </button>
                     </div>
                     
-                    <Link v-else :href="route('dashboard')" prefetch class="flex items-center gap-3">
-                        <!-- Left Logo (Rounded Square) -->
-                        <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert" />
-                        </div>
-                        <!-- Right Text Content -->
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold tracking-widest text-[#059669] dark:text-white uppercase leading-none">Pesu Peluh</span>
-                            <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-1 leading-tight tracking-normal max-w-[185px]">
-                                Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
-                            </span>
-                        </div>
-                    </Link>
+                    <!-- Expanded Sidebar Header -->
+                    <template v-else>
+                        <!-- PAN-SINAR Branding -->
+                        <Link v-if="isPanSinarMode" :href="route('pansinar.index')" prefetch class="flex items-center gap-3">
+                            <div class="h-12 w-12 rounded-xl bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white flex items-center justify-center flex-shrink-0">
+                                <Leaf class="h-6 w-6" />
+                            </div>
+                            <div class="flex flex-col min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-sm font-black tracking-wider text-emerald-600 dark:text-white uppercase leading-none">PAN-SINAR</span>
+                                </div>
+                                <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-1 leading-tight tracking-normal max-w-[190px]">
+                                    Penunjang Non Medik — Sistematis, Integratif, Nyata, Akurat, Realtime
+                                </span>
+                            </div>
+                        </Link>
+
+                        <!-- Standard PESU PELUH Branding -->
+                        <Link v-else :href="route('dashboard')" prefetch class="flex items-center gap-3">
+                            <!-- Left Logo (Rounded Square) -->
+                            <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert" />
+                            </div>
+                            <!-- Right Text Content -->
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold tracking-widest text-[#059669] dark:text-white uppercase leading-none">Pesu Peluh</span>
+                                <span class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-1 leading-tight tracking-normal max-w-[185px]">
+                                    Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
+                                </span>
+                            </div>
+                        </Link>
+                    </template>
                     
                     <!-- Desktop collapse toggle & Close button (Mobile only) -->
                     <div class="flex items-center gap-2">
@@ -1618,6 +1687,42 @@ const getGroupInitials = (title) => {
                         </template>
                     </div>
                 </nav>
+
+                <!-- Bottom Action: Return to PESU PELUH Main Portal (Hanya saat di mode PAN-SINAR) -->
+                <div 
+                    v-if="isPanSinarMode"
+                    :class="[
+                        'border-t border-slate-100 dark:border-slate-800 p-3 transition-all duration-300',
+                        sidebarCollapsed ? 'flex justify-center' : ''
+                    ]"
+                >
+                    <Link
+                        :href="route('services.non-medik')"
+                        prefetch
+                        :class="[
+                            'group flex items-center rounded-xl font-medium transition-colors duration-150 border border-slate-200/80 dark:border-slate-700/60 bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800/70',
+                            sidebarCollapsed
+                                ? 'h-11 w-11 justify-center'
+                                : 'w-full gap-3 p-2.5'
+                        ]"
+                        :title="sidebarCollapsed ? 'Kembali ke PESU PELUH' : ''"
+                    >
+                        <!-- Back Icon with Badge Container (without hover motion) -->
+                        <div class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
+                            <ArrowLeft class="w-4 h-4" />
+                        </div>
+
+                        <!-- Button Text -->
+                        <div v-if="!sidebarCollapsed" class="flex flex-col text-left min-w-0">
+                            <span class="truncate font-semibold text-xs text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white leading-tight">
+                                Kembali ke PESU PELUH
+                            </span>
+                            <span class="text-[9px] text-slate-400 dark:text-slate-500 font-medium truncate mt-0.5">
+                                Portal Penunjang Non-Medik
+                            </span>
+                        </div>
+                    </Link>
+                </div>
             </aside>
 
             <!-- Main Content -->

@@ -38,7 +38,7 @@ class ReportController extends Controller
         $rooms = \App\Models\Room::select(['id', 'name', 'building_name', 'location_floor'])->orderBy('name')->get();
         $reporters = \App\Models\User::select(['id', 'name', 'room_id'])->orderBy('name')->get();
 
-        return Inertia::render('ReportExport/Index', [
+        return Inertia::render('Service/Ipsrs/ReportExport/Index', [
             'filters'         => $filters,
             'supportingUnits' => $supportingUnits,
             'rooms'           => $rooms,
@@ -131,7 +131,7 @@ class ReportController extends Controller
             }
         }
 
-        return Inertia::render('Report/Index', [
+        return Inertia::render('Service/Ipsrs/Report/Index', [
             'tickets'  => Inertia::defer(fn() => $query->paginate(10)),
             'filters'  => $filters,
             'personal' => true,
@@ -182,7 +182,7 @@ class ReportController extends Controller
                 ->each(fn ($notification) => $notification->markAsRead());
         }
 
-        return Inertia::render('Report/Show', [
+        return Inertia::render('Service/Ipsrs/Report/Show', [
             'ticket' => Inertia::defer(fn() => $ticket->load([
                 'reporter:id,name,nip,phone_number',
                 'validator:id,name,nip',

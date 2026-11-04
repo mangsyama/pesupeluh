@@ -3,23 +3,13 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
-import { User, Bell, Globe, Palette, LayoutDashboard, Play, Type, FileText, Database, Layers } from '@lucide/vue';
+import { User, Bell, Globe } from '@lucide/vue';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
 const permissions = computed(() => page.props.auth?.page_permissions || []);
 const hasAccess = (permKey) => permissions.value.includes(permKey);
 const isAdmin = computed(() => [1, 2].includes(Number(user.value?.role_id)));
-
-const designPages = [
-    { label: 'menu.ds_overview', routeName: 'design-system.index', icon: LayoutDashboard, description: 'Ringkasan panduan warna, tema dark mode, & tipografi.' },
-    { label: 'menu.ds_buttons', routeName: 'design-system.buttons-badges', icon: Play, description: 'Koleksi komponen tombol, animasi loading, & badge status.' },
-    { label: 'menu.ds_forms', routeName: 'design-system.forms', icon: Type, description: 'Koleksi komponen input form, select, checkbox, & upload file.' },
-    { label: 'menu.ds_modals', routeName: 'design-system.modals-alerts', icon: FileText, description: 'Koleksi modal popup transisi & notifikasi SweetAlert2.' },
-    { label: 'menu.ds_tables', routeName: 'design-system.tables', icon: Database, description: 'Desain layout tabel data, pagination, & state data kosong.' },
-    { label: 'menu.ds_cards', routeName: 'design-system.cards', icon: Layers, description: 'Koleksi layout kartu data statistik & visualisasi grid.' },
-    { label: 'Pengujian Notifikasi', routeName: 'design-system.notifications', icon: Bell, description: 'Simulasi notifikasi per role user ke Toast popup & Lonceng Dropdown Header.' },
-];
 
 const systemNotifyEnabled = ref(user.value?.system_notify_enabled !== false);
 const waNotifyEnabled = ref(user.value?.wa_notify_enabled !== false);
@@ -202,37 +192,6 @@ const handleLangChange = (selected) => {
                                 />
                             </button>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Section 4: Sistem Desain (Hanya jika Administrator) -->
-                <div v-if="isAdmin && hasAccess('design-system.index')" class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-md font-bold text-slate-950 dark:text-white flex items-center gap-2.5 mb-4">
-                        <div class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-white/10 flex items-center justify-center flex-shrink-0">
-                            <Palette class="h-4 w-4 text-emerald-600 dark:text-white" />
-                        </div>
-                        <span>{{ __('Sistem Desain & Komponen') }}</span>
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 max-w-xl leading-relaxed">
-                        Akses ke galeri komponen UI, tata letak desain, panduan warna, dan elemen antarmuka yang digunakan dalam aplikasi.
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        <Link 
-                            v-for="item in designPages" 
-                            :key="item.routeName"
-                            :href="route(item.routeName)"
-                            class="group flex flex-col justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition duration-150"
-                        >
-                            <div>
-                                <div class="flex items-center gap-2.5">
-                                    <div class="h-8 w-8 rounded-lg flex items-center justify-center bg-emerald-50 dark:bg-white/10 text-emerald-600 dark:text-white">
-                                        <component :is="item.icon" class="h-4 w-4" />
-                                    </div>
-                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-white transition">{{ __(item.label) }}</span>
-                                </div>
-                                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-2 leading-relaxed">{{ item.description }}</p>
-                            </div>
-                        </Link>
                     </div>
                 </div>
             </div>

@@ -21,10 +21,18 @@ class ServiceController extends Controller
             return redirect()->route('services.index')->with('error', 'Unit penunjang ini sedang dalam tahap pengembangan.');
         }
 
-        return Inertia::render('Service/Show', [
-            'unit' => $supportingUnit->load(['issueCategories']),
-            'rooms' => Room::orderBy('name', 'asc')->get()
-        ]);
+        if (in_array(strtolower($supportingUnit->slug), ['kesling', 'pan-sinar', 'pansinar'])) {
+            return redirect()->route('pansinar.index');
+        }
+
+        if (in_array(strtolower($supportingUnit->slug), ['ipsrs'])) {
+            return Inertia::render('Service/Ipsrs/Index', [
+                'unit' => $supportingUnit->load(['issueCategories']),
+                'rooms' => Room::orderBy('name', 'asc')->get()
+            ]);
+        }
+
+        return redirect()->route('services.index')->with('error', "Sistem operasional untuk unit {$supportingUnit->name} belum dibuat. Setiap unit penunjang memerlukan perancangan modul sistem khusus dari awal.");
     }
 
     public function storeTicket(Request $request)

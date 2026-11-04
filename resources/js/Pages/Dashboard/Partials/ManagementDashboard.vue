@@ -544,7 +544,7 @@ const dispoChartOptions = computed(() => {
                 <div class="relative z-10 flex-1 min-w-0 pr-20 sm:pr-24">
                     <h3 class="text-2xl font-extrabold mb-1">PESU PELUH</h3>
                     <p class="text-emerald-100 dark:text-slate-300 text-sm font-medium leading-relaxed break-words">
-                        Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan &mdash; Dashboard Manajemen Terpadu
+                        Pengendalian Terintegrasi Unit Penunjang Dalam Satu Sentuhan
                     </p>
                 </div>
 

@@ -18,6 +18,26 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// ==============================================================================
+// PUBLIC SANITATION & TOILET COMPLAINT PORTAL (PAN-SINAR KESLING)
+// Diakses oleh Pengunjung / Pasien / Masyarakat via scan QR Code tanpa login
+// ==============================================================================
+Route::prefix('services/kesling/aduan-sanitasi')->name('public.sanitasi.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\PublicSanitasiController::class, 'create'])->name('create');
+    Route::post('/', [\App\Http\Controllers\PublicSanitasiController::class, 'store'])->name('store');
+    Route::get('/sukses/{ticketNumber}', [\App\Http\Controllers\PublicSanitasiController::class, 'success'])->name('success');
+    Route::get('/lacak', [\App\Http\Controllers\PublicSanitasiController::class, 'track'])->name('track');
+});
+
+// Alias & redirect untuk backward compatibility scan QR
+Route::redirect('/aduan-sanitasi', '/services/kesling/aduan-sanitasi');
+Route::redirect('/aduan-sanitasi/lacak', '/services/kesling/aduan-sanitasi/lacak');
+Route::redirect('/aduan-sanitasi/track', '/services/kesling/aduan-sanitasi/lacak');
+Route::redirect('/aduan-sanitasi/sukses/{ticketNumber}', '/services/kesling/aduan-sanitasi/sukses/{ticketNumber}');
+Route::redirect('/services/kesling/aduan', '/services/kesling/aduan-sanitasi');
+Route::redirect('/services/kesling/lacak', '/services/kesling/aduan-sanitasi/lacak');
+Route::redirect('/public/report/toilet/{code}', '/services/kesling/aduan-sanitasi');
+
 Route::get('/dashboard', function (Request $request) {
     if ($request->hasSession()) {
         $request->session()->save();
@@ -403,26 +423,51 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/services', function () {
         return Inertia::render('Service/Index', [
             'initialSection' => null,
-            'units' => [],
+            'units' => \App\Models\SupportingUnit::all(),
         ]);
     })->name('services.index');
 
     Route::get('/services/medik', function () {
-        return Inertia::render('Service/Index', [
-            'initialSection' => 'medik',
-            'units' => Inertia::defer(fn() => \App\Models\SupportingUnit::where('type', 'MEDIK')->get()),
-        ]);
+        return redirect()->route('services.index');
     })->name('services.medik');
 
     Route::get('/services/non-medik', function () {
-        return Inertia::render('Service/Index', [
-            'initialSection' => 'non-medik',
-            'units' => Inertia::defer(fn() => \App\Models\SupportingUnit::where('type', 'NON_MEDIK')->get()),
-        ]);
+        return redirect()->route('services.index');
     })->name('services.non-medik');
 
-    Route::get('/services/units/{supportingUnit}', [\App\Http\Controllers\ServiceController::class, 'showUnit'])->name('services.units.show');
     Route::post('/services/tickets', [\App\Http\Controllers\ServiceController::class, 'storeTicket'])->name('services.tickets.store');
+
+    // Sub-Portal PAN-SINAR (Kesehatan Lingkungan)
+    Route::prefix('services/kesling')->name('pansinar.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PanSinarController::class, 'index'])->name('index');
+        Route::get('/sanitasi', [\App\Http\Controllers\PanSinarController::class, 'sanitasi'])->name('tickets.index');
+        Route::get('/ceklis', [\App\Http\Controllers\PanSinarController::class, 'ceklis'])->name('inspections.index');
+        // Pengelolaan Limbah dinonaktifkan sementara (file controller & vue tetap tersimpan)
+        Route::get('/limbah-b3', function () {
+            abort(404);
+        })->name('waste.index');
+        // Manajemen Toilet
+        Route::get('/manajemen-toilet', [\App\Http\Controllers\PanSinarController::class, 'qr'])->name('toilets.index');
+        Route::get('/qr-panic', function () {
+            return redirect()->route('pansinar.toilets.index');
+        })->name('qr.index');
+
+        // Actions
+        Route::post('/tickets', [\App\Http\Controllers\PanSinarController::class, 'storeTicket'])->name('tickets.store');
+        Route::post('/tickets/{id}/start', [\App\Http\Controllers\PanSinarController::class, 'startTicket'])->name('tickets.start');
+        Route::post('/tickets/{id}/resolve', [\App\Http\Controllers\PanSinarController::class, 'resolveTicket'])->name('tickets.resolve');
+        Route::post('/inspections', [\App\Http\Controllers\PanSinarController::class, 'storeInspection'])->name('inspections.store');
+        Route::post('/waste', [\App\Http\Controllers\PanSinarController::class, 'storeWaste'])->name('waste.store');
+        Route::post('/toilets', [\App\Http\Controllers\PanSinarController::class, 'storeToilet'])->name('toilets.store');
+        Route::post('/toilets/import', [\App\Http\Controllers\PanSinarController::class, 'importToilets'])->name('toilets.import');
+        Route::put('/toilets/{id}', [\App\Http\Controllers\PanSinarController::class, 'updateToilet'])->name('toilets.update');
+        Route::delete('/toilets/{id}', [\App\Http\Controllers\PanSinarController::class, 'destroyToilet'])->name('toilets.destroy');
+    });
+
+    // Backward compatibility redirects for legacy routes
+    Route::redirect('/penunjang-non-medik/kesling', '/services/kesling');
+    Route::redirect('/penunjang-non-medik/kesling/{any}', '/services/kesling/{any}')->where('any', '.*');
+    Route::redirect('/services/units/{supportingUnit}', '/services/{supportingUnit}');
 
     // Live Technician Position & Duty Status
     Route::get('/technicians/position', [\App\Http\Controllers\TechnicianPositionController::class, 'index'])->name('technicians.position');
@@ -471,6 +516,9 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/services/supporting-units', [ServiceManagementController::class, 'indexSupportingUnits'])->name('service-management.supporting-units');
     Route::get('/services/working-hours', [\App\Http\Controllers\TechnicianPositionController::class, 'indexWorkingHours'])->name('service-management.working-hours');
     
+    // Dynamic supporting unit operational portal (e.g. /services/ipsrs)
+    Route::get('/services/{supportingUnit}', [\App\Http\Controllers\ServiceController::class, 'showUnit'])->name('services.units.show');
+    
     Route::post('/service-management/rooms', [ServiceManagementController::class, 'storeRoom'])->name('service-management.rooms.store');
     Route::put('/service-management/rooms/{room}', [ServiceManagementController::class, 'updateRoom'])->name('service-management.rooms.update');
     Route::delete('/service-management/rooms/{room}', [ServiceManagementController::class, 'destroyRoom'])->name('service-management.rooms.destroy');
@@ -515,34 +563,6 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
     Route::get('/settings', function () {
         return Inertia::render('UserSettings/Index');
     })->name('settings.index');
-
-    // Design System / Component Testing
-    Route::get('/design-system', function () {
-        return Inertia::render('DesignSystem/Index');
-    })->name('design-system.index');
-
-    Route::get('/design-system/buttons-badges', function () {
-        return Inertia::render('DesignSystem/ButtonsBadges');
-    })->name('design-system.buttons-badges');
-
-    Route::get('/design-system/forms', function () {
-        return Inertia::render('DesignSystem/Forms');
-    })->name('design-system.forms');
-
-    Route::get('/design-system/modals-alerts', function () {
-        return Inertia::render('DesignSystem/ModalsAlerts');
-    })->name('design-system.modals-alerts');
-
-    Route::get('/design-system/tables', function () {
-        return Inertia::render('DesignSystem/Tables');
-    })->name('design-system.tables');
-
-    Route::get('/design-system/cards', function () {
-        return Inertia::render('DesignSystem/Cards');
-    })->name('design-system.cards');
-
-    Route::get('/design-system/notifications', [\App\Http\Controllers\NotificationController::class, 'designSystemIndex'])->name('design-system.notifications');
-    Route::post('/design-system/notifications/trigger', [\App\Http\Controllers\NotificationController::class, 'triggerTestNotification'])->name('design-system.notifications.trigger');
 });
 
 Route::middleware('auth')->group(function () {

@@ -5,7 +5,7 @@ import { computed } from 'vue';
 import { Wrench } from '@lucide/vue';
 
 
-import ReporterIndex from '@/Pages/Report/Partials/ReporterIndex.vue';
+import ReporterIndex from '@/Pages/Service/Ipsrs/Report/Partials/ReporterIndex.vue';
 import UnitHeadIndex from './Partials/UnitHeadIndex.vue';
 import TechnicianIndex from './Partials/TechnicianIndex.vue';
 

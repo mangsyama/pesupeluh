@@ -104,7 +104,7 @@ class ReportManagementController extends Controller
             }
         }
 
-        return Inertia::render('ReportManagement/Index', [
+        return Inertia::render('Service/Ipsrs/ReportManagement/Index', [
             'tickets'  => Inertia::defer(fn() => $query->paginate(10)),
             'filters'  => $filters,
         ]);
@@ -161,7 +161,7 @@ class ReportManagementController extends Controller
                 ->each(fn ($notification) => $notification->markAsRead());
         }
 
-        return Inertia::render('ReportManagement/Show', [
+        return Inertia::render('Service/Ipsrs/ReportManagement/Show', [
             'ticket' => Inertia::defer(fn() => $ticket->load([
                 'reporter:id,name,nip,phone_number',
                 'validator:id,name,nip',

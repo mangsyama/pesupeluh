@@ -99,7 +99,7 @@ class ReportAuditController extends Controller
             'total_deleted' => ServiceTicket::onlyTrashed()->count(),
         ];
 
-        return Inertia::render('ReportAudit/Index', [
+        return Inertia::render('Service/Ipsrs/ReportAudit/Index', [
             'tickets' => Inertia::defer(fn() => $query->paginate(15)),
             'filters' => $filters,
             'stats' => $stats,
@@ -139,7 +139,7 @@ class ReportAuditController extends Controller
             ])
             ->firstOrFail();
 
-        return Inertia::render('ReportAudit/Show', [
+        return Inertia::render('Service/Ipsrs/ReportAudit/Show', [
             'ticket' => $ticket,
             'rooms' => Room::orderBy('name', 'asc')->get(['id', 'name', 'building_name', 'location_floor']),
             'categories' => IssueCategory::with('supportingUnit:id,name')->orderBy('name', 'asc')->get(['id', 'name', 'supporting_unit_id']),

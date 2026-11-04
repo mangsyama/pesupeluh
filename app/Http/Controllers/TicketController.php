@@ -106,7 +106,7 @@ class TicketController extends Controller
         }
 
         if ($request->boolean('personal')) {
-            return Inertia::render('Report/Show', [
+            return Inertia::render('Service/Ipsrs/Report/Show', [
                 'ticket' => Inertia::defer(fn() => $ticket->load([
                     'reporter:id,name,nip',
                     'validator:id,name,nip',
@@ -120,7 +120,7 @@ class TicketController extends Controller
             ]);
         }
 
-        return Inertia::render('ReportManagement/Show', [
+        return Inertia::render('Service/Ipsrs/ReportManagement/Show', [
             'ticket' => Inertia::defer(fn() => $ticket->load([
                 'reporter:id,name,nip',
                 'validator:id,name,nip',

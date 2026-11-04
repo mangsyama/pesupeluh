@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
                         'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports-audit.index', 'reports.index',
                         'technicians.position', 'service-management.working-hours',
                         'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
-                        'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index', 'design-system.index',
+                        'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index',
                     ])
                 ],
                 [
@@ -100,28 +100,28 @@ class DatabaseSeeder extends Seeder
                     'type' => 'MEDIK',
                     'name' => 'FARMASI',
                     'slug' => 'farmasi',
-                    'description' => 'Sistem pelaporan stok obat, resep, dan kebutuhan apotek.',
+                    'description' => 'Pengelolaan ketersediaan stok obat, resep farmasi, dan perbekalan apotek RS.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
                     'type' => 'MEDIK',
                     'name' => 'RADIOLOGI',
                     'slug' => 'radiologi',
-                    'description' => 'Pelaporan pemeriksaan radiologi, hasil Rontgen, CT Scan, dan USG.',
+                    'description' => 'Pelaporan layanan radiodiagnostik, hasil Rontgen, CT Scan, serta USG rumah sakit.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
                     'type' => 'MEDIK',
                     'name' => 'LABORATORIUM',
                     'slug' => 'laboratorium',
-                    'description' => 'Pencatatan pemeriksaan darah, urine, patologi, dan laboratorium klinis.',
+                    'description' => 'Pencatatan pemeriksaan darah, sampel patologi, urine, dan laboratorium klinis.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
                     'type' => 'MEDIK',
                     'name' => 'CSSD',
                     'slug' => 'cssd',
-                    'description' => 'Sistem pemantauan sterilisasi alkes medis dan instrumen operasi.',
+                    'description' => 'Sistem pemantauan sterilisasi instrumen operasi dan desinfeksi alat kesehatan.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 // Non-Medik Units
@@ -129,7 +129,7 @@ class DatabaseSeeder extends Seeder
                     'type' => 'NON_MEDIK',
                     'name' => 'GIZI',
                     'slug' => 'gizi',
-                    'description' => 'Pelaporan menu makanan pasien, distribusi gizi, dan operasional dapur RS.',
+                    'description' => 'Pengelolaan menu makanan pasien, distribusi gizi, dan operasional dapur RS.',
                     'status' => 'IN_DEVELOPMENT'
                 ],
                 [
@@ -143,14 +143,14 @@ class DatabaseSeeder extends Seeder
                     'type' => 'NON_MEDIK',
                     'name' => 'KESLING',
                     'slug' => 'kesling',
-                    'description' => 'Sistem pelaporan sanitasi lingkungan, pengelolaan limbah B3, dan kualitas air.',
-                    'status' => 'IN_DEVELOPMENT'
+                    'description' => 'Monitoring sanitasi lingkungan, inspeksi toilet, serta pemilahan limbah medis.',
+                    'status' => 'ACTIVE'
                 ],
                 [
                     'type' => 'NON_MEDIK',
                     'name' => 'IPSRS',
                     'slug' => 'ipsrs',
-                    'description' => 'Sistem informasi pemeliharaan sarana prasarana, alkes, listrik, air, dan fasilitas RS.',
+                    'description' => 'Pemeliharaan sarana prasarana, kalibrasi alkes, listrik, serta utilitas RS.',
                     'status' => 'ACTIVE'
                 ],
             ]);

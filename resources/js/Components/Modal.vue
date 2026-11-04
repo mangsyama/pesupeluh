@@ -14,13 +14,26 @@ const props = defineProps({
         type: Boolean,
         default: true,
     },
+    closeOnClickOutside: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emit = defineEmits(['close']);
 const dialog = ref();
 const showSlot = ref(props.show);
 
-const handlePopState = () => {
+const handleBackdropClick = () => {
+    if (props.closeOnClickOutside && props.closeable) {
+        close();
+    }
+};
+
+const handlePopState = (e) => {
+    if (e?.__preventModalClose) {
+        return;
+    }
     if (props.show && props.closeable) {
         close();
     }
@@ -74,6 +87,9 @@ const close = () => {
 
 const closeOnEscape = (e) => {
     if (e.key === 'Escape') {
+        if (e?.__preventModalClose) {
+            return;
+        }
         e.preventDefault();
 
         if (props.show) {
@@ -104,8 +120,9 @@ const maxWidthClass = computed(() => {
 
 <template>
     <dialog
-        class="z-50 m-0 min-h-full min-w-full overflow-y-auto bg-transparent backdrop:bg-transparent"
+        class="z-50 m-0 min-h-full min-w-full overflow-y-auto bg-transparent backdrop:bg-transparent outline-none focus:outline-none ring-0 focus:ring-0 border-0"
         ref="dialog"
+        @cancel.prevent="close"
     >
         <div
             class="fixed inset-0 z-50 overflow-y-auto px-0 sm:px-4 py-0 sm:py-6 flex min-h-full items-stretch sm:items-center justify-center text-center"
@@ -122,7 +139,7 @@ const maxWidthClass = computed(() => {
                 <div
                     v-show="show"
                     class="fixed inset-0 transform transition-all"
-                    @click="close"
+                    @click="handleBackdropClick"
                 >
                     <div
                         class="absolute inset-0 bg-black/40 transition-opacity"
@@ -140,7 +157,7 @@ const maxWidthClass = computed(() => {
             >
                 <div
                     v-show="show"
-                    class="my-0 sm:my-auto transform overflow-hidden rounded-none sm:rounded-2xl bg-white text-left shadow-2xl transition-all w-full min-h-screen sm:min-h-0 dark:bg-slate-900 border-0 flex flex-col justify-between"
+                    class="my-0 sm:my-auto transform overflow-hidden rounded-none sm:rounded-2xl bg-white text-left shadow-2xl transition-all w-full min-h-screen sm:min-h-0 dark:bg-slate-900 border-0 flex flex-col justify-between outline-none focus:outline-none ring-0 focus:ring-0"
                     :class="maxWidthClass"
                 >
                     <slot v-if="showSlot" />

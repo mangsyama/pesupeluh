@@ -10,6 +10,7 @@ import {
     Wrench, 
     Stethoscope, 
     ShieldCheck, 
+    Leaf,
     Sparkles, 
     Check,
     Globe,
@@ -42,7 +43,7 @@ const currentOrigin = computed(() => {
 });
 
 // Form states
-const customPath = ref('/services/units/ipsrs');
+const customPath = ref('/services/ipsrs');
 const qrColor = ref('#059669'); // Emerald 600 default
 const includeLogo = ref(true);
 const qrCanvasRef = ref(null);
@@ -54,9 +55,16 @@ const presets = computed(() => [
     {
         id: 'ipsrs',
         title: 'IPSRS (Fasilitas & Sarpras)',
-        path: '/services/units/ipsrs',
+        path: '/services/ipsrs',
         icon: Wrench,
         badge: 'IPSRS'
+    },
+    {
+        id: 'kesling',
+        title: 'Kesling (PAN-SINAR)',
+        path: '/services/kesling',
+        icon: Leaf,
+        badge: 'KESLING'
     },
     {
         id: 'medik',
@@ -73,11 +81,11 @@ const presets = computed(() => [
         badge: 'NON-MEDIK'
     },
     ...props.units
-        .filter(u => !['ipsrs'].includes(u.slug))
+        .filter(u => !['ipsrs', 'kesling'].includes(u.slug))
         .map(u => ({
             id: u.slug,
             title: u.name,
-            path: `/services/units/${u.slug}`,
+            path: `/services/${u.slug}`,
             icon: Layers,
             badge: u.type
         }))
@@ -302,7 +310,7 @@ onMounted(() => {
                                 <input 
                                     v-model="customPath"
                                     type="text" 
-                                    placeholder="/services/units/ipsrs"
+                                    placeholder="/services/ipsrs"
                                     class="flex-1 h-11 px-3.5 bg-transparent text-slate-800 dark:text-slate-200 text-xs font-bold border-none outline-none focus:outline-none focus:ring-0"
                                 />
                             </div>

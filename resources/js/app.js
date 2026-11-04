@@ -51,7 +51,29 @@ if (typeof window !== 'undefined') {
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => {
+        if (!title) return appName;
+
+        // If title explicitly contains PAN-SINAR, keep it clean without adding Pesu Peluh
+        if (title.includes('PAN-SINAR')) {
+            return title.replace(/\s*-\s*Pesu\s*Peluh/gi, '').trim();
+        }
+
+        // Public Aduan Sanitasi pages: clean without Pesu Peluh or PAN-SINAR
+        if (typeof window !== 'undefined' && window.location.pathname.includes('/aduan-sanitasi')) {
+            return title.replace(/\s*-\s*(PAN[-\s]?SINAR|Pesu\s*Peluh)/gi, '').trim();
+        }
+
+        // Kesling services pages: suffix with PAN-SINAR (no Pesu Peluh)
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/services/kesling')) {
+            const clean = title.replace(/\s*-\s*(PAN[-\s]?SINAR|Pesu\s*Peluh)/gi, '').trim();
+            return `${clean} - PAN-SINAR`;
+        }
+
+        // Default pages: suffix with appName ("- Pesu Peluh")
+        const cleanTitle = title.replace(/\s*-\s*Pesu\s*Peluh/gi, '').trim();
+        return `${cleanTitle} - ${appName}`;
+    },
     resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
         const vueApp = createApp({ render: () => h(App, props) })

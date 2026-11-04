@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
-import ReporterShow from '@/Pages/Report/Partials/ReporterShow.vue';
+import ReporterShow from '@/Pages/Service/Ipsrs/Report/Partials/ReporterShow.vue';
 import UnitHeadShow from './Partials/UnitHeadShow.vue';
 import TechnicianShow from './Partials/TechnicianShow.vue';
 

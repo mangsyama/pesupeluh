@@ -23,6 +23,22 @@ class CheckPageAccess
         'services.units.show' => 'services.index',
         'services.tickets.store' => 'services.index',
 
+        // PAN-SINAR (Kesling Sub-System)
+        'pansinar.index' => 'services.index',
+        'pansinar.tickets.index' => 'services.index',
+        'pansinar.inspections.index' => 'services.index',
+        'pansinar.waste.index' => 'services.index',
+        'pansinar.toilets.index' => 'services.index',
+        'pansinar.qr.index' => 'services.index',
+        'pansinar.tickets.store' => 'services.index',
+        'pansinar.tickets.resolve' => 'services.index',
+        'pansinar.inspections.store' => 'services.index',
+        'pansinar.waste.store' => 'services.index',
+        'pansinar.toilets.store' => 'services.index',
+        'pansinar.toilets.update' => 'services.index',
+        'pansinar.toilets.destroy' => 'services.index',
+        'pansinar.toilets.import' => 'services.index',
+
         // Ticket Actions & Workflows
         'tickets.show' => 'reports.history',
         'tickets.assign' => 'reports-management.index',
@@ -100,14 +116,6 @@ class CheckPageAccess
         'admin.wa-gateway.logout' => 'admin.wa-gateway.index',
         'admin.wa-gateway.test' => 'admin.wa-gateway.index',
         'admin.qr-code.index' => 'admin.qr-code.index',
-
-        // Design System
-        'design-system.index' => 'design-system.index',
-        'design-system.buttons-badges' => 'design-system.index',
-        'design-system.forms' => 'design-system.index',
-        'design-system.modals-alerts' => 'design-system.index',
-        'design-system.tables' => 'design-system.index',
-        'design-system.cards' => 'design-system.index',
     ];
 
     /**

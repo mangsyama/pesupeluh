@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ request()->is('*aduan-sanitasi*') ? 'Aduan Masyarakat' : (request()->is('services/kesling*') ? 'PAN-SINAR' : config('app.name', 'Laravel')) }}</title>
 
         <!-- Favicon -->
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4">
