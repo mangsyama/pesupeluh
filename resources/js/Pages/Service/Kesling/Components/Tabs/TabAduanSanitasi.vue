@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import { 
     Search, 
     AlertCircle, 
@@ -23,9 +24,12 @@ import {
     Eye,
     ShieldCheck,
     Info,
-    User
+    User,
+    Trash2
 } from '@lucide/vue';
 import Modal from '@/Components/Modal.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
+import DangerButton from '@/Components/DangerButton.vue';
 
 const props = defineProps({
     tickets: {
@@ -85,6 +89,39 @@ const openPhotoPreview = (url, title) => {
 const closePhotoPreview = () => {
     previewPhotoUrl.value = null;
     previewPhotoTitle.value = '';
+};
+
+// Auth / Role Check: Hanya Administrator yang berhak menghapus aduan
+const page = usePage();
+const isAdmin = computed(() => {
+    const user = page.props.auth?.user;
+    return Number(user?.role_id) === 1 || user?.role?.name?.toUpperCase() === 'ADMINISTRATOR';
+});
+
+// Modal Delete State & Action (Khusus Administrator)
+const showDeleteModal = ref(false);
+const ticketToDelete = ref(null);
+const isDeleting = ref(false);
+
+const confirmDeleteTicket = (ticket) => {
+    ticketToDelete.value = ticket;
+    showDeleteModal.value = true;
+};
+
+const deleteTicketAction = () => {
+    if (!ticketToDelete.value) return;
+    isDeleting.value = true;
+    router.delete(route('pansinar.tickets.destroy', ticketToDelete.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showDeleteModal.value = false;
+            ticketToDelete.value = null;
+            isDeleting.value = false;
+        },
+        onError: () => {
+            isDeleting.value = false;
+        }
+    });
 };
 
 // Summary Stats
@@ -468,7 +505,7 @@ const getActionButtonClass = (status, urgency) => {
 
                                 <!-- Aksi (Tombol Verifikasi/Selesaikan/Detail Sesuai Status) -->
                                 <td class="px-5 py-4 whitespace-nowrap text-center">
-                                    <div class="flex items-center justify-center">
+                                    <div class="flex items-center justify-center gap-1.5">
                                         <button
                                             @click="emit('openResolveModal', ticket)"
                                             type="button"
@@ -479,6 +516,17 @@ const getActionButtonClass = (status, urgency) => {
                                         >
                                             <span>{{ getActionButtonText(ticket.status, ticket.urgency) }}</span>
                                             <ArrowUpRight class="w-3 h-3 shrink-0 stroke-[2.5]" />
+                                        </button>
+
+                                        <!-- Hapus Data (Khusus Administrator - Desain Seragam Manajemen Toilet) -->
+                                        <button
+                                            v-if="isAdmin"
+                                            type="button"
+                                            @click="confirmDeleteTicket(ticket)"
+                                            class="h-8 w-8 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-400 flex items-center justify-center transition cursor-pointer shrink-0"
+                                            title="Hapus Aduan Sanitasi"
+                                        >
+                                            <Trash2 class="h-3.5 w-3.5" />
                                         </button>
                                     </div>
                                 </td>
@@ -618,18 +666,28 @@ const getActionButtonClass = (status, urgency) => {
                                 </div>
                             </div>
 
-                            <!-- Bottom: Tombol Verifikasi/Selesaikan/Detail Sesuai Status -->
-                            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                            <!-- Bottom: Tombol Verifikasi/Selesaikan/Detail Sesuai Status & Tombol Hapus Khusus Admin -->
+                            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
                                 <button
                                     @click="emit('openResolveModal', ticket)"
                                     type="button"
                                     :class="[
-                                        'w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border',
+                                        'flex-1 h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border',
                                         getActionButtonClass(ticket.status, ticket.urgency)
                                     ]"
                                 >
                                     <span>{{ getActionButtonText(ticket.status, ticket.urgency) }}</span>
                                     <ArrowUpRight class="h-4 w-4" />
+                                </button>
+
+                                <button
+                                    v-if="isAdmin"
+                                    type="button"
+                                    @click="confirmDeleteTicket(ticket)"
+                                    class="h-10 w-10 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-400 flex items-center justify-center transition cursor-pointer shrink-0"
+                                    title="Hapus Aduan Sanitasi"
+                                >
+                                    <Trash2 class="h-4 w-4" />
                                 </button>
                             </div>
                         </div>
@@ -719,6 +777,54 @@ const getActionButtonClass = (status, urgency) => {
                     >
                         Tutup
                     </button>
+                </div>
+            </div>
+        </Modal>
+        <!-- Modal Konfirmasi Hapus Aduan (Khusus Administrator) -->
+        <Modal :show="showDeleteModal && !!ticketToDelete" @close="showDeleteModal = false" max-width="md">
+            <div v-if="ticketToDelete" class="p-6 bg-white dark:bg-slate-900 rounded-2xl">
+                <div class="flex items-center gap-3.5 mb-4">
+                    <div class="h-12 w-12 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                        <Trash2 class="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-900 dark:text-white">
+                            Hapus Aduan Sanitasi?
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Data aduan yang dihapus tidak dapat dipulihkan kembali.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs mb-5 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-slate-900 dark:text-white">{{ ticketToDelete.ticket_number }}</span>
+                        <span :class="[
+                            'px-2 py-0.5 rounded-lg text-[10px] font-extrabold border',
+                            ticketToDelete.urgency === 'DARURAT' 
+                                ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800' 
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                        ]">
+                            {{ ticketToDelete.urgency === 'DARURAT' ? 'Darurat' : 'Normal' }}
+                        </span>
+                    </div>
+                    <div class="text-slate-600 dark:text-slate-400 font-medium">
+                        {{ ticketToDelete.location_point }} ({{ ticketToDelete.location_building }} • {{ ticketToDelete.location_floor }})
+                    </div>
+                    <div class="text-slate-500 dark:text-slate-400 italic text-[11px] line-clamp-2 mt-1">
+                        "{{ ticketToDelete.problem_description }}"
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2.5">
+                    <SecondaryButton @click="showDeleteModal = false" :disabled="isDeleting">
+                        Batal
+                    </SecondaryButton>
+                    <DangerButton @click="deleteTicketAction" :disabled="isDeleting" class="font-bold flex items-center gap-1.5">
+                        <Trash2 class="w-3.5 h-3.5" />
+                        <span>{{ isDeleting ? 'Menghapus...' : 'Ya, Hapus Aduan' }}</span>
+                    </DangerButton>
                 </div>
             </div>
         </Modal>

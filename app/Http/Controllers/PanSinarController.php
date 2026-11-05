@@ -305,6 +305,37 @@ class PanSinarController extends Controller
     }
 
     /**
+     * Delete a sanitation ticket (Administrator only).
+     */
+    public function destroyTicket(Request $request, $id)
+    {
+        $user = auth()->user();
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'Akses ditolak. Hanya Administrator yang memiliki izin untuk menghapus aduan sanitasi.');
+        }
+
+        $ticket = SanitationTicket::where('id', $id)
+            ->orWhere('ticket_number', $id)
+            ->firstOrFail();
+
+        $ticketNumber = $ticket->ticket_number;
+
+        // Delete local evidence files if present
+        foreach ([$ticket->evidence_before, $ticket->evidence_after] as $photoUrl) {
+            if ($photoUrl && str_starts_with($photoUrl, '/storage/')) {
+                $filePath = str_replace('/storage/', '', $photoUrl);
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($filePath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($filePath);
+                }
+            }
+        }
+
+        $ticket->delete();
+
+        return redirect()->back()->with('success', "Aduan sanitasi {$ticketNumber} berhasil dihapus.");
+    }
+
+    /**
      * Store routine toilet sanitation checklist.
      */
     public function storeInspection(Request $request)

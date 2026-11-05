@@ -456,6 +456,7 @@ Route::middleware(['auth', 'verified', 'page.access'])->group(function () {
         Route::post('/tickets', [\App\Http\Controllers\PanSinarController::class, 'storeTicket'])->name('tickets.store');
         Route::post('/tickets/{id}/start', [\App\Http\Controllers\PanSinarController::class, 'startTicket'])->name('tickets.start');
         Route::post('/tickets/{id}/resolve', [\App\Http\Controllers\PanSinarController::class, 'resolveTicket'])->name('tickets.resolve');
+        Route::delete('/tickets/{id}', [\App\Http\Controllers\PanSinarController::class, 'destroyTicket'])->name('tickets.destroy');
         Route::post('/inspections', [\App\Http\Controllers\PanSinarController::class, 'storeInspection'])->name('inspections.store');
         Route::post('/waste', [\App\Http\Controllers\PanSinarController::class, 'storeWaste'])->name('waste.store');
         Route::post('/toilets', [\App\Http\Controllers\PanSinarController::class, 'storeToilet'])->name('toilets.store');

@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { useForm, router } from '@inertiajs/vue3';
+import { useForm, router, usePage } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
+import DangerButton from '@/Components/DangerButton.vue';
 import { 
     CheckCircle2, 
     Image as ImageIcon,
@@ -62,6 +63,33 @@ const isInProgress = computed(() => {
 const isPending = computed(() => {
     return !isResolved.value && !isInProgress.value;
 });
+
+// Role Check: Hanya Administrator yang berhak menghapus aduan
+const page = usePage();
+const isAdmin = computed(() => {
+    const user = page.props.auth?.user;
+    return Number(user?.role_id) === 1 || user?.role?.name?.toUpperCase() === 'ADMINISTRATOR';
+});
+
+// Modal Delete State & Action (Khusus Administrator)
+const showDeleteConfirm = ref(false);
+const isDeletingTicket = ref(false);
+
+const deleteTicketFromModal = () => {
+    if (!props.ticket) return;
+    isDeletingTicket.value = true;
+    router.delete(route('pansinar.tickets.destroy', props.ticket.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showDeleteConfirm.value = false;
+            isDeletingTicket.value = false;
+            emit('close');
+        },
+        onError: () => {
+            isDeletingTicket.value = false;
+        }
+    });
+};
 
 // Urgency badge helper
 const getUrgencyBadge = (urgency) => {
@@ -858,7 +886,18 @@ const submitResolution = () => {
             <div class="sticky bottom-0 z-20 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-lg sm:shadow-none">
                 
                 <!-- KONDISI A: TIKET SUDAH SELESAI -->
-                <div v-if="isResolved" class="flex justify-end">
+                <div v-if="isResolved" class="flex items-center justify-between w-full">
+                    <button
+                        v-if="isAdmin"
+                        type="button"
+                        @click="showDeleteConfirm = true"
+                        class="h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                        <Trash2 class="w-4 h-4" />
+                        <span>Hapus Aduan</span>
+                    </button>
+                    <div v-else></div>
+
                     <button
                         type="button"
                         @click="emit('close')"
@@ -870,7 +909,7 @@ const submitResolution = () => {
 
                 <!-- KONDISI B: TIKET BERSTATUS MENUNGGU (TOMBOL TINDAK LANJUTI & BATAL) -->
                 <div v-else-if="isPending" class="w-full">
-                    <!-- Mobile View: Tumpuk (Tindak Lanjuti di atas, Batal di bawah) -->
+                    <!-- Mobile View: Tumpuk (Tindak Lanjuti di atas, Hapus/Batal di bawah) -->
                     <div class="flex flex-col gap-2.5 w-full sm:hidden">
                         <button
                             type="button"
@@ -886,44 +925,68 @@ const submitResolution = () => {
                             <Wrench v-else class="h-4 w-4" />
                             <span>{{ isStartingProgress ? 'Memproses...' : (isEmergency ? 'Respon Panggilan Darurat' : 'Tindak Lanjuti') }}</span>
                         </button>
-                        <button
-                            type="button"
-                            @click="emit('close')"
-                            class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
-                        >
-                            <span>Batal</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button
+                                v-if="isAdmin"
+                                type="button"
+                                @click="showDeleteConfirm = true"
+                                class="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            >
+                                <Trash2 class="w-4 h-4" />
+                                <span>Hapus</span>
+                            </button>
+                            <button
+                                type="button"
+                                @click="emit('close')"
+                                class="flex-1 h-12 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
+                            >
+                                <span>Batal</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Desktop View: Sejajar (Batal di kiri, Tindak Lanjuti di kanan) -->
-                    <div class="hidden sm:flex items-center justify-end gap-3 w-full">
+                    <!-- Desktop View: Sejajar (Hapus di kiri, Batal & Tindak Lanjuti di kanan) -->
+                    <div class="hidden sm:flex items-center justify-between w-full">
                         <button
+                            v-if="isAdmin"
                             type="button"
-                            @click="emit('close')"
-                            class="h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition cursor-pointer"
+                            @click="showDeleteConfirm = true"
+                            class="h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                         >
-                            Batal
+                            <Trash2 class="w-4 h-4" />
+                            <span>Hapus Aduan</span>
                         </button>
-                        <button
-                            type="button"
-                            @click="startProgress"
-                            :disabled="isStartingProgress"
-                            :class="[
-                                'h-11 px-6 rounded-xl active:scale-95 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-60',
-                                isEmergency ? 'bg-rose-600 hover:bg-rose-500' : 'bg-amber-600 hover:bg-amber-500'
-                            ]"
-                        >
-                            <span v-if="isStartingProgress" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                            <AlertCircle v-else-if="isEmergency" class="w-4 h-4" />
-                            <Wrench v-else class="w-4 h-4" />
-                            <span>{{ isStartingProgress ? 'Memproses...' : (isEmergency ? 'Respon Panggilan Darurat' : 'Tindak Lanjuti') }}</span>
-                        </button>
+                        <div v-else></div>
+
+                        <div class="flex items-center gap-3">
+                            <button
+                                type="button"
+                                @click="emit('close')"
+                                class="h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition cursor-pointer"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                @click="startProgress"
+                                :disabled="isStartingProgress"
+                                :class="[
+                                    'h-11 px-6 rounded-xl active:scale-95 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-60',
+                                    isEmergency ? 'bg-rose-600 hover:bg-rose-500' : 'bg-amber-600 hover:bg-amber-500'
+                                ]"
+                            >
+                                <span v-if="isStartingProgress" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                <AlertCircle v-else-if="isEmergency" class="w-4 h-4" />
+                                <Wrench v-else class="w-4 h-4" />
+                                <span>{{ isStartingProgress ? 'Memproses...' : (isEmergency ? 'Respon Panggilan Darurat' : 'Tindak Lanjuti') }}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- KONDISI C: TIKET SEDANG DIKERJAKAN (TOMBOL VERIFIKASI / SELESAIKAN) -->
                 <div v-else-if="isInProgress" class="w-full">
-                    <!-- Mobile View: Tumpuk (Tandai Selesai di atas, Batal di bawah) -->
+                    <!-- Mobile View: Tumpuk (Tandai Selesai di atas, Hapus/Batal di bawah) -->
                     <div class="flex flex-col gap-2.5 w-full sm:hidden">
                         <button
                             type="button"
@@ -940,41 +1003,67 @@ const submitResolution = () => {
                             <CheckCircle2 v-else class="h-4 w-4" />
                             <span>{{ resolveForm.processing ? 'Menyimpan...' : (isEmergency ? 'Selesaikan Penanganan Darurat' : 'Tandai Tiket Selesai') }}</span>
                         </button>
-                        <button
-                            type="button"
-                            @click="emit('close')"
-                            :disabled="resolveForm.processing"
-                            class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
-                        >
-                            <span>Batal</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button
+                                v-if="isAdmin"
+                                type="button"
+                                @click="showDeleteConfirm = true"
+                                :disabled="resolveForm.processing"
+                                class="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            >
+                                <Trash2 class="w-4 h-4" />
+                                <span>Hapus</span>
+                            </button>
+                            <button
+                                type="button"
+                                @click="emit('close')"
+                                :disabled="resolveForm.processing"
+                                class="flex-1 h-12 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
+                            >
+                                <span>Batal</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- Desktop View: Sejajar -->
-                    <div class="hidden sm:flex items-center justify-end gap-3 w-full">
+                    <!-- Desktop View: Sejajar (Hapus di kiri, Batal & Tandai Selesai di kanan) -->
+                    <div class="hidden sm:flex items-center justify-between w-full">
                         <button
+                            v-if="isAdmin"
                             type="button"
-                            @click="emit('close')"
+                            @click="showDeleteConfirm = true"
                             :disabled="resolveForm.processing"
-                            class="h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition cursor-pointer"
+                            class="h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                         >
-                            Batal
+                            <Trash2 class="w-4 h-4" />
+                            <span>Hapus Aduan</span>
                         </button>
-                        <button
-                            type="button"
-                            @click="submitResolution"
-                            :disabled="!canResolve || resolveForm.processing"
-                            :class="[
-                                'h-11 px-6 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm',
-                                canResolve && !resolveForm.processing 
-                                    ? (isEmergency ? 'bg-rose-600 hover:bg-rose-500 text-white cursor-pointer active:scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer active:scale-95')
-                                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-80'
-                            ]"
-                        >
-                            <span v-if="resolveForm.processing" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                            <CheckCircle2 v-else class="w-4 h-4" />
-                            <span>{{ resolveForm.processing ? 'Menyimpan...' : (isEmergency ? 'Selesaikan Penanganan Darurat' : 'Tandai Tiket Selesai') }}</span>
-                        </button>
+                        <div v-else></div>
+
+                        <div class="flex items-center gap-3">
+                            <button
+                                type="button"
+                                @click="emit('close')"
+                                :disabled="resolveForm.processing"
+                                class="h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition cursor-pointer"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                @click="submitResolution"
+                                :disabled="!canResolve || resolveForm.processing"
+                                :class="[
+                                    'h-11 px-6 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm',
+                                    canResolve && !resolveForm.processing 
+                                        ? (isEmergency ? 'bg-rose-600 hover:bg-rose-500 text-white cursor-pointer active:scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer active:scale-95')
+                                        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-80'
+                                ]"
+                            >
+                                <span v-if="resolveForm.processing" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                <CheckCircle2 v-else class="w-4 h-4" />
+                                <span>{{ resolveForm.processing ? 'Menyimpan...' : (isEmergency ? 'Selesaikan Penanganan Darurat' : 'Tandai Tiket Selesai') }}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1020,4 +1109,52 @@ const submitResolution = () => {
             </div>
         </div>
     </dialog>
+    <!-- Modal Konfirmasi Hapus Aduan Dari Modal (Khusus Administrator) -->
+    <Modal :show="showDeleteConfirm && !!ticket" @close="showDeleteConfirm = false" max-width="md">
+        <div v-if="ticket" class="p-6 bg-white dark:bg-slate-900 rounded-2xl">
+            <div class="flex items-center gap-3.5 mb-4">
+                <div class="h-12 w-12 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <Trash2 class="w-6 h-6" />
+                </div>
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white">
+                        Hapus Aduan Sanitasi?
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Data aduan yang dihapus tidak dapat dipulihkan kembali.
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs mb-5 space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-slate-900 dark:text-white">{{ ticket.ticket_number }}</span>
+                    <span :class="[
+                        'px-2 py-0.5 rounded-lg text-[10px] font-extrabold border',
+                        ticket.urgency === 'DARURAT' 
+                            ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800' 
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                    ]">
+                        {{ ticket.urgency === 'DARURAT' ? 'Darurat' : 'Normal' }}
+                    </span>
+                </div>
+                <div class="text-slate-600 dark:text-slate-400 font-medium">
+                    {{ ticket.location_point }} ({{ ticket.location_building }} • {{ ticket.location_floor }})
+                </div>
+                <div class="text-slate-500 dark:text-slate-400 italic text-[11px] line-clamp-2 mt-1">
+                    "{{ ticket.problem_description }}"
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2.5">
+                <SecondaryButton @click="showDeleteConfirm = false" :disabled="isDeletingTicket">
+                    Batal
+                </SecondaryButton>
+                <DangerButton @click="deleteTicketFromModal" :disabled="isDeletingTicket" class="font-bold flex items-center gap-1.5">
+                    <Trash2 class="w-3.5 h-3.5" />
+                    <span>{{ isDeletingTicket ? 'Menghapus...' : 'Ya, Hapus Aduan' }}</span>
+                </DangerButton>
+            </div>
+        </div>
+    </Modal>
 </template>
