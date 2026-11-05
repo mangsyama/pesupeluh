@@ -259,9 +259,15 @@ class PanSinarController extends Controller
      */
     public function startTicket(Request $request, $id)
     {
-        $ticket = SanitationTicket::where('id', $id)
-            ->orWhere('ticket_number', $id)
-            ->firstOrFail();
+        $query = SanitationTicket::query();
+        if (is_numeric($id)) {
+            $query->where('id', (int) $id);
+        } elseif (\Illuminate\Support\Str::isUuid((string) $id)) {
+            $query->where('uuid', (string) $id);
+        } else {
+            $query->where('ticket_number', (string) $id);
+        }
+        $ticket = $query->firstOrFail();
 
         $ticket->update([
             'status' => 'DIKERJAKAN',
@@ -281,9 +287,15 @@ class PanSinarController extends Controller
             'evidence_after_file' => 'nullable|image|max:10240',
         ]);
 
-        $ticket = SanitationTicket::where('id', $id)
-            ->orWhere('ticket_number', $id)
-            ->firstOrFail();
+        $query = SanitationTicket::query();
+        if (is_numeric($id)) {
+            $query->where('id', (int) $id);
+        } elseif (\Illuminate\Support\Str::isUuid((string) $id)) {
+            $query->where('uuid', (string) $id);
+        } else {
+            $query->where('ticket_number', (string) $id);
+        }
+        $ticket = $query->firstOrFail();
 
         $evidenceAfter = $validated['evidence_after'] ?? null;
         if ($request->hasFile('evidence_after_file')) {
@@ -361,10 +373,14 @@ class PanSinarController extends Controller
 
         if (!$toilet && !empty($validated['location_point'])) {
             $loc = (string) $validated['location_point'];
-            $toilet = SanitationToilet::where('id', is_numeric($loc) ? (int)$loc : 0)
-                ->orWhere('name', $loc)
-                ->orWhere('code', $loc)
-                ->first();
+            if (is_numeric($loc)) {
+                $toilet = SanitationToilet::find((int) $loc);
+            }
+            if (!$toilet) {
+                $toilet = SanitationToilet::where('code', $loc)
+                    ->orWhere('name', $loc)
+                    ->first();
+            }
 
             if (!$toilet) {
                 $namePart = trim(explode('(', $loc)[0]);
@@ -372,6 +388,18 @@ class PanSinarController extends Controller
                     ->orWhere('code', $namePart)
                     ->first();
             }
+
+            if (!$toilet && !empty($loc)) {
+                $toilet = SanitationToilet::create([
+                    'name' => $loc,
+                    'code' => 'TLT-' . strtoupper(\Illuminate\Support\Str::random(6)),
+                    'status' => 'AKTIF',
+                ]);
+            }
+        }
+
+        if (!$toilet) {
+            $toilet = SanitationToilet::first();
         }
 
         $photoPath = null;

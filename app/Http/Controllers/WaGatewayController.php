@@ -19,14 +19,13 @@ class WaGatewayController extends Controller
 
         return Inertia::render('WaGateway/Index', [
             'driver' => config('services.wa_gateway.driver', 'local'),
-            'localUrl' => config('services.wa_gateway.local_url', 'http://127.0.0.1:3000/send'),
+            'localUrl' => WaGatewayChannel::getGatewayUrl('/send'),
         ]);
     }
 
     public function status(Request $request)
     {
-        $baseUrl = config('services.wa_gateway.local_url', 'http://127.0.0.1:3000/send');
-        $statusUrl = str_replace('/send', '/status', $baseUrl);
+        $statusUrl = WaGatewayChannel::getGatewayUrl('/status');
 
         $data = [
             'status' => 'offline',
@@ -59,8 +58,7 @@ class WaGatewayController extends Controller
 
     public function logout(Request $request)
     {
-        $baseUrl = config('services.wa_gateway.local_url', 'http://127.0.0.1:3000/send');
-        $logoutUrl = str_replace('/send', '/logout', $baseUrl);
+        $logoutUrl = WaGatewayChannel::getGatewayUrl('/logout');
 
         $secretKey = config('services.wa_gateway.secret_key');
 

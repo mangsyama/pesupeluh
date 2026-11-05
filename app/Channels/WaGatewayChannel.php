@@ -10,6 +10,31 @@ use Illuminate\Support\Facades\Log;
 class WaGatewayChannel
 {
     /**
+     * Resolve the appropriate WA Gateway base URL.
+     * Handles Docker network routing where 127.0.0.1 must resolve to 'wa-gateway' service inside Docker.
+     */
+    public static function getGatewayUrl(string $endpoint = '/send'): string
+    {
+        $baseUrl = config('services.wa_gateway.local_url');
+
+        if (file_exists('/.dockerenv') || env('DOCKER_ENV', false)) {
+            if (empty($baseUrl) || str_contains($baseUrl, '127.0.0.1') || str_contains($baseUrl, 'localhost')) {
+                $baseUrl = 'http://wa-gateway:3000/send';
+            }
+        }
+
+        if (empty($baseUrl)) {
+            $baseUrl = 'http://127.0.0.1:3000/send';
+        }
+
+        if ($endpoint !== '/send') {
+            $baseUrl = str_replace('/send', $endpoint, $baseUrl);
+        }
+
+        return $baseUrl;
+    }
+
+    /**
      * Send the given notification via native WA Gateway microservice.
      */
     public function send($notifiable, Notification $notification): void
@@ -42,13 +67,7 @@ class WaGatewayChannel
             return;
         }
 
-        // Dynamic URL resolution:
-        // 1. Explicitly configured URL from .env (WA_LOCAL_URL or WA_GATEWAY_URL)
-        // 2. If running inside Docker container -> http://wa-gateway:3000/send
-        // 3. Otherwise (standalone local dev) -> http://127.0.0.1:3000/send
-        $url = config('services.wa_gateway.local_url') 
-            ?: (file_exists('/.dockerenv') ? 'http://wa-gateway:3000/send' : 'http://127.0.0.1:3000/send');
-
+        $url = self::getGatewayUrl('/send');
         $secretKey = config('services.wa_gateway.secret_key');
 
         try {
