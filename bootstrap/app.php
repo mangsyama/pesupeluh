@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'aduan-sanitasi',
             'aduan-sanitasi/*',
+            'services/kesling/aduan-sanitasi',
+            'services/kesling/aduan-sanitasi/*',
         ]);
 
         $middleware->web(append: [

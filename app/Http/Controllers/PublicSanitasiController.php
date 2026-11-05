@@ -185,10 +185,13 @@ class PublicSanitasiController extends Controller
      */
     public function success(string $ticketNumber)
     {
-        $ticket = SanitationTicket::with('toilet')
-            ->where('ticket_number', $ticketNumber)
-            ->orWhere('uuid', $ticketNumber)
-            ->first();
+        $query = SanitationTicket::with('toilet');
+        if (\Illuminate\Support\Str::isUuid($ticketNumber)) {
+            $query->where('uuid', $ticketNumber);
+        } else {
+            $query->where('ticket_number', $ticketNumber);
+        }
+        $ticket = $query->first();
 
         if (!$ticket) {
             abort(404, 'Tiket tidak ditemukan');
@@ -220,10 +223,13 @@ class PublicSanitasiController extends Controller
         $ticket = null;
 
         if ($searched) {
-            $ticket = SanitationTicket::with(['toilet', 'resolver'])
-                ->where('ticket_number', $ticketQuery)
-                ->orWhere('uuid', $ticketQuery)
-                ->first();
+            $query = SanitationTicket::with(['toilet', 'resolver']);
+            if (\Illuminate\Support\Str::isUuid($ticketQuery)) {
+                $query->where('uuid', $ticketQuery);
+            } else {
+                $query->where('ticket_number', $ticketQuery);
+            }
+            $ticket = $query->first();
         }
 
         $reportData = null;
