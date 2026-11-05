@@ -52,6 +52,7 @@ Homestead.yaml
 
 # Local development scripts
 /run-dev.ps1
+/build.bat
 
 # WhatsApp Gateway
 /wa-gateway/auth_sessions/

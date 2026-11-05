@@ -326,9 +326,15 @@ class PanSinarController extends Controller
             abort(403, 'Akses ditolak. Hanya Administrator yang memiliki izin untuk menghapus aduan sanitasi.');
         }
 
-        $ticket = SanitationTicket::where('id', $id)
-            ->orWhere('ticket_number', $id)
-            ->firstOrFail();
+        $query = SanitationTicket::query();
+        if (is_numeric($id)) {
+            $query->where('id', (int) $id);
+        } elseif (\Illuminate\Support\Str::isUuid((string) $id)) {
+            $query->where('uuid', (string) $id);
+        } else {
+            $query->where('ticket_number', (string) $id);
+        }
+        $ticket = $query->firstOrFail();
 
         $ticketNumber = $ticket->ticket_number;
 
