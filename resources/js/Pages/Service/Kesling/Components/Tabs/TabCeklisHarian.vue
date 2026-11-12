@@ -252,7 +252,8 @@ const itemsForDate = computed(() => {
                     supplies_ready: matched.supplies_ready,
                     air_fragrance_ok: matched.air_fragrance_ok,
                     notes: matched.notes || '',
-                    photo: matched.photo || null
+                    photo: matched.photo || null,
+                    photo_list: Array.isArray(matched.photo_list) && matched.photo_list.length > 0 ? matched.photo_list : (matched.photo ? [matched.photo] : [])
                 };
             }
 
@@ -272,7 +273,8 @@ const itemsForDate = computed(() => {
                 supplies_ready: null,
                 air_fragrance_ok: null,
                 notes: '',
-                photo: null
+                photo: null,
+                photo_list: []
             };
         });
     }
@@ -294,7 +296,8 @@ const itemsForDate = computed(() => {
         supplies_ready: i.supplies_ready,
         air_fragrance_ok: i.air_fragrance_ok,
         notes: i.notes || '',
-        photo: i.photo || null
+        photo: i.photo || null,
+        photo_list: Array.isArray(i.photo_list) && i.photo_list.length > 0 ? i.photo_list : (i.photo ? [i.photo] : [])
     }));
 });
 
@@ -639,54 +642,54 @@ const getStatusBadge = (status) => {
                                 </td>
 
                                 <!-- 4 Pilar Standar Sanitasi Grid (Center) -->
-                                <td class="px-5 py-4 whitespace-nowrap text-center">
-                                    <div class="grid grid-cols-2 gap-1.5 text-[10px] w-64 mx-auto">
-                                        <!-- Pilar 1: Air & Kloset -->
-                                        <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                                            <span class="text-slate-600 dark:text-slate-300 font-medium">Air & Kloset</span>
-                                            <span v-if="item.water_flush_ok === true" class="h-4 w-4 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
+                                <td class="px-5 py-4 text-center">
+                                    <div class="grid grid-cols-2 gap-1.5 text-[10px] min-w-[410px] w-full max-w-[430px] mx-auto">
+                                        <!-- Pilar 1: Ketersediaan Air -->
+                                        <div class="min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                                            <span class="text-slate-600 dark:text-slate-300 font-medium text-left leading-tight">Ketersediaan Air</span>
+                                            <span v-if="item.water_flush_ok === true" class="h-4 w-4 shrink-0 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
                                                 <Check class="w-2.5 h-2.5 stroke-[2.5]" />
                                             </span>
-                                            <span v-else-if="item.water_flush_ok === false" class="h-4 w-4 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
+                                            <span v-else-if="item.water_flush_ok === false" class="h-4 w-4 shrink-0 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
                                                 <X class="w-2.5 h-2.5 stroke-[2.5]" />
                                             </span>
-                                            <span v-else class="text-[10px] text-slate-400 font-bold">-</span>
+                                            <span v-else class="text-[10px] text-slate-400 font-bold shrink-0">-</span>
                                         </div>
 
-                                        <!-- Pilar 2: Lantai & Kaca -->
-                                        <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                                            <span class="text-slate-600 dark:text-slate-300 font-medium">Lantai & Kaca</span>
-                                            <span v-if="item.floor_mirror_clean === true" class="h-4 w-4 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
+                                        <!-- Pilar 2: Kebersihan -->
+                                        <div class="min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                                            <span class="text-slate-600 dark:text-slate-300 font-medium text-left leading-tight">Kebersihan</span>
+                                            <span v-if="item.floor_mirror_clean === true" class="h-4 w-4 shrink-0 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
                                                 <Check class="w-2.5 h-2.5 stroke-[2.5]" />
                                             </span>
-                                            <span v-else-if="item.floor_mirror_clean === false" class="h-4 w-4 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
+                                            <span v-else-if="item.floor_mirror_clean === false" class="h-4 w-4 shrink-0 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
                                                 <X class="w-2.5 h-2.5 stroke-[2.5]" />
                                             </span>
-                                            <span v-else class="text-[10px] text-slate-400 font-bold">-</span>
+                                            <span v-else class="text-[10px] text-slate-400 font-bold shrink-0">-</span>
                                         </div>
 
-                                        <!-- Pilar 3: Sabun & Tisu -->
-                                        <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                                            <span class="text-slate-600 dark:text-slate-300 font-medium">Sabun & Tisu</span>
-                                            <span v-if="item.supplies_ready === true" class="h-4 w-4 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
+                                        <!-- Pilar 3: Ketersediaan Sabun & Tisu -->
+                                        <div class="min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                                            <span class="text-slate-600 dark:text-slate-300 font-medium text-left leading-tight">Ketersediaan Sabun & Tisu</span>
+                                            <span v-if="item.supplies_ready === true" class="h-4 w-4 shrink-0 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
                                                 <Check class="w-2.5 h-2.5 stroke-[2.5]" />
                                             </span>
-                                            <span v-else-if="item.supplies_ready === false" class="h-4 w-4 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
+                                            <span v-else-if="item.supplies_ready === false" class="h-4 w-4 shrink-0 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
                                                 <X class="w-2.5 h-2.5 stroke-[2.5]" />
                                             </span>
-                                            <span v-else class="text-[10px] text-slate-400 font-bold">-</span>
+                                            <span v-else class="text-[10px] text-slate-400 font-bold shrink-0">-</span>
                                         </div>
 
-                                        <!-- Pilar 4: Aroma & Udara -->
-                                        <div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                                            <span class="text-slate-600 dark:text-slate-300 font-medium">Aroma & Udara</span>
-                                            <span v-if="item.air_fragrance_ok === true" class="h-4 w-4 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
+                                        <!-- Pilar 4: Keharuman & Sirkulasi Udara -->
+                                        <div class="min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                                            <span class="text-slate-600 dark:text-slate-300 font-medium text-left leading-tight">Keharuman & Sirkulasi Udara</span>
+                                            <span v-if="item.air_fragrance_ok === true" class="h-4 w-4 shrink-0 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
                                                 <Check class="w-2.5 h-2.5 stroke-[2.5]" />
                                             </span>
-                                            <span v-else-if="item.air_fragrance_ok === false" class="h-4 w-4 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
+                                            <span v-else-if="item.air_fragrance_ok === false" class="h-4 w-4 shrink-0 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
                                                 <X class="w-2.5 h-2.5 stroke-[2.5]" />
                                             </span>
-                                            <span v-else class="text-[10px] text-slate-400 font-bold">-</span>
+                                            <span v-else class="text-[10px] text-slate-400 font-bold shrink-0">-</span>
                                         </div>
                                     </div>
                                 </td>
@@ -710,17 +713,21 @@ const getStatusBadge = (status) => {
                                     </span>
                                 </td>
 
-                                <!-- Foto Bukti -->
+                                <!-- Foto Bukti (Mendukung Multi-file) -->
                                 <td class="px-5 py-4 whitespace-nowrap text-center">
-                                    <button 
-                                        v-if="item.photo"
-                                        @click="openPhotoPreview(item.photo, `${item.location} (${formatTime(item.checked_at)})`)"
-                                        type="button"
-                                        class="h-8 w-8 inline-flex items-center justify-center rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs mx-auto"
-                                        title="Lihat Foto Bukti Patroli"
-                                    >
-                                        <Camera class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                    </button>
+                                    <div v-if="item.photo_list && item.photo_list.length > 0" class="inline-flex items-center justify-center gap-1 flex-wrap max-w-[140px]">
+                                        <button 
+                                            v-for="(pUrl, pIdx) in item.photo_list"
+                                            :key="'tbl-photo-' + pIdx"
+                                            @click="openPhotoPreview(pUrl, `${item.location} (${formatTime(item.checked_at)})${item.photo_list.length > 1 ? ' #' + (pIdx + 1) : ''}`)"
+                                            type="button"
+                                            class="h-8 px-2 inline-flex items-center justify-center gap-1 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer shadow-2xs"
+                                            :title="`Lihat Foto Bukti Patroli ${item.photo_list.length > 1 ? '#' + (pIdx + 1) : ''}`"
+                                        >
+                                            <Camera class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                            <span v-if="item.photo_list.length > 1" class="text-[10px] font-bold">{{ pIdx + 1 }}</span>
+                                        </button>
+                                    </div>
                                     <span v-else class="text-xs text-slate-400 font-medium">
                                         -
                                     </span>
@@ -795,53 +802,53 @@ const getStatusBadge = (status) => {
                         <div class="p-5 space-y-4 flex-1 flex flex-col justify-between">
                             <div class="space-y-3.5">
                                 <!-- 4 Pilar Sanitasi Checklist Mini Grid -->
-                                <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <!-- Pilar 1: Air Bersih & Flush -->
-                                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                                        <span class="text-slate-600 dark:text-slate-300 text-[11px] font-medium">Air & Kloset</span>
-                                        <span v-if="item.water_flush_ok === true" class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                    <!-- Pilar 1: Ketersediaan Air -->
+                                    <div class="min-w-0 flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                                        <span class="text-slate-600 dark:text-slate-300 text-[11px] font-medium leading-tight">Ketersediaan Air</span>
+                                        <span v-if="item.water_flush_ok === true" class="h-5 w-5 shrink-0 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
                                             <Check class="w-3 h-3" />
                                         </span>
-                                        <span v-else-if="item.water_flush_ok === false" class="h-5 w-5 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
+                                        <span v-else-if="item.water_flush_ok === false" class="h-5 w-5 shrink-0 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
                                             <X class="w-3 h-3" />
                                         </span>
-                                        <span v-else class="text-[11px] text-slate-400 font-bold">-</span>
+                                        <span v-else class="text-[11px] text-slate-400 font-bold shrink-0">-</span>
                                     </div>
 
-                                    <!-- Pilar 2: Kebersihan Lantai & Cermin -->
-                                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                                        <span class="text-slate-600 dark:text-slate-300 text-[11px] font-medium">Lantai & Kaca</span>
-                                        <span v-if="item.floor_mirror_clean === true" class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
+                                    <!-- Pilar 2: Kebersihan -->
+                                    <div class="min-w-0 flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                                        <span class="text-slate-600 dark:text-slate-300 text-[11px] font-medium leading-tight">Kebersihan</span>
+                                        <span v-if="item.floor_mirror_clean === true" class="h-5 w-5 shrink-0 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
                                             <Check class="w-3 h-3" />
                                         </span>
-                                        <span v-else-if="item.floor_mirror_clean === false" class="h-5 w-5 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
+                                        <span v-else-if="item.floor_mirror_clean === false" class="h-5 w-5 shrink-0 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
                                             <X class="w-3 h-3" />
                                         </span>
-                                        <span v-else class="text-[11px] text-slate-400 font-bold">-</span>
+                                        <span v-else class="text-[11px] text-slate-400 font-bold shrink-0">-</span>
                                     </div>
 
-                                    <!-- Pilar 3: Sabun, Tisu, Tempat Sampah -->
-                                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                                        <span class="text-slate-600 dark:text-slate-300 text-[11px] font-medium">Sabun & Tisu</span>
-                                        <span v-if="item.supplies_ready === true" class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
+                                    <!-- Pilar 3: Ketersediaan Sabun & Tisu -->
+                                    <div class="min-w-0 flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                                        <span class="text-slate-600 dark:text-slate-300 text-[11px] font-medium leading-tight">Ketersediaan Sabun & Tisu</span>
+                                        <span v-if="item.supplies_ready === true" class="h-5 w-5 shrink-0 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
                                             <Check class="w-3 h-3" />
                                         </span>
-                                        <span v-else-if="item.supplies_ready === false" class="h-5 w-5 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
+                                        <span v-else-if="item.supplies_ready === false" class="h-5 w-5 shrink-0 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
                                             <X class="w-3 h-3" />
                                         </span>
-                                        <span v-else class="text-[11px] text-slate-400 font-bold">-</span>
+                                        <span v-else class="text-[11px] text-slate-400 font-bold shrink-0">-</span>
                                     </div>
 
-                                    <!-- Pilar 4: Keharuman & Sirkulasi -->
-                                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                                        <span class="text-slate-600 dark:text-slate-300 text-[11px] font-medium">Aroma & Udara</span>
-                                        <span v-if="item.air_fragrance_ok === true" class="h-5 w-5 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
+                                    <!-- Pilar 4: Keharuman & Sirkulasi Udara -->
+                                    <div class="min-w-0 flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                                        <span class="text-slate-600 dark:text-slate-300 text-[11px] font-medium leading-tight">Keharuman & Sirkulasi Udara</span>
+                                        <span v-if="item.air_fragrance_ok === true" class="h-5 w-5 shrink-0 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center">
                                             <Check class="w-3 h-3" />
                                         </span>
-                                        <span v-else-if="item.air_fragrance_ok === false" class="h-5 w-5 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
+                                        <span v-else-if="item.air_fragrance_ok === false" class="h-5 w-5 shrink-0 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 flex items-center justify-center">
                                             <X class="w-3 h-3" />
                                         </span>
-                                        <span v-else class="text-[11px] text-slate-400 font-bold">-</span>
+                                        <span v-else class="text-[11px] text-slate-400 font-bold shrink-0">-</span>
                                     </div>
                                 </div>
 
@@ -855,35 +862,38 @@ const getStatusBadge = (status) => {
                                     </p>
                                 </div>
 
-                                <!-- Foto Bukti Patroli -->
-                                <div 
-                                    v-if="item.photo" 
-                                    @click="openPhotoPreview(item.photo, `${item.location} (${formatTime(item.checked_at)})`)"
-                                    class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/40 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer select-none min-h-[52px]"
-                                    title="Klik untuk memperbesar foto bukti patroli"
-                                >
-                                    <div class="flex items-center gap-2.5 min-w-0">
-                                        <!-- Thumbnail Preview Kecil -->
-                                        <div class="h-10 w-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200/80 dark:border-slate-700 shrink-0 relative">
-                                            <img 
-                                                :src="item.photo" 
-                                                alt="Thumbnail Bukti" 
-                                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
-                                                loading="lazy"
-                                            />
+                                <!-- Foto Bukti Patroli (Mendukung Multi-file) -->
+                                <div v-if="item.photo_list && item.photo_list.length > 0" class="space-y-1.5">
+                                    <div 
+                                        v-for="(pUrl, pIdx) in item.photo_list"
+                                        :key="'card-photo-' + pIdx"
+                                        @click="openPhotoPreview(pUrl, `${item.location} (${formatTime(item.checked_at)})${item.photo_list.length > 1 ? ' #' + (pIdx + 1) : ''}`)"
+                                        class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/40 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer select-none min-h-[52px]"
+                                        title="Klik untuk memperbesar foto bukti patroli"
+                                    >
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <!-- Thumbnail Preview Kecil -->
+                                            <div class="h-10 w-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200/80 dark:border-slate-700 shrink-0 relative">
+                                                <img 
+                                                    :src="pUrl" 
+                                                    :alt="'Thumbnail Bukti ' + (pIdx + 1)" 
+                                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                            <div class="min-w-0">
+                                                <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors block leading-tight">
+                                                    Foto Bukti Patroli {{ item.photo_list.length > 1 ? `#${pIdx + 1}` : '' }}
+                                                </span>
+                                                <span class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block truncate">
+                                                    Klik untuk memperbesar foto
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div class="min-w-0">
-                                            <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors block leading-tight">
-                                                Foto Bukti Patroli
-                                            </span>
-                                            <span class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block truncate">
-                                                Klik untuk memperbesar foto
-                                            </span>
-                                        </div>
-                                    </div>
 
-                                    <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-300 dark:group-hover:text-emerald-400 flex items-center justify-center shrink-0 transition-all shadow-2xs">
-                                        <Maximize2 class="w-3.5 h-3.5" />
+                                        <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-300 dark:group-hover:text-emerald-400 flex items-center justify-center shrink-0 transition-all shadow-2xs">
+                                            <Maximize2 class="w-3.5 h-3.5" />
+                                        </div>
                                     </div>
                                 </div>
 

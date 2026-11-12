@@ -11,6 +11,7 @@ import {
     Wind, 
     Box,
     Check,
+    CheckCircle2,
     X,
     AlertCircle,
     Camera,
@@ -101,6 +102,9 @@ const form = useForm({
     air_fragrance_ok: null,
     notes: '',
     photo: null,
+    photos: [],
+    existing_photos: [],
+    photos_sync: true,
 });
 
 const onToiletChange = () => {
@@ -113,6 +117,7 @@ const onToiletChange = () => {
 const cameraInput = ref(null);
 const fileInput = ref(null);
 const photoPreview = ref(null);
+const photoItems = ref([]);
 const validationError = ref('');
 
 const isEditMode = computed(() => !!form.inspection_id);
@@ -141,7 +146,16 @@ watch(() => props.show, (newVal) => {
             form.air_fragrance_ok = insp.air_fragrance_ok ?? true;
             form.notes = insp.notes || '';
             form.photo = null;
-            photoPreview.value = insp.photo || null;
+            const existingList = Array.isArray(insp.photo_list) && insp.photo_list.length > 0
+                ? insp.photo_list
+                : (insp.photo ? [insp.photo] : []);
+            photoItems.value = existingList.map((url, idx) => ({
+                file: null,
+                previewUrl: url,
+                name: `Foto Patroli #${idx + 1}`,
+                isExisting: true,
+            }));
+            photoPreview.value = existingList[0] || null;
         } else if (props.initialToilet) {
             form.inspection_id = null;
             const t = props.initialToilet;
@@ -157,6 +171,7 @@ watch(() => props.show, (newVal) => {
             form.air_fragrance_ok = null;
             form.notes = '';
             form.photo = null;
+            photoItems.value = [];
             photoPreview.value = null;
         } else {
             form.inspection_id = null;
@@ -169,6 +184,7 @@ watch(() => props.show, (newVal) => {
             form.air_fragrance_ok = null;
             form.notes = '';
             form.photo = null;
+            photoItems.value = [];
             photoPreview.value = null;
         }
     }
@@ -192,26 +208,55 @@ const openFileInput = () => {
 };
 
 const handlePhotoChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        if (file.size > 5 * 1024 * 1024) {
-            validationError.value = 'Ukuran foto maksimal adalah 5MB.';
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const maxFiles = 5;
+    const remainingSlots = maxFiles - photoItems.value.length;
+    if (remainingSlots <= 0) {
+        validationError.value = `Maksimal ${maxFiles} foto yang dapat diunggah.`;
+        event.target.value = '';
+        return;
+    }
+
+    const filesToAdd = files.slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+        validationError.value = `Hanya ${remainingSlots} foto lagi yang dapat ditambahkan (maksimal ${maxFiles} foto).`;
+    }
+
+    filesToAdd.forEach((file) => {
+        if (file.size > 10 * 1024 * 1024) {
+            validationError.value = `Ukuran foto "${file.name}" melebihi batas maksimal 10MB.`;
             return;
         }
-        form.photo = file;
         const reader = new FileReader();
         reader.onload = (e) => {
-            photoPreview.value = e.target.result;
+            photoItems.value.push({
+                file,
+                previewUrl: e.target.result,
+                name: file.name,
+                isExisting: false,
+            });
+            photoPreview.value = photoItems.value[0]?.previewUrl || null;
         };
         reader.readAsDataURL(file);
-    }
+    });
+
+    event.target.value = '';
 };
 
-const removePhoto = () => {
-    form.photo = null;
-    photoPreview.value = null;
-    if (cameraInput.value) cameraInput.value.value = '';
-    if (fileInput.value) fileInput.value.value = '';
+const removePhoto = (index) => {
+    if (typeof index === 'number') {
+        photoItems.value.splice(index, 1);
+    } else {
+        photoItems.value = [];
+    }
+    photoPreview.value = photoItems.value[0]?.previewUrl || null;
+    if (photoItems.value.length === 0) {
+        form.photo = null;
+        if (cameraInput.value) cameraInput.value.value = '';
+        if (fileInput.value) fileInput.value.value = '';
+    }
 };
 
 const handleClose = () => {
@@ -243,10 +288,14 @@ const submit = () => {
         return;
     }
 
-    if (!form.photo && !photoPreview.value) {
+    if (photoItems.value.length === 0) {
         validationError.value = 'Foto bukti patroli toilet wajib disertakan.';
         return;
     }
+
+    form.photos = photoItems.value.filter(p => p.file).map(p => p.file);
+    form.existing_photos = photoItems.value.filter(p => p.isExisting).map(p => p.previewUrl);
+    form.photos_sync = true;
 
     form.post(route('pansinar.inspections.store'), {
         preserveScroll: true,
@@ -324,8 +373,8 @@ const submit = () => {
                                     <Droplet class="w-4 h-4" />
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="font-bold text-xs text-slate-900 dark:text-white truncate">Ketersediaan Air & Flush</p>
-                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">Kran lancar, kloset & flush berfungsi</p>
+                                    <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight">Ketersediaan Air</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">Aliran air bersih lancar serta kran, selang, atau flush berfungsi</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-1.5 shrink-0">
@@ -365,8 +414,8 @@ const submit = () => {
                                     <Sparkles class="w-4 h-4" />
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="font-bold text-xs text-slate-900 dark:text-white truncate">Kebersihan Lantai & Cermin</p>
-                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">Lantai kering, wastafel & kaca bersih</p>
+                                    <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight">Kebersihan</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">Kondisi lantai, tembok, kloset, serta wastafel/cermin bersih</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-1.5 shrink-0">
@@ -406,8 +455,8 @@ const submit = () => {
                                     <Box class="w-4 h-4" />
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="font-bold text-xs text-slate-900 dark:text-white truncate">Ketersediaan Sabun & Tisu</p>
-                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">Dispenser terisi, tempat sampah tertutup</p>
+                                    <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight">Ketersediaan Sabun & Tisu</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">Sabun/tisu tersedia sesuai fasilitas, tempat sampah terkelola</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-1.5 shrink-0">
@@ -447,8 +496,8 @@ const submit = () => {
                                     <Wind class="w-4 h-4" />
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="font-bold text-xs text-slate-900 dark:text-white truncate">Keharuman & Sirkulasi Udara</p>
-                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">Pengharum berfungsi, exhaust fan aktif</p>
+                                    <p class="font-bold text-xs text-slate-900 dark:text-white leading-tight">Keharuman & Sirkulasi Udara</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">Ruangan bebas bau; pengharum, ventilasi/exhaust fan berfungsi</p>
                                 </div>
                             </div>
                             <div class="flex items-center gap-1.5 shrink-0">
@@ -502,21 +551,73 @@ const submit = () => {
                             Foto Bukti Patroli <span class="text-rose-500">*</span>
                         </label>
 
-                        <!-- Preview Foto Terpilih -->
-                        <div v-if="photoPreview" class="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-2.5 flex items-center gap-3">
-                            <img :src="photoPreview" alt="Bukti Patroli" class="w-16 h-16 object-cover rounded-xl shrink-0 border border-slate-200 dark:border-slate-700 shadow-xs" />
-                            <div class="flex-1 min-w-0 text-xs">
-                                <p class="font-bold text-slate-800 dark:text-slate-200 truncate">{{ form.photo?.name || 'Foto Bukti Toilet' }}</p>
-                                <p class="text-[11px] text-slate-400 mt-0.5">{{ form.photo?.size ? (form.photo.size / 1024).toFixed(1) + ' KB' : 'Gambar siap disimpan' }}</p>
+                        <!-- Preview Foto Terpilih (Multi-file Grid) -->
+                        <div v-if="photoItems.length > 0" class="space-y-2.5">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div
+                                    v-for="(item, idx) in photoItems"
+                                    :key="'insp-photo-' + idx"
+                                    class="relative aspect-square rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    <img :src="item.previewUrl" :alt="item.name" class="w-full h-full object-cover" />
+                                    <button
+                                        type="button"
+                                        @click="removePhoto(idx)"
+                                        class="absolute top-1.5 right-1.5 h-6 w-6 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-sm cursor-pointer transition active:scale-90"
+                                        title="Hapus Foto Ini"
+                                    >
+                                        <X class="w-3.5 h-3.5 stroke-[2.5]" />
+                                    </button>
+                                </div>
                             </div>
-                            <button
-                                type="button"
-                                @click="removePhoto"
-                                class="h-8 w-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 flex items-center justify-center transition cursor-pointer shrink-0"
-                                title="Hapus / Ganti Foto"
-                            >
-                                <Trash2 class="w-4 h-4" />
-                            </button>
+
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="h-9 w-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                        <CheckCircle2 class="h-4 w-4" />
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                            {{ photoItems.length }} / 5 Foto Terlampir
+                                        </p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                            {{ photoItems.length < 5 ? 'Masih bisa tambah foto lagi' : 'Batas maksimal 5 foto tercapai' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
+                                    <button
+                                        v-if="photoItems.length < 5"
+                                        type="button"
+                                        @click="triggerCamera"
+                                        class="h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 whitespace-nowrap"
+                                        title="Tambah Foto Kamera"
+                                    >
+                                        <Camera class="h-3.5 w-3.5 shrink-0" />
+                                        <span>Kamera</span>
+                                    </button>
+                                    <button
+                                        v-if="photoItems.length < 5"
+                                        type="button"
+                                        @click="openFileInput"
+                                        class="h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 whitespace-nowrap"
+                                        title="Tambah dari Galeri"
+                                    >
+                                        <ImageIcon class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        <span>Galeri</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="removePhoto()"
+                                        class="col-span-2 sm:col-span-1 h-9 px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 whitespace-nowrap"
+                                        title="Hapus Semua Foto"
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5 shrink-0" />
+                                        <span>Hapus</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Upload Box dengan Pilihan: Buka Kamera vs Pilih Galeri (Sesuai Aduan Masyarakat) -->
@@ -532,7 +633,7 @@ const submit = () => {
                                     Ambil Foto atau Pilih dari Galeri
                                 </p>
                                 <p class="text-[11px] text-slate-400">
-                                    Buka kamera langsung atau pilih file dari galeri (Maks. 5MB)
+                                    Bisa pilih beberapa foto sekaligus (Maks. 5 foto, 10MB/file)
                                 </p>
                             </div>
 
@@ -557,7 +658,7 @@ const submit = () => {
                             </div>
                         </div>
 
-                        <!-- Hidden Inputs: Kamera & Galeri File -->
+                        <!-- Hidden Inputs: Kamera & Galeri File (Multiple) -->
                         <input
                             ref="cameraInput"
                             type="file"
@@ -570,6 +671,7 @@ const submit = () => {
                             ref="fileInput"
                             type="file"
                             accept="image/*"
+                            multiple
                             class="hidden"
                             @change="handlePhotoChange"
                         />

@@ -25,6 +25,10 @@ class ServiceController extends Controller
             return redirect()->route('pansinar.index');
         }
 
+        if (auth()->user()?->isCleaningService()) {
+            return redirect()->route('services.index')->with('error', 'Role CLEANING SERVICE hanya dapat mengakses layanan Kesling (PAN-SINAR).');
+        }
+
         if (in_array(strtolower($supportingUnit->slug), ['ipsrs'])) {
             return Inertia::render('Service/Ipsrs/Index', [
                 'unit' => $supportingUnit->load(['issueCategories']),

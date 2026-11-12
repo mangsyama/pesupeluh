@@ -33,7 +33,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $defaultRoute = $request->user()?->hasPageAccess('dashboard')
+            ? route('dashboard', absolute: false)
+            : route('services.index', absolute: false);
+
+        return redirect()->intended($defaultRoute);
     }
 
     /**

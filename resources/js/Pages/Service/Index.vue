@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { 
     Stethoscope, 
     ShieldCheck, 
@@ -28,11 +28,42 @@ const props = defineProps({
     }
 });
 
+const page = usePage();
+const isCleaningService = computed(() => Number(page.props.auth?.user?.role_id) === 12);
+const canAccessPansinar = computed(() => {
+    const perms = page.props.auth?.page_permissions || [];
+    return perms.includes('pansinar.index');
+});
+
+const isKeslingUnit = (unit) => {
+    return unit?.slug === 'kesling' || (unit?.name && unit.name.toLowerCase().includes('kesling'));
+};
+
 const isUnitsLoading = computed(() => !props.units || props.units.length === 0);
 
 const { proxy } = getCurrentInstance();
 
 const handleUnitClick = (unit) => {
+    if (unit.restrictedReason === 'cleaning_service') {
+        proxy.$swal({
+            title: 'Akses Khusus Kesling',
+            text: 'Akun dengan role CLEANING SERVICE hanya dapat mengakses modul Kesling (PAN-SINAR).',
+            icon: 'info',
+            confirmButtonColor: '#059669',
+        });
+        return;
+    }
+
+    if (unit.restrictedReason === 'no_pansinar_access') {
+        proxy.$swal({
+            title: 'Akses Terbatas',
+            text: 'Modul PAN-SINAR hanya dapat diakses oleh role CLEANING SERVICE atau pengguna yang diberi izin PAN-SINAR.',
+            icon: 'warning',
+            confirmButtonColor: '#059669',
+        });
+        return;
+    }
+
     if (unit.disabled) {
         proxy.$swal({
             title: proxy.__('pages.services.alerts.dev_title') || 'Dalam Pengembangan',
@@ -43,7 +74,7 @@ const handleUnitClick = (unit) => {
         return;
     }
 
-    if (unit.slug === 'kesling' || (unit.name && unit.name.toLowerCase().includes('kesling'))) {
+    if (isKeslingUnit(unit)) {
         router.visit(route('pansinar.index'));
         return;
     }
@@ -63,13 +94,27 @@ const handleUnitClick = (unit) => {
     });
 };
 
+const mapUnitState = (unit) => {
+    const kesling = isKeslingUnit(unit);
+    let restrictedReason = null;
+
+    if (isCleaningService.value && !kesling) {
+        restrictedReason = 'cleaning_service';
+    } else if (kesling && !canAccessPansinar.value) {
+        restrictedReason = 'no_pansinar_access';
+    }
+
+    return {
+        ...unit,
+        restrictedReason,
+        disabled: unit.status !== 'ACTIVE' || restrictedReason !== null,
+    };
+};
+
 const medikUnits = computed(() => {
     return (props.units || [])
         .filter(u => u.type === 'MEDIK')
-        .map(unit => ({
-            ...unit,
-            disabled: unit.status !== 'ACTIVE'
-        }))
+        .map(mapUnitState)
         .sort((a, b) => {
             if (a.disabled === b.disabled) return 0;
             return a.disabled ? 1 : -1;
@@ -79,10 +124,7 @@ const medikUnits = computed(() => {
 const nonMedikUnits = computed(() => {
     return (props.units || [])
         .filter(u => u.type === 'NON_MEDIK')
-        .map(unit => ({
-            ...unit,
-            disabled: unit.status !== 'ACTIVE'
-        }))
+        .map(mapUnitState)
         .sort((a, b) => {
             if (a.disabled === b.disabled) return 0;
             return a.disabled ? 1 : -1;
@@ -233,7 +275,7 @@ const pageTitle = computed(() => {
                                                         : 'bg-emerald-100 dark:bg-white/10 text-emerald-800 dark:text-white'
                                                 ]">
                                                     <span v-if="!unit.disabled" class="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                    {{ unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active') }}
+                                                    {{ unit.restrictedReason ? 'Terkunci' : (unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active')) }}
                                                 </span>
                                             </div>
                                         </div>
@@ -335,7 +377,7 @@ const pageTitle = computed(() => {
                                                         : 'bg-emerald-100 dark:bg-white/10 text-emerald-800 dark:text-white'
                                                 ]">
                                                     <span v-if="!unit.disabled" class="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                    {{ unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active') }}
+                                                    {{ unit.restrictedReason ? 'Terkunci' : (unit.disabled ? __('pages.services.status_development') : __('pages.services.status_active')) }}
                                                 </span>
                                             </div>
                                         </div>

@@ -24,20 +24,22 @@ class CheckPageAccess
         'services.tickets.store' => 'services.index',
 
         // PAN-SINAR (Kesling Sub-System)
-        'pansinar.index' => 'services.index',
-        'pansinar.tickets.index' => 'services.index',
-        'pansinar.inspections.index' => 'services.index',
-        'pansinar.waste.index' => 'services.index',
-        'pansinar.toilets.index' => 'services.index',
-        'pansinar.qr.index' => 'services.index',
-        'pansinar.tickets.store' => 'services.index',
-        'pansinar.tickets.resolve' => 'services.index',
-        'pansinar.inspections.store' => 'services.index',
-        'pansinar.waste.store' => 'services.index',
-        'pansinar.toilets.store' => 'services.index',
-        'pansinar.toilets.update' => 'services.index',
-        'pansinar.toilets.destroy' => 'services.index',
-        'pansinar.toilets.import' => 'services.index',
+        'pansinar.index' => 'pansinar.index',
+        'pansinar.tickets.index' => 'pansinar.index',
+        'pansinar.inspections.index' => 'pansinar.index',
+        'pansinar.waste.index' => 'pansinar.index',
+        'pansinar.toilets.index' => 'pansinar.index',
+        'pansinar.qr.index' => 'pansinar.index',
+        'pansinar.tickets.store' => 'pansinar.index',
+        'pansinar.tickets.start' => 'pansinar.index',
+        'pansinar.tickets.resolve' => 'pansinar.index',
+        'pansinar.tickets.destroy' => 'pansinar.index',
+        'pansinar.inspections.store' => 'pansinar.index',
+        'pansinar.waste.store' => 'pansinar.index',
+        'pansinar.toilets.store' => 'pansinar.index',
+        'pansinar.toilets.update' => 'pansinar.index',
+        'pansinar.toilets.destroy' => 'pansinar.index',
+        'pansinar.toilets.import' => 'pansinar.index',
 
         // Ticket Actions & Workflows
         'tickets.show' => 'reports.history',
@@ -149,8 +151,16 @@ class CheckPageAccess
                 abort(403, 'Anda tidak memiliki akses ke halaman ini.');
             }
 
-            // Redirect to dashboard with error message
-            return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke halaman tersebut.');
+            $fallbackRoute = $user->hasPageAccess('dashboard')
+                ? 'dashboard'
+                : ($user->hasPageAccess('services.index') ? 'services.index' : 'profile.edit');
+
+            if ($routeName === 'dashboard') {
+                return redirect()->route($fallbackRoute);
+            }
+
+            // Redirect to fallback page with error message
+            return redirect()->route($fallbackRoute)->with('error', 'Anda tidak memiliki akses ke halaman tersebut.');
         }
 
         return $next($request);

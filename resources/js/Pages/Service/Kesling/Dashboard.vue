@@ -550,64 +550,64 @@ const donutOptions = computed(() => {
 
                     <!-- 4 Pillars Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <!-- Pilar 1: Air Bersih & Mengalir -->
+                        <!-- Pilar 1: Ketersediaan Air -->
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <Droplets class="w-4 h-4 text-blue-500" />
-                                    <span class="text-xs font-bold text-slate-900 dark:text-white">Pilar 1: Air Bersih</span>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <Droplets class="w-4 h-4 text-blue-500 shrink-0" />
+                                    <span class="text-xs font-bold text-slate-900 dark:text-white truncate">Pilar 1: Ketersediaan Air</span>
                                 </div>
-                                <span class="text-xs font-extrabold text-blue-600 dark:text-blue-400">{{ pillarAir }}%</span>
+                                <span class="text-xs font-extrabold text-blue-600 dark:text-blue-400 shrink-0">{{ pillarAir }}%</span>
                             </div>
                             <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                                 <div class="bg-blue-500 h-full rounded-full transition-all duration-500" :style="{ width: pillarAir + '%' }"></div>
                             </div>
-                            <p class="text-[10px] text-slate-400">Tekanan air lancar & flush toilet berfungsi</p>
+                            <p class="text-[10px] text-slate-400">Aliran air bersih lancar serta kran, selang, atau flush berfungsi</p>
                         </div>
 
-                        <!-- Pilar 2: Lantai Kering & Bersih -->
+                        <!-- Pilar 2: Kebersihan -->
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <Sparkles class="w-4 h-4 text-amber-500" />
-                                    <span class="text-xs font-bold text-slate-900 dark:text-white">Pilar 2: Lantai Bersih</span>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <Sparkles class="w-4 h-4 text-amber-500 shrink-0" />
+                                    <span class="text-xs font-bold text-slate-900 dark:text-white truncate">Pilar 2: Kebersihan</span>
                                 </div>
-                                <span class="text-xs font-extrabold text-amber-600 dark:text-amber-400">{{ pillarLantai }}%</span>
+                                <span class="text-xs font-extrabold text-amber-600 dark:text-amber-400 shrink-0">{{ pillarLantai }}%</span>
                             </div>
                             <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                                 <div class="bg-amber-500 h-full rounded-full transition-all duration-500" :style="{ width: pillarLantai + '%' }"></div>
                             </div>
-                            <p class="text-[10px] text-slate-400">Lantai kering, tidak licin, cermin jernih</p>
+                            <p class="text-[10px] text-slate-400">Kondisi lantai, tembok, kloset, serta wastafel/cermin bersih</p>
                         </div>
 
-                        <!-- Pilar 3: Sabun & Tisu Siaga -->
+                        <!-- Pilar 3: Ketersediaan Sabun & Tisu -->
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <CheckCircle2 class="w-4 h-4 text-emerald-500" />
-                                    <span class="text-xs font-bold text-slate-900 dark:text-white">Pilar 3: Sabun Siaga</span>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <CheckCircle2 class="w-4 h-4 text-emerald-500 shrink-0" />
+                                    <span class="text-xs font-bold text-slate-900 dark:text-white truncate">Pilar 3: Ketersediaan Sabun & Tisu</span>
                                 </div>
-                                <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">{{ pillarSabun }}%</span>
+                                <span class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 shrink-0">{{ pillarSabun }}%</span>
                             </div>
                             <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                                 <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" :style="{ width: pillarSabun + '%' }"></div>
                             </div>
-                            <p class="text-[10px] text-slate-400">Dispenser sabun cair & persediaan higienis</p>
+                            <p class="text-[10px] text-slate-400">Sabun/tisu tersedia sesuai fasilitas, tempat sampah terkelola</p>
                         </div>
 
-                        <!-- Pilar 4: Bebas Bau & Sirkulasi -->
+                        <!-- Pilar 4: Keharuman & Sirkulasi Udara -->
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <Wind class="w-4 h-4 text-teal-500" />
-                                    <span class="text-xs font-bold text-slate-900 dark:text-white">Pilar 4: Bebas Bau</span>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <Wind class="w-4 h-4 text-teal-500 shrink-0" />
+                                    <span class="text-xs font-bold text-slate-900 dark:text-white truncate">Pilar 4: Keharuman & Sirkulasi Udara</span>
                                 </div>
-                                <span class="text-xs font-extrabold text-teal-600 dark:text-teal-400">{{ pillarAroma }}%</span>
+                                <span class="text-xs font-extrabold text-teal-600 dark:text-teal-400 shrink-0">{{ pillarAroma }}%</span>
                             </div>
                             <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                                 <div class="bg-teal-500 h-full rounded-full transition-all duration-500" :style="{ width: pillarAroma + '%' }"></div>
                             </div>
-                            <p class="text-[10px] text-slate-400">Exhaust fan aktif & pengharum ruangan wangi</p>
+                            <p class="text-[10px] text-slate-400">Ruangan bebas bau; pengharum, ventilasi/exhaust fan berfungsi</p>
                         </div>
                     </div>
                 </div>
@@ -788,12 +788,12 @@ const donutOptions = computed(() => {
                                             <component :is="insp.water_flush_ok ? Check : X" class="w-2.5 h-2.5 stroke-[3]" />
                                         </div>
 
-                                        <!-- Lantai -->
+                                        <!-- Kebersihan -->
                                         <div :class="[
                                             'py-1 px-1 rounded-md border flex items-center justify-center gap-0.5 font-bold',
                                             insp.floor_mirror_clean ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50' : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50'
                                         ]">
-                                            <span>Lantai</span>
+                                            <span>Kebersihan</span>
                                             <component :is="insp.floor_mirror_clean ? Check : X" class="w-2.5 h-2.5 stroke-[3]" />
                                         </div>
 

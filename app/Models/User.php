@@ -84,7 +84,7 @@ class User extends Authenticatable
         // 2. Default Administrator role permissions if no override
         if ($this->isAdmin()) {
             return $this->memoizedPermissions = [
-                'dashboard', 'services.index', 'reports.history', 'reports-management.index', 'reports-audit.index', 'reports.index',
+                'dashboard', 'services.index', 'pansinar.index', 'reports.history', 'reports-management.index', 'reports-audit.index', 'reports.index',
                 'technicians.position', 'service-management.working-hours',
                 'service-management.rooms', 'service-management.categories', 'service-management.supporting-units',
                 'users.approvals', 'users.index', 'admin.wa-gateway.index', 'admin.qr-code.index', 'settings.index',
@@ -135,12 +135,18 @@ class User extends Authenticatable
             Role::KEPALA_BAGIAN,
             Role::KEPALA_SUB_BAGIAN,
             Role::STAFF,
+            Role::CLEANING_SERVICE,
         ]);
     }
 
     public function isTechnician(): bool
     {
         return (int) $this->role_id === Role::TEKNISI;
+    }
+
+    public function isCleaningService(): bool
+    {
+        return (int) $this->role_id === Role::CLEANING_SERVICE;
     }
 
     /**

@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Ticket } from '@lucide/vue';
 import TabAduanSanitasi from './Components/Tabs/TabAduanSanitasi.vue';
@@ -20,7 +20,44 @@ const selectedTicketForResolution = ref(null);
 const openResolveModal = (ticket) => {
     selectedTicketForResolution.value = ticket;
     showResolveModal.value = true;
+    router.reload({
+        only: ['tickets'],
+        preserveScroll: true,
+        preserveState: true,
+    });
 };
+
+let refreshInterval = null;
+onMounted(() => {
+    if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const ticketParam = params.get('ticket') || params.get('ticket_number') || params.get('open');
+        if (ticketParam && props.tickets?.length) {
+            const matched = props.tickets.find(
+                t => t.ticket_number === ticketParam || String(t.id) === String(ticketParam) || t.uuid === ticketParam
+            );
+            if (matched) {
+                openResolveModal(matched);
+            }
+        }
+
+        refreshInterval = setInterval(() => {
+            if (document.visibilityState === 'visible' && !showResolveModal.value) {
+                router.reload({
+                    only: ['tickets'],
+                    preserveScroll: true,
+                    preserveState: true,
+                });
+            }
+        }, 20000);
+    }
+});
+
+onUnmounted(() => {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+});
 
 const handleTicketUpdated = (data) => {
     if (selectedTicketForResolution.value && selectedTicketForResolution.value.id === data.id) {

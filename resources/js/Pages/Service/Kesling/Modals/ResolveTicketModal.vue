@@ -4,7 +4,6 @@ import { useForm, router, usePage } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
-import DangerButton from '@/Components/DangerButton.vue';
 import { 
     CheckCircle2, 
     Image as ImageIcon,
@@ -63,33 +62,6 @@ const isInProgress = computed(() => {
 const isPending = computed(() => {
     return !isResolved.value && !isInProgress.value;
 });
-
-// Role Check: Hanya Administrator yang berhak menghapus aduan
-const page = usePage();
-const isAdmin = computed(() => {
-    const user = page.props.auth?.user;
-    return Number(user?.role_id) === 1 || user?.role?.name?.toUpperCase() === 'ADMINISTRATOR';
-});
-
-// Modal Delete State & Action (Khusus Administrator)
-const showDeleteConfirm = ref(false);
-const isDeletingTicket = ref(false);
-
-const deleteTicketFromModal = () => {
-    if (!props.ticket) return;
-    isDeletingTicket.value = true;
-    router.delete(route('pansinar.tickets.destroy', props.ticket.id), {
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirm.value = false;
-            isDeletingTicket.value = false;
-            emit('close');
-        },
-        onError: () => {
-            isDeletingTicket.value = false;
-        }
-    });
-};
 
 // Urgency badge helper
 const getUrgencyBadge = (urgency) => {
@@ -267,60 +239,111 @@ onUnmounted(() => {
 const openZoomPhoto = openPhotoPreview;
 const closeZoomPhoto = closePhotoPreview;
 
-// Form for Resolution
+// Media helpers (support single string & multi-file array)
+const beforePhotos = computed(() => {
+    const list = props.ticket?.evidence_before_list;
+    if (Array.isArray(list) && list.length > 0) return list;
+    return props.ticket?.evidence_before ? [props.ticket.evidence_before] : [];
+});
+
+const afterPhotosList = computed(() => {
+    const list = props.ticket?.evidence_after_list;
+    if (Array.isArray(list) && list.length > 0) return list;
+    return props.ticket?.evidence_after ? [props.ticket.evidence_after] : [];
+});
+
+// Form for Resolution (Multi-file upload)
+const afterUploadFiles = ref([]);
 const resolveForm = useForm({
     resolution_notes: '',
     evidence_after: '',
-    evidence_after_file: null,
+    evidence_after_files: [],
 });
 
 watch(() => props.ticket, (t) => {
     if (t) {
         resolveForm.resolution_notes = t.resolution_notes || '';
         resolveForm.evidence_after = t.evidence_after || '';
-        resolveForm.evidence_after_file = null;
+        resolveForm.evidence_after_files = [];
+        afterUploadFiles.value = [];
         afterPhotoPreview.value = t.evidence_after || null;
     } else {
         resolveForm.reset();
+        afterUploadFiles.value = [];
         afterPhotoPreview.value = null;
     }
 }, { immediate: true });
 
-// Handle file selection
+// Handle multi-file selection
 const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    resolveForm.evidence_after_file = file;
+    const maxFiles = 5;
+    const remainingSlots = maxFiles - afterUploadFiles.value.length;
+    const filesToAdd = files.slice(0, Math.max(0, remainingSlots));
 
-    // Create instant local preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        afterPhotoPreview.value = event.target.result;
-        resolveForm.evidence_after = event.target.result;
-    };
-    reader.readAsDataURL(file);
+    filesToAdd.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            afterUploadFiles.value.push({
+                file,
+                name: file.name,
+                previewUrl: event.target.result,
+            });
+            resolveForm.evidence_after_files = afterUploadFiles.value.map(item => item.file);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    e.target.value = '';
 };
 
-const removeAfterPhoto = () => {
-    resolveForm.evidence_after_file = null;
-    resolveForm.evidence_after = '';
-    afterPhotoPreview.value = null;
-    if (fileInputRef.value) fileInputRef.value.value = '';
-    if (cameraInputRef.value) cameraInputRef.value.value = '';
+const removeAfterPhoto = (index) => {
+    if (typeof index === 'number') {
+        afterUploadFiles.value.splice(index, 1);
+    } else {
+        afterUploadFiles.value = [];
+    }
+    resolveForm.evidence_after_files = afterUploadFiles.value.map(item => item.file);
+    if (afterUploadFiles.value.length === 0) {
+        resolveForm.evidence_after = '';
+        afterPhotoPreview.value = null;
+        if (fileInputRef.value) fileInputRef.value.value = '';
+        if (cameraInputRef.value) cameraInputRef.value.value = '';
+    }
 };
 
-// Flow 1: Start Working on Ticket (Ubah status ke DIKERJAKAN)
+const page = usePage();
+const currentUserId = computed(() => Number(page.props.auth?.user?.id || 0));
+const isAdmin = computed(() => {
+    const user = page.props.auth?.user;
+    return Number(user?.role_id) === 1 || user?.role?.name?.toUpperCase() === 'ADMINISTRATOR';
+});
+
+const isClaimedByOther = computed(() => {
+    if (!isInProgress.value) return false;
+    return !!props.ticket?.started_by && Number(props.ticket.started_by) !== currentUserId.value && !isAdmin.value;
+});
+
+// Flow 1: Start Working on Ticket (Ubah status ke DIKERJAKAN dengan atomic claim)
 const startProgress = () => {
     if (!props.ticket || isStartingProgress.value) return;
     isStartingProgress.value = true;
 
     router.post(route('pansinar.tickets.start', props.ticket.id), {}, {
         preserveScroll: true,
-        onSuccess: () => {
+        onSuccess: (resp) => {
+            if (resp?.props?.flash?.error) {
+                // Diklaim duluan oleh petugas lain
+                localStatus.value = props.ticket?.status || 'DIKERJAKAN';
+                return;
+            }
             localStatus.value = 'DIKERJAKAN';
             if (props.ticket) {
                 props.ticket.status = 'DIKERJAKAN';
+                props.ticket.started_by = currentUserId.value;
+                props.ticket.starter_name = page.props.auth?.user?.name || 'Anda';
             }
             emit('ticketUpdated', { id: props.ticket.id, status: 'DIKERJAKAN' });
         },
@@ -346,13 +369,14 @@ const canResolve = computed(() => {
         // Pada situasi darurat, foto bersifat opsional demi menjaga privasi & etika pasien
         return hasNotes;
     }
-    const hasPhoto = !!resolveForm.evidence_after_file || (!!resolveForm.evidence_after && resolveForm.evidence_after.trim() !== '');
+    const hasPhoto = afterUploadFiles.value.length > 0 || (!!resolveForm.evidence_after && resolveForm.evidence_after.trim() !== '');
     return hasPhoto && hasNotes;
 });
 
 const submitResolution = () => {
     if (!props.ticket || isResolved.value || !canResolve.value) return;
 
+    resolveForm.evidence_after_files = afterUploadFiles.value.map(item => item.file);
     resolveForm.post(route('pansinar.tickets.resolve', props.ticket.id), {
         preserveScroll: true,
         forceFormData: true,
@@ -363,6 +387,7 @@ const submitResolution = () => {
             }
             emit('ticketUpdated', { id: props.ticket.id, status: 'SELESAI' });
             resolveForm.reset();
+            afterUploadFiles.value = [];
             afterPhotoPreview.value = null;
             emit('close');
         }
@@ -613,35 +638,39 @@ const submitResolution = () => {
                             </p>
                         </div>
 
-                        <!-- 5. Foto Lampiran Aduan (Kondisi Awal / Before) - Desain Kartu Persis Ceklis Harian -->
-                        <div 
-                            v-if="ticket.evidence_before" 
-                            @click="openZoomPhoto(ticket.evidence_before, `Foto Bukti Kendala - ${ticket.ticket_number}`)"
-                            class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/40 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer select-none min-h-[52px]"
-                            title="Klik untuk memperbesar foto bukti aduan"
-                        >
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <!-- Thumbnail Preview Kecil -->
-                                <div class="h-10 w-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200/80 dark:border-slate-700 shrink-0 relative">
-                                    <img 
-                                        :src="ticket.evidence_before" 
-                                        alt="Thumbnail Bukti" 
-                                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
-                                        loading="lazy"
-                                    />
-                                </div>
-                                <div class="min-w-0">
-                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors block leading-tight">
-                                        Foto Bukti Kendala
-                                    </span>
-                                    <span class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block truncate">
-                                        Klik untuk memperbesar foto
-                                    </span>
-                                </div>
-                            </div>
+                        <!-- 5. Foto Lampiran Aduan (Kondisi Awal / Before - Mendukung Multi-file) -->
+                        <div v-if="beforePhotos.length > 0" class="space-y-1.5">
+                            <div class="grid gap-2" :class="beforePhotos.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'">
+                                <div 
+                                    v-for="(photoUrl, idx) in beforePhotos"
+                                    :key="'before-' + idx"
+                                    @click="openZoomPhoto(photoUrl, `Foto Bukti Kendala ${beforePhotos.length > 1 ? '#' + (idx + 1) : ''} - ${ticket.ticket_number}`)"
+                                    class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/40 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer select-none min-h-[52px]"
+                                    title="Klik untuk memperbesar foto bukti aduan"
+                                >
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <div class="h-10 w-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200/80 dark:border-slate-700 shrink-0 relative">
+                                            <img 
+                                                :src="photoUrl" 
+                                                :alt="'Thumbnail Bukti ' + (idx + 1)" 
+                                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                        <div class="min-w-0">
+                                            <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors block leading-tight">
+                                                Foto Bukti Kendala {{ beforePhotos.length > 1 ? `#${idx + 1}` : '' }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block truncate">
+                                                Klik untuk memperbesar foto
+                                            </span>
+                                        </div>
+                                    </div>
 
-                            <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-300 dark:group-hover:text-emerald-400 flex items-center justify-center shrink-0 transition-all shadow-2xs">
-                                <Maximize2 class="w-3.5 h-3.5" />
+                                    <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-300 dark:group-hover:text-emerald-400 flex items-center justify-center shrink-0 transition-all shadow-2xs">
+                                        <Maximize2 class="w-3.5 h-3.5" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -680,14 +709,46 @@ const submitResolution = () => {
                     <!-- Card Body -->
                     <div class="p-4 sm:p-5 space-y-4">
 
+                    <!-- Info Petugas Pengklaim (Anti Double Handling) -->
+                    <div v-if="ticket.starter_name" class="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 flex items-center justify-between gap-2.5">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                <Wrench class="w-4 h-4" />
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                    Ditangani oleh: {{ ticket.starter_name }}
+                                </p>
+                                <p v-if="ticket.started_at_formatted" class="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                                    Mulai dikerjakan: {{ ticket.started_at_formatted }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lock Notice jika sedang ditangani petugas lain (Non-Admin) -->
+                    <div v-if="isClaimedByOther" class="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-center space-y-1.5">
+                        <p class="text-xs font-extrabold text-amber-800 dark:text-amber-300">
+                            Aduan Sedang Ditindaklanjuti Petugas Lain
+                        </p>
+                        <p class="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                            Tiket ini sudah diklaim oleh <strong>{{ ticket.starter_name }}</strong>. Form penyelesaian dikunci untuk mencegah penanganan ganda.
+                        </p>
+                    </div>
+
+                    <template v-else>
                     <!-- 1. Upload Bukti Foto After (Hasil Perbaikan) -->
                     <div class="space-y-1.5">
                         <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-tight">
                             {{ isEmergency ? 'Foto Situasi / Lokasi (Opsional)' : 'Foto Bukti Hasil Perbaikan (After)' }} <span v-if="!isEmergency" class="text-rose-500">*</span>
                         </label>
 
+                        <!-- Hidden Inputs (always mounted) -->
+                        <input ref="cameraInputRef" type="file" accept="image/*" capture="environment" @change="handleFileChange" class="hidden" />
+                        <input ref="fileInputRef" type="file" accept="image/*" multiple @change="handleFileChange" class="hidden" />
+
                         <!-- Box Upload Pilihan Kamera vs Galeri (Sesuai Ceklis Harian) -->
-                        <div v-if="!afterPhotoPreview" 
+                        <div v-if="afterUploadFiles.length === 0" 
                              class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 text-center bg-white dark:bg-slate-900 space-y-3">
                             <div class="flex flex-col items-center gap-1">
                                 <div :class="[
@@ -700,7 +761,7 @@ const submitResolution = () => {
                                     Ambil Foto atau Pilih dari Galeri
                                 </p>
                                 <p class="text-[11px] text-slate-400">
-                                    {{ isEmergency ? 'Opsional: Demi menjaga privasi & etika pasien, foto tidak diwajibkan' : 'Wajib sertakan foto hasil perbaikan fasilitas sanitasi (Maks. 10MB)' }}
+                                    {{ isEmergency ? 'Opsional: Demi menjaga privasi & etika pasien, foto tidak diwajibkan' : 'Wajib sertakan foto hasil perbaikan sanitasi (bisa pilih beberapa foto, maks. 5)' }}
                                 </p>
                             </div>
 
@@ -725,46 +786,78 @@ const submitResolution = () => {
                                     <span>Pilih Galeri</span>
                                 </button>
                             </div>
-                            <input ref="cameraInputRef" type="file" accept="image/*" capture="environment" @change="handleFileChange" class="hidden" />
-                            <input ref="fileInputRef" type="file" accept="image/*" @change="handleFileChange" class="hidden" />
                         </div>
 
-                        <!-- Preview Foto Terpilih (Desain Kartu Kompak & Rapi) -->
-                        <div v-else class="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-emerald-50/30 dark:bg-emerald-950/20 border border-emerald-500/40 min-h-[52px]">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <div class="h-11 w-11 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 shrink-0 relative">
-                                    <img :src="afterPhotoPreview" alt="Foto Selesai" class="w-full h-full object-cover" />
-                                </div>
-                                <div class="min-w-0">
-                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100 block leading-tight truncate">
-                                        {{ resolveForm.evidence_after_file?.name || 'Foto Bukti Selesai' }}
-                                    </span>
-                                    <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-0.5 truncate">
-                                        Foto siap diverifikasi
-                                    </span>
+                        <!-- Preview Foto Terpilih (Multi-file Grid + Toolbar) -->
+                        <div v-else class="space-y-2.5">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                <div
+                                    v-for="(item, idx) in afterUploadFiles"
+                                    :key="'after-upload-' + idx"
+                                    class="relative aspect-square rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-emerald-500/40 group cursor-pointer"
+                                    @click="openZoomPhoto(item.previewUrl, `Foto Hasil Perbaikan #${idx + 1}`)"
+                                >
+                                    <img :src="item.previewUrl" :alt="item.name" class="w-full h-full object-cover" />
+                                    <button
+                                        type="button"
+                                        @click.stop="removeAfterPhoto(idx)"
+                                        class="absolute top-1.5 right-1.5 h-6 w-6 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-sm cursor-pointer transition active:scale-90"
+                                        title="Hapus Foto"
+                                    >
+                                        <X class="w-3.5 h-3.5 stroke-[2.5]" />
+                                    </button>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-1.5 shrink-0">
-                                <button 
-                                    type="button" 
-                                    @click="openZoomPhoto(afterPhotoPreview, 'Foto Hasil Perbaikan (After)')"
-                                    class="h-7 w-7 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-emerald-600 flex items-center justify-center transition cursor-pointer"
-                                    title="Perbesar Foto">
-                                    <Maximize2 class="w-3.5 h-3.5" />
-                                </button>
-                                <button 
-                                    type="button" 
-                                    @click="triggerGallery"
-                                    class="px-2.5 h-7 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition cursor-pointer">
-                                    Ganti
-                                </button>
-                                <button 
-                                    type="button" 
-                                    @click="removeAfterPhoto"
-                                    class="h-7 w-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 flex items-center justify-center transition cursor-pointer"
-                                    title="Hapus Foto">
-                                    <Trash2 class="w-3.5 h-3.5" />
-                                </button>
+
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50/30 dark:bg-emerald-950/20 border border-emerald-500/40">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="h-9 w-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                        <CheckCircle2 class="h-4 w-4" />
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                                            {{ afterUploadFiles.length }} / 5 Foto Siap Diverifikasi
+                                        </p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                            {{ afterUploadFiles.length < 5 ? 'Masih bisa tambah foto lagi' : 'Batas maksimal 5 foto tercapai' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
+                                    <button
+                                        v-if="afterUploadFiles.length < 5"
+                                        type="button"
+                                        @click="triggerCamera"
+                                        :class="[
+                                            'h-9 px-3 rounded-xl text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 whitespace-nowrap',
+                                            isEmergency ? 'bg-rose-600 hover:bg-rose-500' : 'bg-emerald-600 hover:bg-emerald-500'
+                                        ]"
+                                        title="Tambah Foto Kamera"
+                                    >
+                                        <Camera class="h-3.5 w-3.5 shrink-0" />
+                                        <span>Kamera</span>
+                                    </button>
+                                    <button
+                                        v-if="afterUploadFiles.length < 5"
+                                        type="button"
+                                        @click="triggerGallery"
+                                        class="h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 whitespace-nowrap"
+                                        title="Tambah dari Galeri"
+                                    >
+                                        <ImageIcon class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        <span>Galeri</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="removeAfterPhoto()"
+                                        class="col-span-2 sm:col-span-1 h-9 px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 whitespace-nowrap"
+                                        title="Hapus Semua Foto"
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5 shrink-0" />
+                                        <span>Hapus</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -785,6 +878,7 @@ const submitResolution = () => {
                             <span>{{ isEmergency ? '* Harap lengkapi catatan tindakan (min. 5 karakter)' : '* Harap lengkapi foto & catatan solusi' }}</span>
                         </div>
                     </div>
+                    </template>
                     </div>
                 </div>
 
@@ -801,60 +895,26 @@ const submitResolution = () => {
 
                     <div class="p-4 sm:p-5 space-y-3">
 
-                    <!-- Foto Before vs After Berdampingan Menggunakan Desain Kartu -->
+                    <!-- Dokumentasi Hasil Penyelesaian (After saja, karena kondisi awal sudah tampil di atas) -->
                     <div class="space-y-1.5">
                         <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider block">
-                            Dokumentasi Bukti Foto
+                            Dokumentasi Hasil Penyelesaian
                         </span>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <!-- Before Card -->
+                        <div v-if="afterPhotosList.length > 0" class="grid gap-2" :class="afterPhotosList.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'">
                             <div 
-                                v-if="ticket.evidence_before" 
-                                @click="openZoomPhoto(ticket.evidence_before, `Foto Kondisi Awal (Before) - ${ticket.ticket_number}`)"
-                                class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 hover:border-emerald-500/40 transition-all cursor-pointer select-none min-h-[52px]"
-                                title="Klik untuk memperbesar foto awal"
-                            >
-                                <div class="flex items-center gap-2.5 min-w-0">
-                                    <div class="h-10 w-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 shrink-0 relative">
-                                        <img :src="ticket.evidence_before" alt="Before" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200" />
-                                    </div>
-                                    <div class="min-w-0">
-                                        <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 transition-colors block leading-tight">
-                                            Kondisi Awal (Before)
-                                        </span>
-                                        <span class="text-[11px] text-slate-400 mt-0.5 block truncate">
-                                            Klik untuk memperbesar
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 flex items-center justify-center shrink-0">
-                                    <Maximize2 class="w-3.5 h-3.5" />
-                                </div>
-                            </div>
-                            <div v-else class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 text-slate-400 min-h-[52px]">
-                                <div class="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
-                                    <ImageIcon class="w-4 h-4" />
-                                </div>
-                                <div class="min-w-0">
-                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block leading-tight">Kondisi Awal (Before)</span>
-                                    <span class="text-[11px] text-slate-400 block mt-0.5">Tidak ada foto</span>
-                                </div>
-                            </div>
-
-                            <!-- After Card -->
-                            <div 
-                                v-if="ticket.evidence_after" 
-                                @click="openZoomPhoto(ticket.evidence_after, `Foto Hasil Perbaikan (After) - ${ticket.ticket_number}`)"
+                                v-for="(photoUrl, idx) in afterPhotosList"
+                                :key="'res-after-' + idx"
+                                @click="openZoomPhoto(photoUrl, `Foto Hasil Penyelesaian ${afterPhotosList.length > 1 ? '#' + (idx + 1) : ''} - ${ticket.ticket_number}`)"
                                 class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/30 border border-emerald-500/40 hover:border-emerald-500 transition-all cursor-pointer select-none min-h-[52px]"
-                                title="Klik untuk memperbesar foto perbaikan"
+                                title="Klik untuk memperbesar foto hasil penyelesaian"
                             >
                                 <div class="flex items-center gap-2.5 min-w-0">
                                     <div class="h-10 w-10 rounded-lg overflow-hidden bg-emerald-100 dark:bg-slate-700 border border-emerald-300/80 shrink-0 relative">
-                                        <img :src="ticket.evidence_after" alt="After" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200" />
+                                        <img :src="photoUrl" :alt="'Hasil Penyelesaian ' + (idx + 1)" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200" />
                                     </div>
                                     <div class="min-w-0">
                                         <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 transition-colors block leading-tight">
-                                            Hasil Perbaikan (After)
+                                            Bukti Penyelesaian {{ afterPhotosList.length > 1 ? `#${idx + 1}` : '' }}
                                         </span>
                                         <span class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 block truncate">
                                             Terverifikasi selesai
@@ -864,6 +924,15 @@ const submitResolution = () => {
                                 <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700 text-emerald-600 flex items-center justify-center shrink-0">
                                     <Maximize2 class="w-3.5 h-3.5" />
                                 </div>
+                            </div>
+                        </div>
+                        <div v-else class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 text-slate-400 min-h-[52px]">
+                            <div class="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 text-slate-400">
+                                <ImageIcon class="w-4 h-4" />
+                            </div>
+                            <div class="min-w-0">
+                                <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block leading-tight">Bukti Penyelesaian</span>
+                                <span class="text-[11px] text-slate-400 block mt-0.5">Tidak ada foto dilampirkan</span>
                             </div>
                         </div>
                     </div>
@@ -886,18 +955,7 @@ const submitResolution = () => {
             <div class="sticky bottom-0 z-20 shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-lg sm:shadow-none">
                 
                 <!-- KONDISI A: TIKET SUDAH SELESAI -->
-                <div v-if="isResolved" class="flex items-center justify-between w-full">
-                    <button
-                        v-if="isAdmin"
-                        type="button"
-                        @click="showDeleteConfirm = true"
-                        class="h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-                    >
-                        <Trash2 class="w-4 h-4" />
-                        <span>Hapus Aduan</span>
-                    </button>
-                    <div v-else></div>
-
+                <div v-if="isResolved" class="flex justify-end">
                     <button
                         type="button"
                         @click="emit('close')"
@@ -909,7 +967,7 @@ const submitResolution = () => {
 
                 <!-- KONDISI B: TIKET BERSTATUS MENUNGGU (TOMBOL TINDAK LANJUTI & BATAL) -->
                 <div v-else-if="isPending" class="w-full">
-                    <!-- Mobile View: Tumpuk (Tindak Lanjuti di atas, Hapus/Batal di bawah) -->
+                    <!-- Mobile View: Tumpuk (Tindak Lanjuti di atas, Batal di bawah) -->
                     <div class="flex flex-col gap-2.5 w-full sm:hidden">
                         <button
                             type="button"
@@ -925,68 +983,55 @@ const submitResolution = () => {
                             <Wrench v-else class="h-4 w-4" />
                             <span>{{ isStartingProgress ? 'Memproses...' : (isEmergency ? 'Respon Panggilan Darurat' : 'Tindak Lanjuti') }}</span>
                         </button>
-                        <div class="flex items-center gap-2">
-                            <button
-                                v-if="isAdmin"
-                                type="button"
-                                @click="showDeleteConfirm = true"
-                                class="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
-                            >
-                                <Trash2 class="w-4 h-4" />
-                                <span>Hapus</span>
-                            </button>
-                            <button
-                                type="button"
-                                @click="emit('close')"
-                                class="flex-1 h-12 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
-                            >
-                                <span>Batal</span>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            @click="emit('close')"
+                            class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
+                        >
+                            <span>Batal</span>
+                        </button>
                     </div>
 
-                    <!-- Desktop View: Sejajar (Hapus di kiri, Batal & Tindak Lanjuti di kanan) -->
-                    <div class="hidden sm:flex items-center justify-between w-full">
+                    <!-- Desktop View: Sejajar (Batal di kiri, Tindak Lanjuti di kanan) -->
+                    <div class="hidden sm:flex items-center justify-end gap-3 w-full">
                         <button
-                            v-if="isAdmin"
                             type="button"
-                            @click="showDeleteConfirm = true"
-                            class="h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                            @click="emit('close')"
+                            class="h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition cursor-pointer"
                         >
-                            <Trash2 class="w-4 h-4" />
-                            <span>Hapus Aduan</span>
+                            Batal
                         </button>
-                        <div v-else></div>
-
-                        <div class="flex items-center gap-3">
-                            <button
-                                type="button"
-                                @click="emit('close')"
-                                class="h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition cursor-pointer"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="button"
-                                @click="startProgress"
-                                :disabled="isStartingProgress"
-                                :class="[
-                                    'h-11 px-6 rounded-xl active:scale-95 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-60',
-                                    isEmergency ? 'bg-rose-600 hover:bg-rose-500' : 'bg-amber-600 hover:bg-amber-500'
-                                ]"
-                            >
-                                <span v-if="isStartingProgress" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                <AlertCircle v-else-if="isEmergency" class="w-4 h-4" />
-                                <Wrench v-else class="w-4 h-4" />
-                                <span>{{ isStartingProgress ? 'Memproses...' : (isEmergency ? 'Respon Panggilan Darurat' : 'Tindak Lanjuti') }}</span>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            @click="startProgress"
+                            :disabled="isStartingProgress"
+                            :class="[
+                                'h-11 px-6 rounded-xl active:scale-95 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-60',
+                                isEmergency ? 'bg-rose-600 hover:bg-rose-500' : 'bg-amber-600 hover:bg-amber-500'
+                            ]"
+                        >
+                            <span v-if="isStartingProgress" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                            <AlertCircle v-else-if="isEmergency" class="w-4 h-4" />
+                            <Wrench v-else class="w-4 h-4" />
+                            <span>{{ isStartingProgress ? 'Memproses...' : (isEmergency ? 'Respon Panggilan Darurat' : 'Tindak Lanjuti') }}</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- KONDISI C: TIKET SEDANG DIKERJAKAN (TOMBOL VERIFIKASI / SELESAIKAN) -->
+                <!-- KONDISI C1: TIKET SEDANG DIKERJAKAN PETUGAS LAIN (READ-ONLY) -->
+                <div v-else-if="isInProgress && isClaimedByOther" class="flex justify-end">
+                    <button
+                        type="button"
+                        @click="emit('close')"
+                        class="w-full sm:w-auto h-11 px-7 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 font-bold text-xs transition cursor-pointer"
+                    >
+                        Tutup
+                    </button>
+                </div>
+
+                <!-- KONDISI C2: TIKET SEDANG DIKERJAKAN (TOMBOL VERIFIKASI / SELESAIKAN) -->
                 <div v-else-if="isInProgress" class="w-full">
-                    <!-- Mobile View: Tumpuk (Tandai Selesai di atas, Hapus/Batal di bawah) -->
+                    <!-- Mobile View: Tumpuk (Tandai Selesai di atas, Batal di bawah) -->
                     <div class="flex flex-col gap-2.5 w-full sm:hidden">
                         <button
                             type="button"
@@ -1003,67 +1048,41 @@ const submitResolution = () => {
                             <CheckCircle2 v-else class="h-4 w-4" />
                             <span>{{ resolveForm.processing ? 'Menyimpan...' : (isEmergency ? 'Selesaikan Penanganan Darurat' : 'Tandai Tiket Selesai') }}</span>
                         </button>
-                        <div class="flex items-center gap-2">
-                            <button
-                                v-if="isAdmin"
-                                type="button"
-                                @click="showDeleteConfirm = true"
-                                :disabled="resolveForm.processing"
-                                class="flex-1 h-12 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
-                            >
-                                <Trash2 class="w-4 h-4" />
-                                <span>Hapus</span>
-                            </button>
-                            <button
-                                type="button"
-                                @click="emit('close')"
-                                :disabled="resolveForm.processing"
-                                class="flex-1 h-12 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
-                            >
-                                <span>Batal</span>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            @click="emit('close')"
+                            :disabled="resolveForm.processing"
+                            class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
+                        >
+                            <span>Batal</span>
+                        </button>
                     </div>
 
-                    <!-- Desktop View: Sejajar (Hapus di kiri, Batal & Tandai Selesai di kanan) -->
-                    <div class="hidden sm:flex items-center justify-between w-full">
+                    <!-- Desktop View: Sejajar -->
+                    <div class="hidden sm:flex items-center justify-end gap-3 w-full">
                         <button
-                            v-if="isAdmin"
                             type="button"
-                            @click="showDeleteConfirm = true"
+                            @click="emit('close')"
                             :disabled="resolveForm.processing"
-                            class="h-11 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:border-rose-900/50 text-slate-500 dark:text-slate-400 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                            class="h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition cursor-pointer"
                         >
-                            <Trash2 class="w-4 h-4" />
-                            <span>Hapus Aduan</span>
+                            Batal
                         </button>
-                        <div v-else></div>
-
-                        <div class="flex items-center gap-3">
-                            <button
-                                type="button"
-                                @click="emit('close')"
-                                :disabled="resolveForm.processing"
-                                class="h-11 px-5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition cursor-pointer"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="button"
-                                @click="submitResolution"
-                                :disabled="!canResolve || resolveForm.processing"
-                                :class="[
-                                    'h-11 px-6 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm',
-                                    canResolve && !resolveForm.processing 
-                                        ? (isEmergency ? 'bg-rose-600 hover:bg-rose-500 text-white cursor-pointer active:scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer active:scale-95')
-                                        : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-80'
-                                ]"
-                            >
-                                <span v-if="resolveForm.processing" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                <CheckCircle2 v-else class="w-4 h-4" />
-                                <span>{{ resolveForm.processing ? 'Menyimpan...' : (isEmergency ? 'Selesaikan Penanganan Darurat' : 'Tandai Tiket Selesai') }}</span>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            @click="submitResolution"
+                            :disabled="!canResolve || resolveForm.processing"
+                            :class="[
+                                'h-11 px-6 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm',
+                                canResolve && !resolveForm.processing 
+                                    ? (isEmergency ? 'bg-rose-600 hover:bg-rose-500 text-white cursor-pointer active:scale-95' : 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer active:scale-95')
+                                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-80'
+                            ]"
+                        >
+                            <span v-if="resolveForm.processing" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                            <CheckCircle2 v-else class="w-4 h-4" />
+                            <span>{{ resolveForm.processing ? 'Menyimpan...' : (isEmergency ? 'Selesaikan Penanganan Darurat' : 'Tandai Tiket Selesai') }}</span>
+                        </button>
                     </div>
                 </div>
 
@@ -1109,52 +1128,4 @@ const submitResolution = () => {
             </div>
         </div>
     </dialog>
-    <!-- Modal Konfirmasi Hapus Aduan Dari Modal (Khusus Administrator) -->
-    <Modal :show="showDeleteConfirm && !!ticket" @close="showDeleteConfirm = false" max-width="md">
-        <div v-if="ticket" class="p-6 bg-white dark:bg-slate-900 rounded-2xl">
-            <div class="flex items-center gap-3.5 mb-4">
-                <div class="h-12 w-12 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                    <Trash2 class="w-6 h-6" />
-                </div>
-                <div>
-                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white">
-                        Hapus Aduan Sanitasi?
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Data aduan yang dihapus tidak dapat dipulihkan kembali.
-                    </p>
-                </div>
-            </div>
-
-            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs mb-5 space-y-1.5">
-                <div class="flex items-center justify-between">
-                    <span class="font-extrabold text-slate-900 dark:text-white">{{ ticket.ticket_number }}</span>
-                    <span :class="[
-                        'px-2 py-0.5 rounded-lg text-[10px] font-extrabold border',
-                        ticket.urgency === 'DARURAT' 
-                            ? 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800' 
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                    ]">
-                        {{ ticket.urgency === 'DARURAT' ? 'Darurat' : 'Normal' }}
-                    </span>
-                </div>
-                <div class="text-slate-600 dark:text-slate-400 font-medium">
-                    {{ ticket.location_point }} ({{ ticket.location_building }} • {{ ticket.location_floor }})
-                </div>
-                <div class="text-slate-500 dark:text-slate-400 italic text-[11px] line-clamp-2 mt-1">
-                    "{{ ticket.problem_description }}"
-                </div>
-            </div>
-
-            <div class="flex items-center justify-end gap-2.5">
-                <SecondaryButton @click="showDeleteConfirm = false" :disabled="isDeletingTicket">
-                    Batal
-                </SecondaryButton>
-                <DangerButton @click="deleteTicketFromModal" :disabled="isDeletingTicket" class="font-bold flex items-center gap-1.5">
-                    <Trash2 class="w-3.5 h-3.5" />
-                    <span>{{ isDeletingTicket ? 'Menghapus...' : 'Ya, Hapus Aduan' }}</span>
-                </DangerButton>
-            </div>
-        </div>
-    </Modal>
 </template>

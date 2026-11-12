@@ -665,8 +665,8 @@ const panSinarSearchableItems = [
 ];
 
 const generalSearchableItems = [
-    { label: 'Dashboard', routeName: 'dashboard', description: 'Ringkasan data & status utama' },
-    { label: 'Layanan Penunjang', routeName: 'services.index', description: 'Pelaporan Medik & Non-Medik' },
+    { label: 'Dashboard', routeName: 'dashboard', description: 'Ringkasan data & status utama', permKey: 'dashboard' },
+    { label: 'Layanan Penunjang', routeName: 'services.index', description: 'Pelaporan Medik & Non-Medik', permKey: 'services.index' },
     { label: 'Riwayat Pelaporan', routeName: 'reports.history', description: 'Daftar riwayat tiket' },
     { label: 'Manajemen Laporan', routeName: 'reports-management.index', description: 'Monitoring & kelola seluruh tiket laporan', permKey: 'reports-management.index' },
     { label: 'Audit Laporan', routeName: 'reports-audit.index', description: 'Audit trail dan validasi laporan', permKey: 'reports-audit.index' },
@@ -1378,7 +1378,7 @@ const getGroupInitials = (title) => {
                         </Link>
 
                         <!-- Standard PESU PELUH Branding -->
-                        <Link v-else :href="route('dashboard')" prefetch class="flex items-center gap-3">
+                        <Link v-else :href="hasAccess('dashboard') ? route('dashboard') : route('services.index')" prefetch class="flex items-center gap-3">
                             <!-- Left Logo (Rounded Square) -->
                             <div class="h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
                                 <img src="/images/logo-sidebar.png" alt="PESU PELUH" class="h-full w-full object-contain dark:brightness-0 dark:invert" />

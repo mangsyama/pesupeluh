@@ -93,6 +93,7 @@ const closePhotoPreview = () => {
 
 // Auth / Role Check: Hanya Administrator yang berhak menghapus aduan
 const page = usePage();
+const currentUserId = computed(() => Number(page.props.auth?.user?.id || 0));
 const isAdmin = computed(() => {
     const user = page.props.auth?.user;
     return Number(user?.role_id) === 1 || user?.role?.name?.toUpperCase() === 'ADMINISTRATOR';
@@ -265,10 +266,19 @@ const formatTicketLocation = (ticket) => {
     return point;
 };
 
-// Action Button Helper (Respon Darurat / Selesaikan Darurat jika DARURAT, Verifikasi saat Menunggu, Selesaikan saat Dikerjakan, Detail saat Selesai)
-const getActionButtonText = (status, urgency) => {
+const isClaimedByOther = (ticket) => {
+    const s = ticket?.status?.toUpperCase();
+    if (s !== 'DIKERJAKAN' && s !== 'IN_PROGRESS') return false;
+    return !!ticket?.started_by && Number(ticket.started_by) !== currentUserId.value && !isAdmin.value;
+};
+
+// Action Button Helper (Respon Darurat / Selesaikan Darurat jika DARURAT, Verifikasi saat Menunggu, Selesaikan saat Dikerjakan, Lihat Progres jika dikerjakan petugas lain, Detail saat Selesai)
+const getActionButtonText = (status, urgency, ticket = null) => {
     const s = status?.toUpperCase();
     if (s === 'DIKERJAKAN' || s === 'IN_PROGRESS') {
+        if (ticket && isClaimedByOther(ticket)) {
+            return 'Lihat Progres';
+        }
         return urgency === 'DARURAT' ? 'Selesaikan Darurat' : 'Selesaikan';
     }
     if (s === 'MENUNGGU' || s === 'OPEN') {
@@ -277,8 +287,11 @@ const getActionButtonText = (status, urgency) => {
     return 'Detail';
 };
 
-const getActionButtonClass = (status, urgency) => {
+const getActionButtonClass = (status, urgency, ticket = null) => {
     const s = status?.toUpperCase();
+    if (ticket && isClaimedByOther(ticket)) {
+        return 'bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700';
+    }
     if (urgency === 'DARURAT' && (s === 'MENUNGGU' || s === 'OPEN' || s === 'DIKERJAKAN' || s === 'IN_PROGRESS')) {
         return 'bg-rose-600 hover:bg-rose-500 text-white border-transparent shadow-xs animate-pulse';
     }
@@ -511,10 +524,10 @@ const getActionButtonClass = (status, urgency) => {
                                             type="button"
                                             :class="[
                                                 'px-2.5 py-1 rounded-xl text-[10px] font-extrabold inline-flex items-center justify-center gap-1.5 border transition-all duration-150 cursor-pointer active:scale-95 whitespace-nowrap',
-                                                getActionButtonClass(ticket.status, ticket.urgency)
+                                                getActionButtonClass(ticket.status, ticket.urgency, ticket)
                                             ]"
                                         >
-                                            <span>{{ getActionButtonText(ticket.status, ticket.urgency) }}</span>
+                                            <span>{{ getActionButtonText(ticket.status, ticket.urgency, ticket) }}</span>
                                             <ArrowUpRight class="w-3 h-3 shrink-0 stroke-[2.5]" />
                                         </button>
 
@@ -666,6 +679,15 @@ const getActionButtonClass = (status, urgency) => {
                                 </div>
                             </div>
 
+                            <!-- Banner Penanganan Aktif (Agar Tidak Double Handling) -->
+                            <div
+                                v-if="(ticket.status === 'DIKERJAKAN' || ticket.status === 'IN_PROGRESS') && ticket.starter_name"
+                                class="px-3 py-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 font-semibold"
+                            >
+                                <Wrench class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Ditangani oleh: <strong class="font-bold">{{ ticket.starter_name }}</strong></span>
+                            </div>
+
                             <!-- Bottom: Tombol Verifikasi/Selesaikan/Detail Sesuai Status & Tombol Hapus Khusus Admin -->
                             <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
                                 <button
@@ -673,10 +695,10 @@ const getActionButtonClass = (status, urgency) => {
                                     type="button"
                                     :class="[
                                         'flex-1 h-10 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer border',
-                                        getActionButtonClass(ticket.status, ticket.urgency)
+                                        getActionButtonClass(ticket.status, ticket.urgency, ticket)
                                     ]"
                                 >
-                                    <span>{{ getActionButtonText(ticket.status, ticket.urgency) }}</span>
+                                    <span>{{ getActionButtonText(ticket.status, ticket.urgency, ticket) }}</span>
                                     <ArrowUpRight class="h-4 w-4" />
                                 </button>
 

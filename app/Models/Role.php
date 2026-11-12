@@ -17,6 +17,7 @@ class Role extends Model
     public const PJ_RUANGAN = 9;
     public const TEKNISI = 10;
     public const STAFF = 11;
+    public const CLEANING_SERVICE = 12;
 
     public $timestamps = false;
     protected $fillable = ['name', 'page_permissions'];

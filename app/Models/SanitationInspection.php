@@ -39,6 +39,7 @@ class SanitationInspection extends Model
         'shift',
         'inspector',
         'inspection_date',
+        'photo_list',
     ];
 
     public function toilet()
@@ -83,6 +84,17 @@ class SanitationInspection extends Model
             return 'Siang (14:00 - 21:00)';
         }
         return 'Malam (21:00 - 07:00)';
+    }
+
+    public function getPhotoAttribute($value): ?string
+    {
+        $list = SanitationTicket::parseMediaList($value);
+        return $list[0] ?? null;
+    }
+
+    public function getPhotoListAttribute(): array
+    {
+        return SanitationTicket::parseMediaList($this->attributes['photo'] ?? null);
     }
 }
 

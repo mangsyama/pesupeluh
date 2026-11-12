@@ -120,6 +120,7 @@ class UserManagementController extends Controller
                 'group' => 'Layanan & Laporan',
                 'permissions' => [
                     ['key' => 'services.index', 'label' => 'Layanan Penunjang'],
+                    ['key' => 'pansinar.index', 'label' => 'PAN-SINAR (Kesling)'],
                     ['key' => 'reports.history', 'label' => 'Riwayat Pelaporan'],
                     ['key' => 'reports-management.index', 'label' => 'Manajemen Laporan'],
                     ['key' => 'reports-audit.index', 'label' => 'Audit Laporan (Semua Data)'],

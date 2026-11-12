@@ -104,25 +104,47 @@ class PublicSanitasiController extends Controller
             'reporter_phone' => 'nullable|string|max:30',
             'is_anonymous' => 'nullable|boolean',
             'attachment' => 'nullable',
+            'attachments' => 'nullable|array|max:5',
+            'attachments.*' => 'file|mimes:jpg,jpeg,png,webp,gif,mp4,mov,webm|max:10240',
         ], [
             'room_id.required' => 'Silakan pilih lokasi ruangan atau toilet terlebih dahulu.',
             'problem_description.required' => 'Deskripsi kendala wajib diisi minimal 5 karakter.',
             'problem_description.min' => 'Deskripsi kendala terlalu singkat (minimal 5 karakter).',
+            'attachments.max' => 'Maksimal 5 file lampiran yang dapat diunggah.',
+            'attachments.*.max' => 'Ukuran setiap file maksimal 10MB.',
         ]);
 
-        // Process photo attachment if uploaded
-        $evidenceBefore = null;
+        // Process photo/video attachments (single or multiple)
+        $evidencePaths = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if ($file && $file->isValid()) {
+                    $filename = 'sanitasi_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                    $path = $file->storeAs('attachments/sanitasi', $filename, 'public');
+                    $evidencePaths[] = '/storage/' . $path;
+                }
+            }
+        }
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $filename = 'sanitasi_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('attachments/sanitasi', $filename, 'public');
-            $evidenceBefore = '/storage/' . $path;
+            if ($file && $file->isValid()) {
+                $filename = 'sanitasi_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('attachments/sanitasi', $filename, 'public');
+                $evidencePaths[] = '/storage/' . $path;
+            }
         } elseif ($request->filled('attachment') && is_string($request->input('attachment'))) {
             $raw = $request->input('attachment');
             if (str_starts_with($raw, 'data:image')) {
-                $evidenceBefore = SecureFileUpload::saveBase64($raw, 'attachments/sanitasi', 'sanitasi_');
+                $saved = SecureFileUpload::saveBase64($raw, 'attachments/sanitasi', 'sanitasi_');
+                if ($saved) {
+                    $evidencePaths[] = $saved;
+                }
             }
         }
+
+        $evidenceBefore = count($evidencePaths) === 0
+            ? null
+            : (count($evidencePaths) === 1 ? $evidencePaths[0] : json_encode($evidencePaths));
 
         // Find or associate toilet
         $toilet = null;
@@ -247,10 +269,13 @@ class PublicSanitasiController extends Controller
                 'status' => $ticket->status,
                 'reporter_name' => $ticket->reporter_name,
                 'evidence_before' => $ticket->evidence_before,
+                'evidence_before_list' => $ticket->evidence_before_list,
                 'evidence_after' => $ticket->evidence_after,
+                'evidence_after_list' => $ticket->evidence_after_list,
                 'resolution_notes' => $ticket->resolution_notes,
                 'created_at' => $ticket->created_at_formatted ?? now()->format('d M Y - H:i'),
                 'created_at_relative' => $ticket->created_at_relative,
+                'started_at' => $ticket->started_at_formatted,
                 'resolved_at' => $ticket->resolved_at_formatted,
             ];
         }

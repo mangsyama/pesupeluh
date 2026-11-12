@@ -187,6 +187,18 @@ const checkKeyboard = () => {
     }
 };
 
+const beforePhotos = computed(() => {
+    const list = props.report?.evidence_before_list;
+    if (Array.isArray(list) && list.length > 0) return list;
+    return props.report?.evidence_before ? [props.report.evidence_before] : [];
+});
+
+const afterPhotos = computed(() => {
+    const list = props.report?.evidence_after_list;
+    if (Array.isArray(list) && list.length > 0) return list;
+    return props.report?.evidence_after ? [props.report.evidence_after] : [];
+});
+
 onMounted(() => {
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', checkKeyboard);
@@ -451,6 +463,9 @@ const statusBadge = computed(() => {
                                                     ? 'Aduan telah masuk antrean dan sedang menunggu penanganan petugas.' 
                                                     : 'Aduan telah diverifikasi dan siap ditindaklanjuti.' }}
                                             </p>
+                                            <span v-if="report.created_at" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 block">
+                                                {{ report.created_at }}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -492,6 +507,9 @@ const statusBadge = computed(() => {
                                                         ? 'Petugas sedang melakukan penanganan langsung di lokasi.' 
                                                         : 'Petugas akan segera menuju lokasi untuk melakukan penanganan.') }}
                                             </p>
+                                            <span v-if="(isInProgress || isCompleted) && (report.started_at || report.resolved_at || report.created_at)" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 block">
+                                                {{ report.started_at || report.resolved_at || report.created_at }}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -541,36 +559,41 @@ const statusBadge = computed(() => {
                             </div>
 
                             <!-- Card Body -->
-                            <div class="p-4 sm:p-5 space-y-3">
-                                <!-- Foto Before & After Ditumpuk Atas-Bawah -->
+                            <div class="p-4 sm:p-5 space-y-4">
+                                <!-- Sub-bagian 1: Kondisi Awal Laporan -->
                                 <div class="space-y-2">
-                                    <!-- Foto Before -->
-                                    <div 
-                                        v-if="report.evidence_before" 
-                                        @click="openPhotoPreview(report.evidence_before, `Foto Kondisi Awal (Before) - ${report.ticket_number}`)"
-                                        class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/40 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer select-none min-h-[52px]"
-                                        title="Klik untuk memperbesar foto awal"
-                                    >
-                                        <div class="flex items-center gap-2.5 min-w-0">
-                                            <div class="h-10 w-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 shrink-0 relative">
-                                                <img 
-                                                    :src="report.evidence_before" 
-                                                    alt="Before" 
-                                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
-                                                    loading="lazy" 
-                                                />
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block leading-tight">
+                                        Kondisi Awal Laporan
+                                    </span>
+                                    <div v-if="beforePhotos.length > 0" class="space-y-2">
+                                        <div 
+                                            v-for="(photoUrl, idx) in beforePhotos"
+                                            :key="'track-before-' + idx"
+                                            @click="openPhotoPreview(photoUrl, `Kondisi Awal Laporan ${beforePhotos.length > 1 ? '#' + (idx + 1) : ''} - ${report.ticket_number}`)"
+                                            class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/40 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer select-none min-h-[52px]"
+                                            title="Klik untuk memperbesar foto awal"
+                                        >
+                                            <div class="flex items-center gap-2.5 min-w-0">
+                                                <div class="h-10 w-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 shrink-0 relative">
+                                                    <img 
+                                                        :src="photoUrl" 
+                                                        :alt="'Kondisi Awal ' + (idx + 1)" 
+                                                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                        loading="lazy" 
+                                                    />
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors block leading-tight">
+                                                        Foto Kondisi Awal {{ beforePhotos.length > 1 ? `#${idx + 1}` : '' }}
+                                                    </span>
+                                                    <span class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block truncate">
+                                                        Klik untuk memperbesar
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div class="min-w-0">
-                                                <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors block leading-tight">
-                                                    Kondisi Awal (Before)
-                                                </span>
-                                                <span class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block truncate">
-                                                    Klik untuk memperbesar
-                                                </span>
+                                            <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-300 dark:group-hover:text-emerald-400 flex items-center justify-center shrink-0 transition-all shadow-2xs">
+                                                <Maximize2 class="w-3.5 h-3.5" />
                                             </div>
-                                        </div>
-                                        <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-300 dark:group-hover:text-emerald-400 flex items-center justify-center shrink-0 transition-all shadow-2xs">
-                                            <Maximize2 class="w-3.5 h-3.5" />
                                         </div>
                                     </div>
                                     <div v-else class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 text-slate-400 min-h-[52px]">
@@ -578,38 +601,49 @@ const statusBadge = computed(() => {
                                             <ImageIcon class="w-4 h-4" />
                                         </div>
                                         <div class="min-w-0">
-                                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block leading-tight">Kondisi Awal (Before)</span>
+                                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block leading-tight">Foto Kondisi Awal</span>
                                             <span class="text-[11px] text-slate-400 block mt-0.5">Tidak ada foto</span>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <!-- Foto After -->
-                                    <div 
-                                        v-if="report.evidence_after" 
-                                        @click="openPhotoPreview(report.evidence_after, `Foto Hasil Perbaikan (After) - ${report.ticket_number}`)"
-                                        class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 hover:border-emerald-500/40 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all cursor-pointer select-none min-h-[52px]"
-                                        title="Klik untuk memperbesar foto perbaikan"
-                                    >
-                                        <div class="flex items-center gap-2.5 min-w-0">
-                                            <div class="h-10 w-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 shrink-0 relative">
-                                                <img 
-                                                    :src="report.evidence_after" 
-                                                    alt="After" 
-                                                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
-                                                    loading="lazy" 
-                                                />
+                                <!-- Divider Pemisah -->
+                                <div class="border-t border-slate-100 dark:border-slate-800/80"></div>
+
+                                <!-- Sub-bagian 2: Bukti Penyelesaian dari Petugas -->
+                                <div class="space-y-2">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block leading-tight">
+                                        Bukti Penyelesaian Petugas
+                                    </span>
+                                    <div v-if="afterPhotos.length > 0" class="space-y-2">
+                                        <div 
+                                            v-for="(photoUrl, idx) in afterPhotos"
+                                            :key="'track-after-' + idx"
+                                            @click="openPhotoPreview(photoUrl, `Bukti Penyelesaian Petugas ${afterPhotos.length > 1 ? '#' + (idx + 1) : ''} - ${report.ticket_number}`)"
+                                            class="group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-900/50 hover:border-emerald-500/60 transition-all cursor-pointer select-none min-h-[52px]"
+                                            title="Klik untuk memperbesar bukti penyelesaian"
+                                        >
+                                            <div class="flex items-center gap-2.5 min-w-0">
+                                                <div class="h-10 w-10 rounded-lg overflow-hidden bg-emerald-100 dark:bg-slate-700 border border-emerald-300/80 shrink-0 relative">
+                                                    <img 
+                                                        :src="photoUrl" 
+                                                        :alt="'Bukti Penyelesaian ' + (idx + 1)" 
+                                                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                                                        loading="lazy" 
+                                                    />
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors block leading-tight">
+                                                        Foto Penyelesaian {{ afterPhotos.length > 1 ? `#${idx + 1}` : '' }}
+                                                    </span>
+                                                    <span class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 block truncate">
+                                                        Klik untuk memperbesar
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div class="min-w-0">
-                                                <span class="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors block leading-tight">
-                                                    Hasil Perbaikan (After)
-                                                </span>
-                                                <span class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 block truncate">
-                                                    Klik untuk memperbesar
-                                                </span>
+                                            <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-700/60 border border-emerald-200 dark:border-emerald-700/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 transition-all shadow-2xs">
+                                                <Maximize2 class="w-3.5 h-3.5" />
                                             </div>
-                                        </div>
-                                        <div class="h-7 w-7 rounded-lg bg-white dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-400 group-hover:text-emerald-600 group-hover:border-emerald-300 dark:group-hover:text-emerald-400 flex items-center justify-center shrink-0 transition-all shadow-2xs">
-                                            <Maximize2 class="w-3.5 h-3.5" />
                                         </div>
                                     </div>
                                     <div v-else class="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 text-slate-400 min-h-[52px]">
@@ -617,25 +651,12 @@ const statusBadge = computed(() => {
                                             <ImageIcon class="w-4 h-4" />
                                         </div>
                                         <div class="min-w-0">
-                                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block leading-tight">Hasil Perbaikan (After)</span>
+                                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block leading-tight">Foto Penyelesaian</span>
                                             <span class="text-[11px] text-slate-400 block mt-0.5">
                                                 {{ isCompleted ? 'Tidak ada foto' : 'Menunggu pengerjaan selesai' }}
                                             </span>
                                         </div>
                                     </div>
-                                </div>
-
-                                <!-- Catatan Tindak Lanjut Petugas -->
-                                <div v-if="report.resolution_notes" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 space-y-1">
-                                    <div class="flex items-center gap-1.5">
-                                        <ShieldCheck class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-tight">
-                                            Catatan Petugas
-                                        </span>
-                                    </div>
-                                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic pl-5">
-                                        "{{ report.resolution_notes }}"
-                                    </p>
                                 </div>
                             </div>
                         </div>

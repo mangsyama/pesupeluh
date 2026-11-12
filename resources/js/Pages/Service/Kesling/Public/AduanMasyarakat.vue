@@ -5,7 +5,8 @@ import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { 
     Send, 
-    MessageSquare, 
+    MessageSquare,
+    MessageCircle,
     Building2, 
     Sparkles, 
     Check,
@@ -204,7 +205,8 @@ const targetObjectRef = ref(null);
 const isiLaporanRef = ref(null);
 const reporterNameRef = ref(null);
 const reporterPhoneRef = ref(null);
-const uploadedAttachment = ref(null);
+const uploadedAttachments = ref([]);
+const hasAttachments = computed(() => uploadedAttachments.value.length > 0);
 
 const checkKeyboard = () => {
     if (window.visualViewport) {
@@ -245,14 +247,14 @@ const onIsiLaporanKeydown = (e) => {
     if (e.key === 'Enter') {
         if (e.ctrlKey || e.metaKey) {
             e.preventDefault();
-            if (form.value.isi_laporan.trim().length >= 5 && uploadedAttachment.value?.file) {
+            if (form.value.isi_laporan.trim().length >= 5) {
                 goToStep2();
             }
             return;
         }
 
         const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-        if (isTouch && !e.shiftKey && form.value.isi_laporan.trim().length >= 5 && uploadedAttachment.value?.file) {
+        if (isTouch && !e.shiftKey && form.value.isi_laporan.trim().length >= 5) {
             e.preventDefault();
             goToStep2();
         }
@@ -361,52 +363,61 @@ const compressImage = (file, maxWidth = 1920, maxHeight = 1920, quality = 0.82) 
 
 const onFileSelected = async (event) => {
     uploadError.value = '';
-    const originalFile = event.target.files?.[0];
-    if (!originalFile) return;
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const maxFiles = 5;
+    const remainingSlots = maxFiles - uploadedAttachments.value.length;
+    if (remainingSlots <= 0) {
+        uploadError.value = `Maksimal ${maxFiles} file lampiran yang dapat diunggah.`;
+        event.target.value = '';
+        return;
+    }
+
+    const filesToProcess = files.slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+        uploadError.value = `Hanya ${remainingSlots} file lagi yang dapat ditambahkan (maksimal ${maxFiles} file).`;
+    }
 
     const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov', 'avi', 'webm'];
-    const fileExtension = originalFile.name.split('.').pop()?.toLowerCase() || '';
-
-    if (!allowedExtensions.includes(fileExtension) || (!originalFile.type.startsWith('image/') && !originalFile.type.startsWith('video/'))) {
-        uploadError.value = 'Format file tidak didukung! Demi keamanan sistem, hanya file Foto (JPG, JPEG, PNG, WEBP) atau Video (MP4, MOV) yang diizinkan.';
-        event.target.value = '';
-        return;
-    }
-
-    if (originalFile.size > 10 * 1024 * 1024) {
-        uploadError.value = 'Ukuran file terlalu besar. Maksimal file yang dapat diunggah adalah 10MB!';
-        event.target.value = '';
-        return;
-    }
-
     isCompressing.value = true;
 
     try {
-        let finalFile = originalFile;
-        if (originalFile.type.startsWith('image/')) {
-            finalFile = await compressImage(originalFile);
+        for (const originalFile of filesToProcess) {
+            const fileExtension = originalFile.name.split('.').pop()?.toLowerCase() || '';
+
+            if (!allowedExtensions.includes(fileExtension) || (!originalFile.type.startsWith('image/') && !originalFile.type.startsWith('video/'))) {
+                uploadError.value = 'Format file tidak didukung! Hanya file Foto (JPG, JPEG, PNG, WEBP) atau Video (MP4, MOV) yang diizinkan.';
+                continue;
+            }
+
+            if (originalFile.size > 10 * 1024 * 1024) {
+                uploadError.value = `Ukuran file "${originalFile.name}" terlalu besar. Maksimal 10MB per file!`;
+                continue;
+            }
+
+            let finalFile = originalFile;
+            if (originalFile.type.startsWith('image/')) {
+                finalFile = await compressImage(originalFile);
+            }
+
+            const isImage = finalFile.type.startsWith('image/');
+            const isVideo = finalFile.type.startsWith('video/');
+            const previewUrl = URL.createObjectURL(finalFile);
+            const sizeInMB = (finalFile.size / (1024 * 1024)).toFixed(1);
+            const sizeFormatted = sizeInMB < 0.1 ? Math.round(finalFile.size / 1024) + ' KB' : sizeInMB + ' MB';
+
+            uploadedAttachments.value.push({
+                file: finalFile,
+                name: finalFile.name,
+                sizeFormatted,
+                isImage,
+                isVideo,
+                previewUrl
+            });
         }
 
-        if (uploadedAttachment.value?.previewUrl) {
-            URL.revokeObjectURL(uploadedAttachment.value.previewUrl);
-        }
-
-        const isImage = finalFile.type.startsWith('image/');
-        const isVideo = finalFile.type.startsWith('video/');
-        const previewUrl = URL.createObjectURL(finalFile);
-        const sizeInMB = (finalFile.size / (1024 * 1024)).toFixed(1);
-        const sizeFormatted = sizeInMB < 0.1 ? Math.round(finalFile.size / 1024) + ' KB' : sizeInMB + ' MB';
-
-        uploadedAttachment.value = {
-            file: finalFile,
-            name: finalFile.name,
-            sizeFormatted,
-            isImage,
-            isVideo,
-            previewUrl
-        };
-
-        form.value.uploaded_files = [uploadedAttachment.value];
+        form.value.uploaded_files = uploadedAttachments.value;
     } catch (e) {
         console.error('Gagal memproses media:', e);
     } finally {
@@ -415,13 +426,21 @@ const onFileSelected = async (event) => {
     }
 };
 
-const removeAttachment = () => {
+const removeAttachment = (index) => {
     uploadError.value = '';
-    if (uploadedAttachment.value?.previewUrl) {
-        URL.revokeObjectURL(uploadedAttachment.value.previewUrl);
+    if (typeof index === 'number') {
+        const item = uploadedAttachments.value[index];
+        if (item?.previewUrl) {
+            URL.revokeObjectURL(item.previewUrl);
+        }
+        uploadedAttachments.value.splice(index, 1);
+    } else {
+        uploadedAttachments.value.forEach((item) => {
+            if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        });
+        uploadedAttachments.value = [];
     }
-    uploadedAttachment.value = null;
-    form.value.uploaded_files = [];
+    form.value.uploaded_files = uploadedAttachments.value;
     if (fileInput.value) fileInput.value.value = '';
     if (cameraInput.value) cameraInput.value.value = '';
 };
@@ -451,7 +470,7 @@ const goToStep2 = () => {
         uploadError.value = 'Silakan pilih lokasi toilet terlebih dahulu.';
         return;
     }
-    if (!form.value.isi_laporan.trim() || form.value.isi_laporan.trim().length < 5 || !uploadedAttachment.value?.file || isTransitioning.value) return;
+    if (!form.value.isi_laporan.trim() || form.value.isi_laporan.trim().length < 5 || isTransitioning.value) return;
     isTransitioning.value = true;
     currentStep.value = 2;
     scrollToTop();
@@ -465,7 +484,7 @@ const submitReport = async () => {
         alert('Silakan pilih lokasi toilet terlebih dahulu.');
         return;
     }
-    if (!form.value.isi_laporan.trim() || form.value.isi_laporan.trim().length < 5 || !uploadedAttachment.value?.file || isSubmitting.value) return;
+    if (!form.value.isi_laporan.trim() || form.value.isi_laporan.trim().length < 5 || isSubmitting.value) return;
     
     isSubmitting.value = true;
     
@@ -483,9 +502,11 @@ const submitReport = async () => {
         formData.append('reporter_phone', form.value.reporter_phone || '');
         formData.append('is_anonymous', form.value.reporter_name ? '0' : '1');
         
-        if (uploadedAttachment.value?.file) {
-            formData.append('attachment', uploadedAttachment.value.file);
-        }
+        uploadedAttachments.value.forEach((item) => {
+            if (item?.file) {
+                formData.append('attachments[]', item.file);
+            }
+        });
 
         const response = await fetch('/services/kesling/aduan-sanitasi', {
             method: 'POST',
@@ -524,10 +545,12 @@ const submitReport = async () => {
 };
 
 const resetForm = () => {
-    if (uploadedAttachment.value?.previewUrl) {
-        URL.revokeObjectURL(uploadedAttachment.value.previewUrl);
-    }
-    uploadedAttachment.value = null;
+    uploadedAttachments.value.forEach((item) => {
+        if (item?.previewUrl) {
+            URL.revokeObjectURL(item.previewUrl);
+        }
+    });
+    uploadedAttachments.value = [];
     if (fileInput.value) fileInput.value.value = '';
     if (cameraInput.value) cameraInput.value.value = '';
     form.value = {
@@ -560,7 +583,33 @@ const isPanicTriggering = ref(false);
 const panicHoldProgress = ref(0);
 const panicTriggered = ref(false);
 const panicEmergencyTicket = ref(null);
+const showEmergencyContactsModal = ref(false);
 let panicInterval = null;
+
+const emergencyContacts = [
+    {
+        name: 'Dangkayani',
+        phone: '083850392949',
+        waNumber: '6283850392949',
+    },
+    {
+        name: 'Gusti Made Kartika',
+        phone: '085792909781',
+        waNumber: '6285792909781',
+    },
+    {
+        name: 'Sukiman',
+        phone: '081338608050',
+        waNumber: '6281338608050',
+    },
+];
+
+const getEmergencyWaUrl = (waNumber) => {
+    const loc = currentReportLocation.value || 'Lokasi Toilet RS';
+    const ticket = panicEmergencyTicket.value ? `\nNo. Tiket: ${panicEmergencyTicket.value}` : '';
+    const message = `*PANGGILAN BANTUAN DARURAT TOILET*\nLokasi: ${loc}${ticket}\nMohon bantuan dan pertolongan segera di lokasi ini.`;
+    return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
+};
 
 const frontPanicHoldProgress = ref(0);
 const isFrontHolding = ref(false);
@@ -630,6 +679,7 @@ const closePanicModal = () => {
     cancelPanicHold();
     showPanicModal.value = false;
     panicTriggered.value = false;
+    showEmergencyContactsModal.value = false;
     frontPanicHoldProgress.value = 0;
 };
 
@@ -1002,9 +1052,9 @@ const triggerEmergencyAlert = async () => {
                             </div>
                         </div>
 
-                        <!-- Upload Bukti Foto / Video (Wajib / Tanda Bintang) -->
+                        <!-- Upload Bukti Foto / Video (Opsional) -->
                         <div class="space-y-2.5">
-                            <InputLabel value="Lampirkan Bukti Foto / Video *" />
+                            <InputLabel value="Lampirkan Bukti Foto / Video (Opsional)" />
 
                             <!-- Inline Upload Error Alert Banner -->
                             <div 
@@ -1035,11 +1085,12 @@ const triggerEmergencyAlert = async () => {
                                 @change="onFileSelected" 
                             />
 
-                            <!-- Galeri / File Penyimpanan HP -->
+                            <!-- Galeri / File Penyimpanan HP (Multiple) -->
                             <input 
                                 ref="fileInput" 
                                 type="file" 
                                 accept="image/*,video/*" 
+                                multiple
                                 class="hidden" 
                                 @change="onFileSelected" 
                             />
@@ -1047,8 +1098,8 @@ const triggerEmergencyAlert = async () => {
                             <!-- Space Upload Area -->
                             <div 
                                 class="relative w-full rounded-2xl overflow-hidden border transition-all duration-200"
-                                :class="uploadedAttachment ? 'border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 shadow-none' : 'border-2 border-dashed border-slate-300 hover:border-emerald-500 dark:border-slate-700 dark:hover:border-emerald-500 bg-slate-50 hover:bg-emerald-50/30 dark:bg-slate-950 dark:hover:bg-emerald-950/20 cursor-pointer'"
-                                @click.stop="!uploadedAttachment && !isTransitioning && openFileInput()"
+                                :class="hasAttachments ? 'border-slate-300 dark:border-slate-700 bg-slate-100/60 dark:bg-slate-900 shadow-none' : 'border-2 border-dashed border-slate-300 hover:border-emerald-500 dark:border-slate-700 dark:hover:border-emerald-500 bg-slate-50 hover:bg-emerald-50/30 dark:bg-slate-950 dark:hover:bg-emerald-950/20 cursor-pointer'"
+                                @click.stop="!hasAttachments && !isTransitioning && openFileInput()"
                             >
                                 <!-- State 1: Mengoptimalkan Media -->
                                 <div v-if="isCompressing" class="flex flex-col items-center justify-center p-8 text-center select-none">
@@ -1059,7 +1110,7 @@ const triggerEmergencyAlert = async () => {
                                 </div>
 
                                 <!-- State 2: Kosong (Siap Klik) -->
-                                <div v-else-if="!uploadedAttachment" class="flex flex-col items-center justify-center p-5 sm:p-7 text-center select-none">
+                                <div v-else-if="!hasAttachments" class="flex flex-col items-center justify-center p-5 sm:p-7 text-center select-none">
                                     <div class="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2.5">
                                         <Camera class="h-6 w-6" />
                                     </div>
@@ -1067,7 +1118,7 @@ const triggerEmergencyAlert = async () => {
                                         Ambil Foto atau Pilih dari Galeri
                                     </p>
                                     <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 mb-3.5">
-                                        Buka kamera untuk foto langsung atau ambil dari galeri HP
+                                        Bisa pilih beberapa foto/video sekaligus (Maks. 5 file)
                                     </p>
 
                                     <!-- Tombol Pilihan: Kamera vs Galeri (Tanpa Shadow) -->
@@ -1091,65 +1142,97 @@ const triggerEmergencyAlert = async () => {
                                     </div>
 
                                     <span class="inline-block text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-3 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/80">
-                                        Khusus Foto / Video (Maks. 10MB)
+                                        Khusus Foto / Video (Maks. 5 File, 10MB/file)
                                     </span>
                                 </div>
 
-                                <!-- State 3: Ada Media -->
-                                <div v-else class="relative w-full h-52 sm:h-64 flex items-center justify-center bg-slate-100 dark:bg-slate-900">
-                                    <img 
-                                        v-if="uploadedAttachment.isImage" 
-                                        :src="uploadedAttachment.previewUrl" 
-                                        :alt="uploadedAttachment.name"
-                                        class="w-full h-full object-cover"
-                                    />
-                                    <video 
-                                        v-else-if="uploadedAttachment.isVideo" 
-                                        :src="uploadedAttachment.previewUrl" 
-                                        controls 
-                                        class="w-full h-full object-cover"
-                                    ></video>
+                                <!-- State 3: Grid Media Terlampir (Multi-file) -->
+                                <div v-else class="p-3 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                    <div
+                                        v-for="(att, idx) in uploadedAttachments"
+                                        :key="idx"
+                                        class="relative aspect-square rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 group"
+                                    >
+                                        <img
+                                            v-if="att.isImage"
+                                            :src="att.previewUrl"
+                                            :alt="att.name"
+                                            class="w-full h-full object-cover"
+                                        />
+                                        <video
+                                            v-else-if="att.isVideo"
+                                            :src="att.previewUrl"
+                                            controls
+                                            class="w-full h-full object-cover"
+                                        ></video>
+
+                                        <span class="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-slate-900/75 text-white text-[10px] font-bold">
+                                            {{ att.sizeFormatted }}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            @click.stop="removeAttachment(idx)"
+                                            :disabled="isTransitioning"
+                                            class="absolute top-1.5 right-1.5 h-6 w-6 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white flex items-center justify-center shadow-sm cursor-pointer transition active:scale-90"
+                                            title="Hapus file ini"
+                                        >
+                                            <X class="h-3.5 w-3.5 stroke-[2.5]" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Keterangan & Aksi File Terlampir -->
+                            <!-- Keterangan & Aksi Tambah / Hapus Semua File Terlampir -->
                             <div 
-                                v-if="uploadedAttachment && !isCompressing" 
-                                class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 animate-spa-fade-in"
+                                v-if="hasAttachments && !isCompressing" 
+                                class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 animate-spa-fade-in"
                             >
                                 <div class="flex items-center gap-2.5 min-w-0">
-                                    <div class="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                    <div class="h-9 w-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                                         <CheckCircle2 class="h-4 w-4" />
                                     </div>
                                     <div class="min-w-0">
                                         <p class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
-                                            {{ uploadedAttachment.isImage ? 'Foto Terlampir' : 'Video Terlampir' }}
+                                            {{ uploadedAttachments.length }} / 5 Media Terlampir
                                         </p>
-                                        <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                                            Ukuran: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ uploadedAttachment.sizeFormatted }}</span>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                            {{ uploadedAttachments.length < 5 ? 'Masih bisa tambah foto atau video lagi' : 'Batas maksimal 5 file tercapai' }}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div class="flex items-center gap-2 shrink-0">
+                                <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
                                     <button
+                                        v-if="uploadedAttachments.length < 5"
+                                        type="button"
+                                        @click.stop="triggerCamera"
+                                        :disabled="isTransitioning"
+                                        class="h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                                        title="Tambah Foto Kamera"
+                                    >
+                                        <Camera class="h-3.5 w-3.5 shrink-0" />
+                                        <span>Kamera</span>
+                                    </button>
+                                    <button
+                                        v-if="uploadedAttachments.length < 5"
                                         type="button"
                                         @click.stop="openFileInput"
                                         :disabled="isTransitioning"
-                                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold transition cursor-pointer active:scale-95 disabled:opacity-50"
-                                        title="Ganti Foto atau Video"
+                                        class="h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                                        title="Tambah dari Galeri"
                                     >
-                                        <RefreshCw class="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                                        <span>Ganti</span>
+                                        <ImageIcon class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        <span>Galeri</span>
                                     </button>
                                     <button
                                         type="button"
-                                        @click.stop="removeAttachment"
+                                        @click.stop="removeAttachment()"
                                         :disabled="isTransitioning"
-                                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-semibold transition cursor-pointer active:scale-95 disabled:opacity-50"
-                                        title="Hapus Lampiran"
+                                        class="col-span-2 sm:col-span-1 h-9 px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                                        title="Hapus Semua Lampiran"
                                     >
-                                        <Trash2 class="h-3.5 w-3.5" />
+                                        <Trash2 class="h-3.5 w-3.5 shrink-0" />
                                         <span>Hapus</span>
                                     </button>
                                 </div>
@@ -1170,7 +1253,7 @@ const triggerEmergencyAlert = async () => {
                             <button
                                 type="button"
                                 @click.stop.prevent="goToStep2"
-                                :disabled="(!isToiletPreset && availableToilets.length > 0 && !selectedToiletId) || !form.isi_laporan.trim() || form.isi_laporan.trim().length < 5 || !uploadedAttachment?.file || isTransitioning"
+                                :disabled="(!isToiletPreset && availableToilets.length > 0 && !selectedToiletId) || !form.isi_laporan.trim() || form.isi_laporan.trim().length < 5 || isTransitioning"
                                 class="flex-1 flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 font-semibold text-sm text-white transition-all duration-200 hover:bg-emerald-500 active:scale-[0.99] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <span>Lanjut ke Data Pelapor</span>
@@ -1324,7 +1407,7 @@ const triggerEmergencyAlert = async () => {
                         <button
                             type="button"
                             @click.stop.prevent="goToStep2"
-                            :disabled="(!isToiletPreset && availableToilets.length > 0 && !selectedToiletId) || !form.isi_laporan.trim() || form.isi_laporan.trim().length < 5 || !uploadedAttachment?.file || isTransitioning"
+                            :disabled="(!isToiletPreset && availableToilets.length > 0 && !selectedToiletId) || !form.isi_laporan.trim() || form.isi_laporan.trim().length < 5 || isTransitioning"
                             class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 font-semibold text-sm text-white transition-all duration-200 hover:bg-emerald-500 active:scale-[0.99] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <span>Lanjut ke Data Pelapor</span>
@@ -1407,13 +1490,14 @@ const triggerEmergencyAlert = async () => {
 
             <!-- Bottom Action Buttons (Standard Form Button Size h-12 rounded-xl) -->
             <div class="w-full max-w-md mx-auto flex flex-col gap-2.5 pb-2">
-                <a 
-                    href="tel:119"
+                <button 
+                    type="button"
+                    @click="showEmergencyContactsModal = true"
                     class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-rose-600 font-semibold text-sm text-white transition-all duration-200 hover:bg-rose-500 active:scale-[0.99] focus:outline-none"
                 >
-                    <PhoneCall class="w-4 h-4" />
-                    <span>Panggil Call Center IGD (119)</span>
-                </a>
+                    <MessageCircle class="w-4 h-4" />
+                    <span>Hubungi Petugas via WhatsApp</span>
+                </button>
                 <button 
                     type="button"
                     @click="closePanicModal"
@@ -1422,6 +1506,83 @@ const triggerEmergencyAlert = async () => {
                     <ArrowLeft class="h-4 w-4" />
                     <span>Kembali ke Menu Utama</span>
                 </button>
+            </div>
+        </div>
+
+        <!-- MODAL / SHEET PILIHAN KONTAK WHATSAPP PETUGAS DARURAT -->
+        <div
+            v-if="panicTriggered && showEmergencyContactsModal"
+            @click.self="showEmergencyContactsModal = false"
+            class="fixed inset-0 z-[60] bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-spa-fade-in"
+        >
+            <div class="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden">
+                <!-- Header -->
+                <div class="px-5 py-4 bg-rose-600 text-white flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                            <PhoneCall class="h-5 w-5" />
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="text-sm sm:text-base font-extrabold leading-tight truncate">
+                                Hubungi Petugas Darurat
+                            </h3>
+                            <p class="text-[11px] text-rose-100 mt-0.5 truncate">
+                                Pilih nomor untuk chat atau telepon via WhatsApp
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        @click="showEmergencyContactsModal = false"
+                        class="p-1.5 rounded-lg text-rose-100 hover:text-white hover:bg-white/15 transition cursor-pointer shrink-0"
+                        title="Tutup"
+                    >
+                        <X class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <!-- Contact List -->
+                <div class="p-4 sm:p-5 space-y-2.5">
+                    <a
+                        v-for="contact in emergencyContacts"
+                        :key="contact.waNumber"
+                        :href="getEmergencyWaUrl(contact.waNumber)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="group flex items-center justify-between gap-3 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 hover:border-emerald-500/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 transition-all duration-150 active:scale-[0.99]"
+                    >
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="h-11 w-11 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                                <MessageCircle class="h-5 w-5" />
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                                    {{ contact.name }}
+                                </div>
+                                <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
+                                    <Phone class="h-3 w-3 shrink-0" />
+                                    <span>{{ contact.phone }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold shadow-xs group-hover:bg-emerald-500 transition">
+                            <span>WhatsApp</span>
+                            <ArrowRight class="h-3.5 w-3.5" />
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-5 sm:px-6 pb-8 sm:pb-6 pt-1">
+                    <button
+                        type="button"
+                        @click="showEmergencyContactsModal = false"
+                        class="flex h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-semibold text-sm text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99] focus:outline-none"
+                    >
+                        Tutup
+                    </button>
+                </div>
             </div>
         </div>
     </div>

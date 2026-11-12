@@ -33,7 +33,7 @@ class PanSinarController extends Controller
             ->get();
 
         // 2. Sanitation & Toilet Tickets from Database
-        $tickets = SanitationTicket::with(['toilet', 'resolver'])
+        $tickets = SanitationTicket::with(['toilet', 'starter', 'resolver'])
             ->latest()
             ->get();
 
@@ -269,11 +269,23 @@ class PanSinarController extends Controller
         }
         $ticket = $query->firstOrFail();
 
-        $ticket->update([
-            'status' => 'DIKERJAKAN',
-        ]);
+        // Atomic lock: only 1 user can claim transition MENUNGGU -> DIKERJAKAN
+        $affected = SanitationTicket::where('id', $ticket->id)
+            ->where('status', 'MENUNGGU')
+            ->update([
+                'status' => 'DIKERJAKAN',
+                'started_at' => now(),
+                'started_by' => auth()->id(),
+                'updated_at' => now(),
+            ]);
 
-        return redirect()->back()->with('success', "Tiket {$ticket->ticket_number} berhasil dimulai dan status diubah menjadi Sedang Dikerjakan.");
+        if ($affected === 0) {
+            $ticket->refresh()->load('starter');
+            $handler = $ticket->starter_name ?: 'petugas lain';
+            return redirect()->back()->with('error', "Aduan {$ticket->ticket_number} sudah ditindaklanjuti lebih dulu oleh {$handler}.");
+        }
+
+        return redirect()->back()->with('success', "Tiket {$ticket->ticket_number} berhasil ditindaklanjuti dan tercatat atas nama Anda.");
     }
 
     /**
@@ -285,6 +297,8 @@ class PanSinarController extends Controller
             'resolution_notes' => 'required|string|min:5',
             'evidence_after' => 'nullable|string',
             'evidence_after_file' => 'nullable|image|max:10240',
+            'evidence_after_files' => 'nullable|array|max:5',
+            'evidence_after_files.*' => 'image|max:10240',
         ]);
 
         $query = SanitationTicket::query();
@@ -297,18 +311,45 @@ class PanSinarController extends Controller
         }
         $ticket = $query->firstOrFail();
 
-        $evidenceAfter = $validated['evidence_after'] ?? null;
-        if ($request->hasFile('evidence_after_file')) {
-            $path = $request->file('evidence_after_file')->store('sanitation/resolutions', 'public');
-            $evidenceAfter = '/storage/' . $path;
-        } elseif ($request->filled('evidence_after') && str_starts_with($request->input('evidence_after'), 'data:image')) {
-            $evidenceAfter = \App\Services\SecureFileUpload::saveBase64($request->input('evidence_after'), 'attachments/sanitasi', 'resolusi_');
+        $user = auth()->user();
+        if ($ticket->started_by && (int) $ticket->started_by !== (int) $user?->id && !$user?->isAdmin()) {
+            $ticket->load('starter');
+            $handler = $ticket->starter_name ?: 'petugas lain';
+            return redirect()->back()->with('error', "Aduan {$ticket->ticket_number} sedang ditangani oleh {$handler}.");
         }
+
+        $afterPaths = [];
+        if ($request->hasFile('evidence_after_files')) {
+            foreach ($request->file('evidence_after_files') as $file) {
+                if ($file && $file->isValid()) {
+                    $path = $file->store('sanitation/resolutions', 'public');
+                    $afterPaths[] = '/storage/' . $path;
+                }
+            }
+        }
+        if ($request->hasFile('evidence_after_file')) {
+            $file = $request->file('evidence_after_file');
+            if ($file && $file->isValid()) {
+                $path = $file->store('sanitation/resolutions', 'public');
+                $afterPaths[] = '/storage/' . $path;
+            }
+        } elseif ($request->filled('evidence_after') && str_starts_with($request->input('evidence_after'), 'data:image')) {
+            $saved = \App\Services\SecureFileUpload::saveBase64($request->input('evidence_after'), 'attachments/sanitasi', 'resolusi_');
+            if ($saved) {
+                $afterPaths[] = $saved;
+            }
+        } elseif ($request->filled('evidence_after') && empty($afterPaths)) {
+            $afterPaths[] = $validated['evidence_after'];
+        }
+
+        $evidenceAfter = count($afterPaths) === 0
+            ? ($ticket->urgency === 'DARURAT' ? null : ($ticket->getRawOriginal('evidence_after') ?: null))
+            : (count($afterPaths) === 1 ? $afterPaths[0] : json_encode($afterPaths));
 
         $ticket->update([
             'status' => 'SELESAI',
             'resolution_notes' => $validated['resolution_notes'],
-            'evidence_after' => $evidenceAfter ?: ($ticket->urgency === 'DARURAT' ? null : ($ticket->evidence_after ?: null)),
+            'evidence_after' => $evidenceAfter,
             'resolved_by' => auth()->id(),
             'resolved_at' => now(),
         ]);
@@ -338,8 +379,9 @@ class PanSinarController extends Controller
 
         $ticketNumber = $ticket->ticket_number;
 
-        // Delete local evidence files if present
-        foreach ([$ticket->evidence_before, $ticket->evidence_after] as $photoUrl) {
+        // Delete all local evidence files if present
+        $allEvidence = array_merge($ticket->evidence_before_list, $ticket->evidence_after_list);
+        foreach ($allEvidence as $photoUrl) {
             if ($photoUrl && str_starts_with($photoUrl, '/storage/')) {
                 $filePath = str_replace('/storage/', '', $photoUrl);
                 if (\Illuminate\Support\Facades\Storage::disk('public')->exists($filePath)) {
@@ -369,6 +411,11 @@ class PanSinarController extends Controller
             'air_fragrance_ok' => 'required|boolean',
             'notes' => 'required|string',
             'photo' => 'nullable',
+            'photos' => 'nullable|array|max:5',
+            'photos.*' => 'image|max:10240',
+            'existing_photos' => 'nullable|array',
+            'existing_photos.*' => 'string',
+            'photos_sync' => 'nullable|boolean',
         ]);
 
         // Find matching toilet by explicit ID first
@@ -408,11 +455,31 @@ class PanSinarController extends Controller
             $toilet = SanitationToilet::first();
         }
 
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('inspections', 'public');
-            $photoPath = '/storage/' . $path;
+        $newPhotoPaths = [];
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $file) {
+                if ($file && $file->isValid()) {
+                    $path = $file->store('inspections', 'public');
+                    $newPhotoPaths[] = '/storage/' . $path;
+                }
+            }
         }
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            if ($file && $file->isValid()) {
+                $path = $file->store('inspections', 'public');
+                $newPhotoPaths[] = '/storage/' . $path;
+            }
+        }
+
+        $existingKept = array_values(array_filter(
+            $request->input('existing_photos', []),
+            fn ($item) => is_string($item) && trim($item) !== ''
+        ));
+        $mergedPhotos = array_values(array_unique(array_merge($existingKept, $newPhotoPaths)));
+        $photoPath = count($mergedPhotos) === 0
+            ? null
+            : (count($mergedPhotos) === 1 ? $mergedPhotos[0] : json_encode($mergedPhotos));
 
         $isAllOk = (bool)$validated['water_flush_ok'] 
             && (bool)$validated['floor_mirror_clean'] 
@@ -434,7 +501,7 @@ class PanSinarController extends Controller
                     'status' => $status,
                     'notes' => $validated['notes'],
                 ];
-                if ($photoPath) {
+                if ($request->boolean('photos_sync') || count($newPhotoPaths) > 0) {
                     $payload['photo'] = $photoPath;
                 }
                 $existing->update($payload);
