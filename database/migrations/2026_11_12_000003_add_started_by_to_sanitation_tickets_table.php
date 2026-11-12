@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sanitation_tickets', function (Blueprint $table) {
-            $table->foreignId('started_by')->nullable()->after('started_at')->constrained('users')->nullOnDelete();
+            $table->foreignId('started_by')
+                ->nullable()
+                ->after('started_at')
+                ->constrained('users')
+                ->noActionOnDelete();
         });
     }
 
