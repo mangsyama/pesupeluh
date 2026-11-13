@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, getCurrentInstance } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
-import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, ShieldAlert, ArrowRight, Wrench, Trash2 } from '@lucide/vue';
+import { Search, Eye, Calendar, User, MapPin, Phone, ChevronLeft, ChevronRight, Inbox, Clock, CheckCircle, ShieldAlert, ArrowRight, Wrench, Trash2, ChevronDown } from '@lucide/vue';
 import { getDisplayDescription, getDisplayReporterName, getDisplayReporterPhone, isSipuasTicket } from '@/Utils/sipuasHelper';
 
 const { proxy } = getCurrentInstance();
@@ -170,49 +170,39 @@ const formatDate = (dateStr) => {
     <div class="w-full">
         <!-- Unified Table Card Wrapper -->
         <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800/60 rounded-2xl shadow-sm overflow-hidden mb-4">
-            <!-- Search & Custom Tab Controls (Combined Header - ALWAYS VISIBLE) -->
-            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5 border-b border-slate-100 dark:border-slate-800/60">
-                <!-- Left: Tab Buttons -->
-                <div class="flex flex-wrap items-center bg-slate-100/80 dark:bg-slate-950/45 p-1 rounded-xl w-full xl:w-fit gap-1">
-                    <button
-                        @click="setTab('')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === '' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
-                    >
-                        <Inbox class="h-3.5 w-3.5" />
-                        Semua Tugas
-                    </button>
-                    <button
-                        @click="setTab('PENDING_VALIDATION')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'PENDING_VALIDATION' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
-                    >
-                        <ShieldAlert class="h-3.5 w-3.5" />
-                        Menunggu Validasi
-                    </button>
-                    <button
-                        @click="setTab('ASSIGNED,IN_PROGRESS,PENDING')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'ASSIGNED,IN_PROGRESS,PENDING' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
-                    >
-                        <Clock class="h-3.5 w-3.5" />
-                        Sedang Berjalan
-                    </button>
-                    <button
-                        @click="setTab('COMPLETED,CANCEL')"
-                        :class="['flex-1 xl:flex-initial px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 whitespace-nowrap', currentTab === 'COMPLETED,CANCEL' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
-                    >
-                        <CheckCircle class="h-3.5 w-3.5" />
-                        Riwayat Selesai
-                    </button>
-                </div>
-
-                <!-- Right: Search Box -->
-                <div class="relative w-full xl:w-96">
-                    <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <!-- Search & Custom Filter Controls (Combined Header Sesuai Standar Ringkas) -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800/60">
+                <!-- Left: Search Box -->
+                <div class="relative w-full sm:w-80 xl:w-96">
+                    <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                         v-model="searchQuery"
                         type="text"
-                        :placeholder="__('pages.reports.history.search_placeholder')"
-                        class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-855 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-white transition-all duration-150 shadow-none"
+                        :placeholder="__('pages.reports.history.search_placeholder') || 'Cari nomor tiket, pelapor, atau masalah...'"
+                        class="w-full h-10 pl-10 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 shadow-none"
                     />
+                </div>
+
+                <!-- Right Controls: Status Filter Dropdown (Bertumpuk di Layar Kecil, Sejajar di Desktop) -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-auto">
+                        <select
+                            v-model="currentTab"
+                            @change="applyFilters"
+                            class="w-full sm:w-auto h-10 pl-3.5 pr-8 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-medium focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none"
+                        >
+                            <option value="">Semua Status Tiket</option>
+                            <option value="PENDING_VALIDATION">Menunggu Validasi & Disposisi</option>
+                            <option value="ASSIGNED,IN_PROGRESS,PENDING">Dalam Pengerjaan (Aktif)</option>
+                            <option value="ASSIGNED">Ditugaskan ke Teknisi</option>
+                            <option value="IN_PROGRESS">Sedang Dikerjakan Teknisi</option>
+                            <option value="PENDING">Tertunda</option>
+                            <option value="COMPLETED,CANCEL">Riwayat Selesai & Batal</option>
+                            <option value="COMPLETED">Selesai</option>
+                            <option value="CANCEL">Dibatalkan</option>
+                        </select>
+                        <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    </div>
                 </div>
             </div>
 

@@ -6,7 +6,7 @@ import Modal from '@/Components/Modal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import SearchableSelect from '@/Components/SearchableSelect.vue';
-import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, UserPlus, Plus, X, KeyRound, RotateCcw, ChevronLeft, ChevronRight, Eye } from '@lucide/vue';
+import { Search, User, Shield, ShieldAlert, Layers, Users, Calendar, Phone, Wrench, MapPin, Edit2, Trash2, UserX, UserCheck, UserPlus, Plus, X, KeyRound, RotateCcw, ChevronLeft, ChevronRight, Eye, ChevronDown } from '@lucide/vue';
 
 const props = defineProps({
     users: {
@@ -34,7 +34,9 @@ const props = defineProps({
 const page = usePage();
 const { proxy } = getCurrentInstance();
 const searchQuery = ref('');
-const currentTab = ref('all');
+const selectedRole = ref('all');
+const selectedUnit = ref('all');
+const selectedStatus = ref('all');
 
 const roleOptions = computed(() => {
     return (props.roles || []).map(r => ({
@@ -70,27 +72,34 @@ const __ = (key) => {
     return current;
 };
 
-const roleTabs = computed(() => [
-    { key: 'all', label: proxy.__('pages.user_management.tabs.all') || 'Semua', icon: Users },
-    { key: 'admin', label: proxy.__('pages.user_management.tabs.admin') || 'Administrator', icon: Shield },
-    { key: 'management', label: proxy.__('pages.user_management.tabs.management') || 'Manajemen', icon: Wrench },
-    { key: 'unit_head', label: proxy.__('pages.user_management.tabs.unit_head') || 'Instalasi', icon: MapPin },
-    { key: 'room_head', label: proxy.__('pages.user_management.tabs.room_head') || 'PJ Ruangan', icon: Layers },
-    { key: 'technician', label: proxy.__('pages.user_management.tabs.technician') || 'Teknisi', icon: Wrench },
-    { key: 'reporter', label: proxy.__('pages.user_management.tabs.reporter') || 'Staff / Pelapor', icon: User },
-]);
-
 const filteredUsers = computed(() => {
     return props.users.filter(user => {
-        let matchesTab = true;
-        if (currentTab.value === 'admin') matchesTab = user.role_id === 1;
-        else if (currentTab.value === 'management') matchesTab = [2, 3, 4, 5, 6].includes(user.role_id);
-        else if (currentTab.value === 'unit_head') matchesTab = [7, 8].includes(user.role_id);
-        else if (currentTab.value === 'room_head') matchesTab = user.role_id === 9;
-        else if (currentTab.value === 'technician') matchesTab = user.role_id === 10;
-        else if (currentTab.value === 'reporter') matchesTab = user.role_id === 11;
+        let matchesRole = true;
+        if (selectedRole.value !== 'all' && selectedRole.value !== '') {
+            if (selectedRole.value === 'admin') matchesRole = user.role_id === 1;
+            else if (selectedRole.value === 'management') matchesRole = [2, 3, 4, 5, 6].includes(user.role_id);
+            else if (selectedRole.value === 'unit_head') matchesRole = [7, 8].includes(user.role_id);
+            else if (selectedRole.value === 'room_head') matchesRole = user.role_id === 9;
+            else if (selectedRole.value === 'technician') matchesRole = user.role_id === 10;
+            else if (selectedRole.value === 'reporter') matchesRole = user.role_id === 11;
+            else if (selectedRole.value === 'cleaning_service') matchesRole = user.role_id === 12;
+            else matchesRole = Number(user.role_id) === Number(selectedRole.value);
+        }
+        if (!matchesRole) return false;
 
-        if (!matchesTab) return false;
+        let matchesStatus = true;
+        if (selectedStatus.value === 'active') {
+            matchesStatus = Boolean(user.is_active);
+        } else if (selectedStatus.value === 'inactive') {
+            matchesStatus = !Boolean(user.is_active);
+        }
+        if (!matchesStatus) return false;
+
+        let matchesUnit = true;
+        if (selectedUnit.value !== 'all' && selectedUnit.value !== '') {
+            matchesUnit = Number(user.supporting_unit_id) === Number(selectedUnit.value);
+        }
+        if (!matchesUnit) return false;
 
         if (!searchQuery.value.trim()) return true;
 
@@ -98,8 +107,9 @@ const filteredUsers = computed(() => {
         const name = (user.name || '').toLowerCase();
         const email = (user.email || '').toLowerCase();
         const nip = (user.nip || '').toLowerCase();
+        const phone = (user.phone_number || '').toLowerCase();
 
-        return name.includes(q) || email.includes(q) || nip.includes(q);
+        return name.includes(q) || email.includes(q) || nip.includes(q) || phone.includes(q);
     });
 });
 
@@ -122,7 +132,7 @@ const hasNext = computed(() => currentPage.value < lastPage.value);
 const goToPrev = () => { if (currentPage.value > 1) currentPage.value--; };
 const goToNext = () => { if (currentPage.value < lastPage.value) currentPage.value++; };
 
-watch([searchQuery, currentTab], () => {
+watch([searchQuery, selectedRole, selectedStatus, selectedUnit], () => {
     currentPage.value = 1;
 });
 
@@ -423,40 +433,61 @@ const deleteUser = (user) => {
 
                 <!-- Table Card Container -->
                 <div class="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl shadow-sm mb-4 relative z-20">
-                    <!-- Filter Tabs & Search Header (ALWAYS VISIBLE) -->
-                    <div class="flex flex-col gap-4 p-5 border-b border-slate-100 dark:border-slate-800/60 relative z-30">
-                        <!-- Mobile Role Filter Dropdown (< xl) -->
-                        <div class="xl:hidden w-full relative z-40">
-                            <SearchableSelect
-                                v-model="currentTab"
-                                :options="roleTabs"
-                                value-key="key"
-                                label-key="label"
-                                :searchable="false"
-                                placeholder="Pilih Filter Peran..."
-                            />
-                        </div>
-
-                        <!-- Desktop Role Filter Tabs (>= xl) -->
-                        <div class="hidden xl:grid grid-cols-7 gap-2 bg-slate-100/80 dark:bg-slate-950/45 p-1 rounded-xl">
-                            <button
-                                v-for="tab in roleTabs"
-                                :key="tab.key"
-                                @click="currentTab = tab.key"
-                                :class="['w-full px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap', currentTab === tab.key ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200']"
-                            >
-                                <component :is="tab.icon" class="h-3.5 w-3.5" />
-                                {{ tab.label }}
-                            </button>
-                        </div>
-                        <div class="relative w-full">
-                            <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <!-- Search & Custom Filter Controls (Combined Header Sesuai Manajemen Toilet) -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800/60">
+                        <!-- Left: Search Box -->
+                        <div class="relative w-full sm:w-80 xl:w-96">
+                            <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <input
                                 v-model="searchQuery"
                                 type="text"
-                                :placeholder="__('pages.user_management.search_all_placeholder')"
-                                class="w-full h-10 pl-9 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-sm focus:outline-none focus:ring-0 focus:border-emerald-500 dark:focus:border-white transition-all duration-150 shadow-none"
+                                :placeholder="__('pages.user_management.search_all_placeholder') || 'Cari nama, email, NIP, atau kontak...'"
+                                class="w-full h-10 pl-10 pr-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all duration-150 shadow-none"
                             />
+                        </div>
+
+                        <!-- Right Controls: Role, Unit & Status Filter Dropdowns (Bertumpuk di Layar Kecil, Sejajar di Desktop) -->
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+                            <!-- Role Filter Dropdown -->
+                            <div class="relative w-full sm:w-auto">
+                                <select
+                                    v-model="selectedRole"
+                                    class="w-full sm:w-auto h-10 pl-3.5 pr-8 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-medium focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none"
+                                >
+                                    <option value="all">Semua Peran</option>
+                                    <option v-for="r in roleOptions" :key="r.id" :value="r.id">
+                                        {{ r.name }}
+                                    </option>
+                                </select>
+                                <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            </div>
+
+                            <!-- Unit Penunjang Filter Dropdown -->
+                            <div class="relative w-full sm:w-auto" v-if="supportingUnits && supportingUnits.length > 0">
+                                <select
+                                    v-model="selectedUnit"
+                                    class="w-full sm:w-auto h-10 pl-3.5 pr-8 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-medium focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none"
+                                >
+                                    <option value="all">Semua Unit</option>
+                                    <option v-for="u in supportingUnits" :key="u.id" :value="u.id">
+                                        {{ u.name }}
+                                    </option>
+                                </select>
+                                <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            </div>
+
+                            <!-- Status Filter Dropdown -->
+                            <div class="relative w-full sm:w-auto">
+                                <select
+                                    v-model="selectedStatus"
+                                    class="w-full sm:w-auto h-10 pl-3.5 pr-8 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-medium focus:ring-2 focus:ring-emerald-500 cursor-pointer appearance-none"
+                                >
+                                    <option value="all">Semua Status</option>
+                                    <option value="active">Aktif</option>
+                                    <option value="inactive">Nonaktif</option>
+                                </select>
+                                <ChevronDown class="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            </div>
                         </div>
                     </div>
 
